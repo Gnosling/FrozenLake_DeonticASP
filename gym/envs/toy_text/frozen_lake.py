@@ -15,7 +15,17 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
-    "4x4": ["SFFF", "FHFH", "FFFH", "HFFG"],
+    "3x3": [
+        "SFF",
+        "FHF",
+        "FFG"
+    ],
+    "4x4": [
+        "SFFF",
+        "FHFH",
+        "FFFH",
+        "HFFG"
+    ],
     "8x8": [
         "SFFFFFFF",
         "FFFFFFFF",
@@ -196,12 +206,25 @@ class FrozenLakeEnv(Env):
                 row = max(row - 1, 0)
             return (row, col)
 
+
         def update_probability_matrix(row, col, action):
+            """
+            defines new state, terminated and reward of n action
+            """
             newrow, newcol = inc(row, col, action)
             newstate = to_s(newrow, newcol)
             newletter = desc[newrow, newcol]
+            difference_to_goal = len(desc)-1-newrow + len(desc[0])-1-newcol
+
             terminated = bytes(newletter) in b"GH"
-            reward = float(newletter == b"G")
+
+            if newletter == b"G":
+                reward = 100
+            elif newletter == b"H":
+                reward = -50
+            else:
+                reward = 0
+
             return newstate, reward, terminated
 
         for row in range(nrow):

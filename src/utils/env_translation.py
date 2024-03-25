@@ -14,3 +14,15 @@ def action_number_to_string(number: int) -> str:
         return "UP"
     else:
         return None
+
+def action_name_to_number(name: str) -> int:
+    if name == "LEFT":
+        return 0
+    elif name == "DOWN":
+        return 1
+    elif name == "RIGHT":
+        return 2
+    elif name == "UP":
+        return 3
+    else:
+        return None
