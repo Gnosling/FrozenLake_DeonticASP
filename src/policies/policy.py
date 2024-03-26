@@ -1,14 +1,22 @@
-from typing import Set, Dict, Any
-import random
-from src.policies.q_table import QTable
+from typing import Any
+from .q_table import QTable
 
 
 class Policy:
+    """
+    This is the most general policy, suggesting only the best known action (greedy)
+    """
 
-    def __init__(self):
-        self.q_table = QTable()
-        self.learning_rate = 0.3
-        self.discount = 0.3
+    def __init__(self, q_table: QTable, learning_rate: float, discount: float):
+        """
+        Args:
+        q_table                             the Q-Table to store learned values for state-action pairs
+        0 <= learning_rate (float) <= 1     scales each update
+        0 <= discount (float) <= 1          defines importance of next-state value in the update
+        """
+        self.q_table = q_table
+        self.learning_rate = learning_rate
+        self.discount = discount
 
     def initialize(self, states, available_actions):
         for state in states:
@@ -20,17 +28,24 @@ class Policy:
         self.q_table.update(state, action, delta)
 
     def update_after_end_of_episode(self, trail):
+        """
+        updates q-table in reversed step order
+        """
         for state, action, new_state, reward in reversed(trail):
             self.update_after_step(state, action, new_state, reward)
 
     def value_of_state_action_pair(self, state, action) -> float:
         return self.q_table.value_of(state, action)
 
-    def get_best_action_for_state(self, state) -> Any:
+    def suggest_action(self, state) -> Any:
         return self.q_table.get_best_action_for_state(state)
 
     def value_of_state(self, state):
+        """
+        state-value is best known action value of that state
+        """
         return self.q_table.max_value_of(state)
 
+    # TODO: create helper function to get learned path of policy?
     def print_policy(self):
         print(str(self.q_table.get_all_values()))

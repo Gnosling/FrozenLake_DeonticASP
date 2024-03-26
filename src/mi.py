@@ -1,14 +1,20 @@
 import gym
 import time
 
-from policies.policy import Policy
-from utils import constants
-from src.utils.env_translation import *
+from .utils import constants
+from .utils.env_translation import *
+from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
+from .policies.q_table import QTable
+
+table = QTable()
+learning_rate = 0.3
+discount = 0.5
+epsilon = 0.2
 
 # Create the FrozenLake environment
 env = gym.make('FrozenLake3x3', is_slippery=False, render_mode='ansi')  # You can also use 'FrozenLake-v0', render_mode='human', render_mode='ansi'
 state, info = env.reset(seed=42)
-behavior = Policy()
+behavior = EpsilonGreedyPolicy(table, learning_rate, discount, epsilon)
 behavior.initialize({s for s in range(9)}, constants.action_set)
 
 # initial_state = 0
@@ -26,7 +32,7 @@ for i in range(20):
         print("_____________________________________________")
         print(env.render())
 
-        action_name = behavior.get_best_action_for_state(state)
+        action_name = behavior.suggest_action(state)
         action = action_name_to_number(action_name)
         print(f'Action: {action_number_to_string(action)}')
 
