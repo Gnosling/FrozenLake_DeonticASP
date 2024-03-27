@@ -1,70 +1,112 @@
+from typing import List
+
 import gym
 import time
+import csv
 
 from .utils import constants
-from .utils.env_translation import *
+from .utils.utils import *
 from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from .policies.q_table import QTable
+from .policies.policy import Policy
+from .service import *
 
 class Controller:
 
     def __init__(self):
-        pass
+        self.discount_rate = 1.0
+
+    # TODO: have a service.class for this
+
+    # TODO: change the frozenLake env to have multiple targets, other elves and change properties?
 
 
-    def run(self):
 
-        table = QTable()
-        learning_rate = 0.3
-        discount = 0.5
-        epsilon = 0.2
+    def run_experiment(self, config: str):
 
-        # Create the FrozenLake environment
-        env = gym.make('FrozenLake3x3', is_slippery=False,
-                       render_mode='human')  # You can also use 'FrozenLake-v0', render_mode='human', render_mode='ansi'
+        print(f"Starting experiment {config} ...")
+
+        # -----------------------------------------------------------------------------
+        # Reading params
+        # -----------------------------------------------------------------------------
+        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning = read_config_param(config)
+
+        # -----------------------------------------------------------------------------
+        # Initializations
+        # -----------------------------------------------------------------------------
+
+        env = gym.make(id=frozenlake.get("name"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
         state, info = env.reset(seed=42)
-        behavior = EpsilonGreedyPolicy(table, learning_rate, discount, epsilon)
-        behavior.initialize({s for s in range(9)}, constants.action_set)
+        behavior = Policy(QTable(), learning_rate, discount)
+        # behavior = EpsilonGreedyPolicy(table, learning_rate, discount, epsilon)
+        behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
 
-        # initial_state = 0
-        # state = initial_state
+        # -----------------------------------------------------------------------------
+        # Training
+        # -----------------------------------------------------------------------------
 
-        for i in range(20):
+        total_results = {"avg_behavior_return": [], "avg_target_return": []}
+        for rep in range(reps):
+            return_of_behavior = []
+            return_of_target = []
+            print(f"Performing repetition {rep+1}", end='\r', flush=True)
+            for episode in range(episodes):
+                debug_print("_____________________________________________")
+                debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
+                state, info = env.reset()  # this is to restart
+                trail = []  # list of [state, action_name, new_state, rewards]
 
-            print("___________________________________________")
-            print(f"    ----    ----    RUN {i}    ----    ----    ")
-            state, info = env.reset()  # this is to restart
-            trail = []
+                for step in range(max_steps):
+                    # debug_print("_____________________________________________")
+                    # debug_print(env.render())
 
-            for _ in range(50):
+                    action_name = behavior.suggest_action(state)
+                    action = action_name_to_number(action_name)
+                    # debug_print(f'Action: {action_number_to_string(action)}')
 
-                print("_____________________________________________")
-                print(env.render())
+                    new_state, reward, terminated, truncated, info = env.step(action)
+                    # debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
 
-                action_name = behavior.suggest_action(state)
-                action = action_name_to_number(action_name)
-                print(f'Action: {action_number_to_string(action)}')
+                    trail.append([state, action_name, new_state, reward])
+                    behavior.update_after_step(state, action_name, new_state, reward)
 
-                new_state, reward, terminated, truncated, info = env.step(action)
-                print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
+                    state = new_state
 
-                trail.append([state, action_name, new_state, reward])
-                behavior.update_after_step(state, action_name, new_state, reward)
+                    # time.sleep(0.5)
 
-                state = new_state
+                    if terminated or truncated:
+                        # state, info = env.reset() # this is to restart
+                        break  # this is to terminate
 
-                # time.sleep(0.5)
+                # debug_print(env.render())
+                # behavior.update_after_end_of_episode(trail)
+                expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail])
+                return_of_behavior.append(expected_return)
+                return_of_target.append(expected_return)
+                debug_print(f"Expected return of ep {episode}: {expected_return}")
+                debug_print("_____________________________________________")
 
-                if terminated or truncated:
-                    # state, info = env.reset() # this is to restart
-                    break  # this is to terminate
+            debug_print("_____________________________________________")
+            # debug_print(env.render())
+            debug_print(behavior.get_printed_policy())
+            total_results.get("avg_behavior_return").append(return_of_behavior)
+            total_results.get("avg_target_return").append(return_of_target)
+            # time.sleep(1)
+            env.close()
 
-            print(env.render())
-            # behavior.update_after_end_of_episode(trail)
+        print("Experiment completed!            ", end='\n', flush=True)
+        # print("\n", flush=True)
+        # print("\nTask completed!")
+        # -----------------------------------------------------------------------------
+        # Evaluation
+        # -----------------------------------------------------------------------------
+        avg_results = get_average_results(total_results)
+        debug_print(f"Results:\n{avg_results}")
 
-        print("_____________________________________________")
-        print(env.render())
-        behavior.print_policy()
-        time.sleep(2)
-        env.close()
+        # -----------------------------------------------------------------------------
+        # Storing of results
+        # -----------------------------------------------------------------------------
+        store_results(config, avg_results)
+
+        # print("Run finished!")
 

@@ -1,4 +1,5 @@
 from src import *
 
 controller = Controller()
-controller.run()
+controller.run_experiment("A1")
+

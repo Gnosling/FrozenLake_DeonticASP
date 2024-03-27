@@ -47,5 +47,5 @@ class Policy:
         return self.q_table.max_value_of(state)
 
     # TODO: create helper function to get learned path of policy?
-    def print_policy(self):
-        print(str(self.q_table.get_all_values()))
+    def get_printed_policy(self) -> str:
+        return str(self.q_table.get_all_values())
