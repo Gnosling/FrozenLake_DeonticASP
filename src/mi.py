@@ -2,7 +2,7 @@ import gym
 import time
 
 from .utils import constants
-from .utils.env_translation import *
+from .utils.utils import *
 from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from .policies.q_table import QTable
 
