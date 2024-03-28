@@ -15,7 +15,7 @@ RIGHT = 2
 UP = 3
 
 MAPS = {
-    "3x3": [
+    "3x3_A": [
         "SFF",
         "FHF",
         "FFG"

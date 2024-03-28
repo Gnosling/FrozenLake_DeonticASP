@@ -7,6 +7,7 @@ import csv
 from .utils import constants
 from .utils.utils import *
 from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
+from .policies.planner_policy import PlannerPolicy
 from .policies.q_table import QTable
 from .policies.policy import Policy
 from .service import *
@@ -37,8 +38,9 @@ class Controller:
 
         env = gym.make(id=frozenlake.get("name"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
         state, info = env.reset(seed=42)
-        behavior = Policy(QTable(), learning_rate, discount)
+        # behavior = Policy(QTable(), learning_rate, discount)
         # behavior = EpsilonGreedyPolicy(table, learning_rate, discount, epsilon)
+        behavior = PlannerPolicy(QTable(), learning_rate, discount, planning)
         behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
 
         # -----------------------------------------------------------------------------
@@ -58,11 +60,11 @@ class Controller:
 
                 for step in range(max_steps):
                     # debug_print("_____________________________________________")
-                    # debug_print(env.render())
+                    debug_print(env.render())
 
                     action_name = behavior.suggest_action(state)
                     action = action_name_to_number(action_name)
-                    # debug_print(f'Action: {action_number_to_string(action)}')
+                    debug_print(f'Action: {action_number_to_string(action)}')
 
                     new_state, reward, terminated, truncated, info = env.step(action)
                     # debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')

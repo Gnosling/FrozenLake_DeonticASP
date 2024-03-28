@@ -1,6 +1,3 @@
-#program initial.
-currentState(0).
-
 #program always.
 #const tiles = 9.
 #const width = 3.

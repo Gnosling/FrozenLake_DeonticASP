@@ -5,5 +5,10 @@ configs = {
            "policy": "eps_greedy", "epsilon": 0.2,
            "planning": ""
            },
-    "A2": {"a": 0, "b": 4}
+    "A2": {"reps": 3, "episodes": 20, "max_steps": 100,
+           "discount": 1.0, "learning_rate": 1.0,
+           "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9},
+           "policy": "eps_greedy", "epsilon": 0.2,
+           "planning": ""
+           },
 }
