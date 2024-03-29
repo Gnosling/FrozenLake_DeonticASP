@@ -4,6 +4,10 @@ import numpy as np
 import csv
 
 from src.configs import configs
+from src.policies.policy import Policy
+from src.policies.epsilon_greedy_policy import EpsilonGreedyPolicy
+from src.policies.planner_policy import PlannerPolicy
+from src.policies.q_table import QTable
 from .constants import *
 
 
@@ -48,10 +52,25 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, di
         frozenlake = values.get("frozenlake")
         policy = values.get("policy")
         epsilon = values.get("epsilon")
-        planning = values.get("planning")
-        return reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning
+        planning_strategy = values.get("planning_strategy")
+        return reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy
     else:
         raise ValueError("Configuration was not found!")
+
+
+def build_policy(config: str):
+    _, _, _, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy = read_config_param(config)
+
+    if policy == "greedy":
+        obj = Policy(QTable(), learning_rate, discount)
+    elif policy == "eps_greedy":
+        obj = EpsilonGreedyPolicy(QTable(), learning_rate, discount, epsilon)
+    elif policy == "planning":
+        obj = PlannerPolicy(QTable(), learning_rate, discount, planning_strategy, frozenlake.get("name"))
+    else:
+        raise ValueError(f"Wrong value of policy: {policy}!")
+
+    return obj
 
 
 def compute_expected_return(discount_rate: float, rewards: List[float]) -> float:

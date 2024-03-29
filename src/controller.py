@@ -30,17 +30,15 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning = read_config_param(config)
+        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Initializations
         # -----------------------------------------------------------------------------
 
         env = gym.make(id=frozenlake.get("name"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
-        state, info = env.reset(seed=42)
-        # behavior = Policy(QTable(), learning_rate, discount)
-        # behavior = EpsilonGreedyPolicy(table, learning_rate, discount, epsilon)
-        behavior = PlannerPolicy(QTable(), learning_rate, discount, planning)
+        env.reset(seed=42)
+        behavior = build_policy(config)
         behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
 
         # -----------------------------------------------------------------------------
