@@ -10,6 +10,6 @@ configs = {
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9},
            "policy": "planning", "epsilon": 0.2,
            # "planning": "plan_for_new_states"
-              "planning_strategy": "full_planning"
+              "planning_strategy": "plan_for_new_states"
            },
 }
