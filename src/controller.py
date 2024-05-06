@@ -36,7 +36,7 @@ class Controller:
         # Initializations
         # -----------------------------------------------------------------------------
 
-        env = gym.make(id=frozenlake.get("name"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
+        env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
         env.reset(seed=42)
         behavior = build_policy(config)
         behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
@@ -75,10 +75,10 @@ class Controller:
                     # time.sleep(0.5)
 
                     if terminated or truncated:
-                        # state, info = env.reset() # this is to restart
+                        debug_print(env.render())
+                        env.reset() # this is to restart
                         break  # this is to terminate
 
-                # debug_print(env.render())
                 # behavior.update_after_end_of_episode(trail)
                 expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail])
                 return_of_behavior.append(expected_return)

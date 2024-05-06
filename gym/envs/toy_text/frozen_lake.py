@@ -14,11 +14,18 @@ DOWN = 1
 RIGHT = 2
 UP = 3
 
+SLIDING_PROB = 0.1
+
 MAPS = {
     "3x3_A": [
         "SFF",
         "FHF",
         "FFG"
+    ],
+    "3x3_B": [
+        "SFC",
+        "FHC",
+        "CCG"
     ],
     "4x4": [
         "SFFF",
@@ -36,6 +43,11 @@ MAPS = {
         "FHFFHFHF",
         "FFFHFFFG",
     ],
+}
+
+TRAVERSER_PATHS = {
+    "3x3_A": [8,7,6,3,0],
+    "3x3_B": [8,7,6,3,0]
 }
 
 
@@ -174,6 +186,7 @@ class FrozenLakeEnv(Env):
         render_mode: Optional[str] = None,
         desc=None,
         map_name="4x4",
+        traverser_path=None,
         is_slippery=True,
     ):
         if desc is None and map_name is None:
@@ -183,6 +196,11 @@ class FrozenLakeEnv(Env):
         self.desc = desc = np.asarray(desc, dtype="c")
         self.nrow, self.ncol = nrow, ncol = desc.shape
         self.reward_range = (0, 1)
+        if traverser_path in TRAVERSER_PATHS.keys():
+            self.traverser_path = TRAVERSER_PATHS[traverser_path]
+            self.traverser_tracker = 0
+        else:
+            self.traverser_path = None
 
         nA = 4
         nS = nrow * ncol
@@ -237,15 +255,17 @@ class FrozenLakeEnv(Env):
                 s = to_s(row, col)
                 for a in range(4):
                     li = self.P[s][a]
+                    # li contains (prop, newstate, rewards, terminated)
                     letter = desc[row, col]
                     if letter in b"GH":
                         li.append((1.0, s, 0, True))
                     else:
                         if is_slippery:
-                            for b in [(a - 1) % 4, a, (a + 1) % 4]:
-                                li.append(
-                                    (1.0 / 3.0, *update_probability_matrix(row, col, b))
-                                )
+                            left_turn = (a+1)%4
+                            right_turn = (a-1)%4
+                            li.append((SLIDING_PROB, *update_probability_matrix(row, col, left_turn)))
+                            li.append(( (1-2*SLIDING_PROB) , *update_probability_matrix(row, col, a)))
+                            li.append((SLIDING_PROB, *update_probability_matrix(row, col, right_turn)))
                         else:
                             li.append((1.0, *update_probability_matrix(row, col, a)))
 
@@ -269,16 +289,39 @@ class FrozenLakeEnv(Env):
         self.goal_img = None
         self.start_img = None
 
+    def get_tile_of_state_number(self, state: int):
+        row = int(state / self.nrow)
+        col = state % self.ncol
+        return self.desc[row][col]
+
+    def get_current_traverser_state(self) -> int:
+        if self.traverser_path:
+            return self.traverser_path[self.traverser_tracker]
+        return -1
+
     def step(self, a):
-        transitions = self.P[self.s][a]
+        transitions = self.P[self.s][a] # transition = [prop, next_state, reward, terminated]
         i = categorical_sample([t[0] for t in transitions], self.np_random)
-        p, s, r, t = transitions[i]
-        self.s = s
+        prob, state, reward, terminated = transitions[i]
+        tile = self.get_tile_of_state_number(state)
+
+        self.s = state
         self.lastaction = a
+        ret_values = (int(state), reward, terminated, False, {"prob": prob})
+
+        if self.traverser_path:
+            # case traverser exist
+            if self.traverser_tracker < len(self.traverser_path)-1:
+                self.traverser_tracker += 1
+            traverser_state = self.traverser_path[self.traverser_tracker]
+
+            if state == traverser_state and tile in b"C":
+                # terminate episode with reward 0
+                ret_values = (int(state), 0, True, False, {"prob": prob})
 
         if self.render_mode == "human":
             self.render()
-        return (int(s), r, t, False, {"prob": p})
+        return ret_values
 
     def reset(
         self,
@@ -288,6 +331,7 @@ class FrozenLakeEnv(Env):
     ):
         super().reset(seed=seed)
         self.s = categorical_sample(self.initial_state_distrib, self.np_random)
+        self.traverser_tracker=0
         self.lastaction = None
 
         if self.render_mode == "human":
@@ -416,10 +460,23 @@ class FrozenLakeEnv(Env):
     def _render_text(self):
         desc = self.desc.tolist()
         outfile = StringIO()
-
-        row, col = self.s // self.ncol, self.s % self.ncol
         desc = [[c.decode("utf-8") for c in line] for line in desc]
-        desc[row][col] = utils.colorize(desc[row][col], "red", highlight=True)
+
+        if self.traverser_path:
+            row, col = self.s // self.ncol, self.s % self.ncol
+            ts = self.traverser_path[self.traverser_tracker]
+            trow, tcol = ts // self.ncol, ts % self.ncol
+
+            if trow == row and tcol == col:
+                desc[row][col] = utils.colorize(desc[row][col], "yellow", highlight=True)
+            else:
+                desc[row][col] = utils.colorize(desc[row][col], "blue", highlight=True)
+                desc[trow][tcol] = utils.colorize(desc[trow][tcol], "red", highlight=True)
+
+        else:
+            row, col = self.s // self.ncol, self.s % self.ncol
+            desc[row][col] = utils.colorize(desc[row][col], "blue", highlight=True)
+
         if self.lastaction is not None:
             outfile.write(f"  ({['Left', 'Down', 'Right', 'Up'][self.lastaction]})\n")
         else:
