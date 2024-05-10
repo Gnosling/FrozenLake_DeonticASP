@@ -12,4 +12,11 @@ configs = {
            # "planning": "plan_for_new_states"
               "planning_strategy": "plan_for_new_states"
            },
+    "A3": {"reps": 3, "episodes": 20, "max_steps": 100,
+           "discount": 1.0, "learning_rate": 1.0,
+           "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
+           "policy": "planning", "epsilon": 0.2,
+           # "planning": "plan_for_new_states"
+              "planning_strategy": "plan_for_new_states"
+           },
 }

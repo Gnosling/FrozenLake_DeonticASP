@@ -40,6 +40,12 @@ class Policy:
     def suggest_action(self, state) -> Any:
         return self.q_table.get_best_action_for_state(state)
 
+    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action):
+        """
+        Currently only needed in planner_policy to keep track of changes in the environment
+        """
+        pass
+
     def value_of_state(self, state):
         """
         state-value is best known action value of that state

@@ -11,8 +11,16 @@ conda install -c potassco telingo
   - (Agent must move towards goal / don't go back / don't visit tile twice / follow planned or given path)
   - (If so, then re-return)
 
+- Should agent know 'cracked' tiles or assume everything is frozen?
+  - only if it affects planned rewards?
 
-- Write proposal until 19th June
+- Write proposal until 19th June:
+  - Intro
+  - stateOfArt
+  - Goal / research questions
+  - Method
+  - Connections to L&C (ie. state lectures
+  - literature!!
 - Define settings for evaluation:
   - only rewards
   - only obligations

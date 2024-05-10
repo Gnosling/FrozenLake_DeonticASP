@@ -2,6 +2,7 @@
 
 
 #show currentState/1.
+#show currentStateOfTraverser/1.
 #show act/1.
 
 #program always.
@@ -12,6 +13,13 @@ executable(move(right)) :- currentState(L), frozen(L+1), not rightEdge(L), not t
 executable(move(up)) :- currentState(L), frozen(L-width), not upperEdge(L), not terminalStateReached.
 executable(move(down)) :- currentState(L), frozen(L+width), not lowerEdge(L), not terminalStateReached.
 
+executable(move(left)) :- currentState(L), cracked(L-1), not leftEdge(L), not terminalStateReached.
+executable(move(down)) :- currentState(L), cracked(L+width), not lowerEdge(L), not terminalStateReached.
+executable(move(right)) :- currentState(L), cracked(L+1), not rightEdge(L), not terminalStateReached.
+executable(move(up)) :- currentState(L), cracked(L-width), not upperEdge(L), not terminalStateReached.
+
+% assume traverser stays
+currentStateOfTraverser(X) :- 'currentStateOfTraverser(X).
 
 % define transitions
 % currentState(L):- currentState(L), not act(move(_)).
@@ -25,6 +33,7 @@ currentState(L+width) :- 'act(move(down)), 'currentState(L).
 % define termination
 goalStateReached :- currentState(S), goal(S).
 failedStateReached :- currentState(S), hole(S).
+failedStateReached :- currentState(S), currentStateOfTraverser(S), cracked(S).
 terminalStateReached :- goalStateReached.
 terminalStateReached :- failedStateReached.
 
@@ -32,3 +41,4 @@ terminalStateReached :- failedStateReached.
 % define rewards
 nextReward(-1) :- not goalStateReached.
 nextReward(10) :- goalStateReached.
+% TODO: have neg reward for failedStateReached?

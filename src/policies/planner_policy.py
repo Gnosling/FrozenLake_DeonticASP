@@ -11,6 +11,8 @@ class PlannerPolicy(Policy):
         self.strategy = strategy
         self.level = level
         self.visited_states = []
+        self.current_state_of_traverser = -1
+        self.last_performed_action = None
 
 
     def suggest_action(self, state) -> Any:
@@ -20,11 +22,11 @@ class PlannerPolicy(Policy):
         action = None
 
         if self.strategy == "full_planning":
-            action = plan_action(self.level, state)
+            action = plan_action(self.level, self.current_state_of_traverser, self.last_performed_action, state)
 
         elif self.strategy == "plan_for_new_states":
             if state not in self.visited_states:
-                action = plan_action(self.level, state)
+                action = plan_action(self.level, self.current_state_of_traverser, self.last_performed_action, state)
             else:
                 action = self.q_table.get_best_action_for_state(state)
 
@@ -36,5 +38,9 @@ class PlannerPolicy(Policy):
             self.visited_states.append(state)
 
         return action
+
+    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action):
+        self.current_state_of_traverser = current_state_of_traverser
+        self.last_performed_action = last_performed_action
 
 

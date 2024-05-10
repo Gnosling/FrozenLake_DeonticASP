@@ -1,12 +1,12 @@
 #program always.
-forbidden(currentState(1)).
-currentViolation(forbidden(currentState(1))) :- forbidden(currentState(1)), currentState(1).
+forbidden(occupyTraverserTile).
+currentViolation(forbidden(occupyTraverserTile)) :- forbidden(occupyTraverserTile), currentState(X), currentStateOfTraverser(Y), X=Y.
+forbidden(turnOnTraverserTile).
+currentViolation(forbidden(turnOnTraverserTile)) :- act(move(X)), 'act(move(Y)), X != Y, currentState(W), currentStateOfTraverser(U), W=U.
+currentViolation(forbidden(turnOnTraverserTile)) :- act(move(X)), lastPerformedAction(move(Y)), X != Y, currentState(W), currentStateOfTraverser(U), W=U.
 
-obligatory(reachedTopRight).
-obligatory(reachedBottomLeft).
 
-% TODO: parameterize these states
+obligatory(reachedGoal).
 
 #program final.
-currentViolation(obligatory(reachedTopRight)) :- not &tel {<? currentState(2)}.
-currentViolation(obligatory(reachedBottomLeft)) :- not &tel {<? currentState(6)}.
+currentViolation(obligatory(reachedGoal)) :- not &tel {<? goalStateReached}.

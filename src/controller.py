@@ -55,11 +55,13 @@ class Controller:
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
                 trail = []  # list of [state, action_name, new_state, rewards]
+                action_name = None
 
                 for step in range(max_steps):
                     # debug_print("_____________________________________________")
                     debug_print(env.render())
 
+                    behavior.updated_dynamic_env_aspects(env.get_current_traverser_state(), action_name)
                     action_name = behavior.suggest_action(state)
                     action = action_name_to_number(action_name)
                     debug_print(f'Action: {action_number_to_string(action)}')
