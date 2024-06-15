@@ -10,7 +10,6 @@ from .policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from .policies.planner_policy import PlannerPolicy
 from .policies.q_table import QTable
 from .policies.policy import Policy
-from .service import *
 
 class Controller:
 
@@ -30,7 +29,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy = read_config_param(config)
+        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, norm_set, evaluation_function = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Initializations
