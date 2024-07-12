@@ -13,14 +13,8 @@ from .policies.policy import Policy
 
 class Controller:
 
-    def __init__(self):
-        self.discount_rate = 1.0
-
     # TODO: have a service.class for this
-
     # TODO: change the frozenLake env to have multiple targets, other elves and change properties?
-
-
 
     def run_experiment(self, config: str):
 
@@ -29,7 +23,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, norm_set, evaluation_function = read_config_param(config)
+        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Initializations
@@ -38,7 +32,6 @@ class Controller:
         env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
         env.reset(seed=42)
         behavior = build_policy(config)
-        behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
 
         # -----------------------------------------------------------------------------
         # Training

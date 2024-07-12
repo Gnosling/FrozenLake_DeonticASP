@@ -8,6 +8,7 @@ from src.policies.policy import Policy
 from src.policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from src.policies.planner_policy import PlannerPolicy
 from src.policies.q_table import QTable
+from . import constants
 from .constants import *
 
 
@@ -41,7 +42,7 @@ def action_name_to_number(name: str) -> int:
 
 
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, dict, bool, str, float, str, int, int]:
+def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, dict, bool, str, float, str, int, int, int]:
     if config_name in configs.keys():
         values = configs.get(config_name)
         reps = values.get("reps")
@@ -53,25 +54,27 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, di
         policy = values.get("policy")
         epsilon = values.get("epsilon")
         planning_strategy = values.get("planning_strategy")
+        planning_horizon = values.get("planning_horizon")
         norm_set = values.get("norm_set")
         evaluation_function = values.get("evaluation_function")
-        return reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, norm_set, evaluation_function
+        return reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
     else:
         raise ValueError("Configuration was not found!")
 
 
 def build_policy(config: str):
-    _, _, _, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, norm_set, evaluation_function = read_config_param(config)
+    _, _, _, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
     if policy == "greedy":
         obj = Policy(QTable(), learning_rate, discount)
     elif policy == "eps_greedy":
         obj = EpsilonGreedyPolicy(QTable(), learning_rate, discount, epsilon)
     elif policy == "planning":
-        obj = PlannerPolicy(QTable(), learning_rate, discount, planning_strategy, frozenlake.get("name"), norm_set, evaluation_function)
+        obj = PlannerPolicy(QTable(), learning_rate, discount, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
     else:
         raise ValueError(f"Wrong value of policy: {policy}!")
 
+    obj.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
     return obj
 
 

@@ -3,7 +3,7 @@ configs = {
            "discount": 1.0, "learning_rate": 1.0,
            "frozenlake": {"name": "FrozenLake-v1", "slippery": False, "tiles": 16, "traverser_path": None},
            "policy": "eps_greedy", "epsilon": 0.2,
-           "planning_strategy": None,
+           "planning_strategy": None, "planning_horizon": 8,
            "norm_set": None,
            "evaluation_function": None
            },
@@ -11,7 +11,7 @@ configs = {
            "discount": 1.0, "learning_rate": 1.0,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,
-           "planning_strategy": "plan_for_new_states",
+           "planning_strategy": "plan_for_new_states", "planning_horizon": 8,
            "norm_set": 1,
            "evaluation_function": 1
            },
@@ -19,7 +19,7 @@ configs = {
            "discount": 1.0, "learning_rate": 1.0,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,
-           "planning_strategy": "plan_for_new_states",
+           "planning_strategy": "plan_for_new_states", "planning_horizon": 8,
            "norm_set": 1,
            "evaluation_function": 1
            },
