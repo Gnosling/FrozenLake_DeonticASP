@@ -70,7 +70,7 @@ def build_policy(config: str):
     elif policy == "eps_greedy":
         obj = EpsilonGreedyPolicy(QTable(), learning_rate, discount, epsilon)
     elif policy == "planning":
-        obj = PlannerPolicy(QTable(), learning_rate, discount, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
+        obj = PlannerPolicy(QTable(), learning_rate, discount, epsilon, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
     else:
         raise ValueError(f"Wrong value of policy: {policy}!")
 

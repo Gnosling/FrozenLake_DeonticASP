@@ -24,8 +24,7 @@ class EpsilonGreedyPolicy(Policy):
         Returns the best known action with prop 1-epsilon
         Returns a random action with prop epsilon
         """
-        random_number = random.random()
-        if random_number < self.epsilon:
+        if random.random() < self.epsilon:
             return random.choice(list(action_set))
         else:
             return self.q_table.get_best_action_for_state(state)
