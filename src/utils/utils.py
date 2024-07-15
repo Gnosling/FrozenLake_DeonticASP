@@ -42,7 +42,7 @@ def action_name_to_number(name: str) -> int:
 
 
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, dict, bool, str, float, str, int, int, int]:
+def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, bool, dict, bool, str, float, str, int, int, int]:
     if config_name in configs.keys():
         values = configs.get(config_name)
         reps = values.get("reps")
@@ -50,6 +50,7 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, di
         max_steps = values.get("max_steps")
         discount = values.get("discount")
         learning_rate = values.get("learning_rate")
+        reversed_q_learning = values.get("reversed_q_learning")
         frozenlake = values.get("frozenlake")
         policy = values.get("policy")
         epsilon = values.get("epsilon")
@@ -57,13 +58,13 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, di
         planning_horizon = values.get("planning_horizon")
         norm_set = values.get("norm_set")
         evaluation_function = values.get("evaluation_function")
-        return reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
+        return reps, episodes, max_steps, discount, learning_rate, reversed_q_learning,frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
     else:
         raise ValueError("Configuration was not found!")
 
 
 def build_policy(config: str):
-    _, _, _, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+    _, _, _, discount, learning_rate, _, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
     if policy == "greedy":
         obj = Policy(QTable(), learning_rate, discount)

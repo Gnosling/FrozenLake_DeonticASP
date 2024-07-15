@@ -23,7 +23,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        reps, episodes, max_steps, discount, learning_rate, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+        reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Initializations
@@ -62,7 +62,8 @@ class Controller:
                     # debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
 
                     trail.append([state, action_name, new_state, reward])
-                    behavior.update_after_step(state, action_name, new_state, reward)
+                    if not reversed_q_learning:
+                        behavior.update_after_step(state, action_name, new_state, reward)
 
                     state = new_state
 
@@ -73,7 +74,12 @@ class Controller:
                         env.reset() # this is to restart
                         break  # this is to terminate
 
-                # behavior.update_after_end_of_episode(trail)
+                if reversed_q_learning:
+                    behavior.update_after_end_of_episode(trail)
+
+                if type(behavior) == PlannerPolicy:
+                    behavior.reset_after_episode()
+
                 expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail])
                 return_of_behavior.append(expected_return)
                 return_of_target.append(expected_return)

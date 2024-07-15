@@ -63,4 +63,8 @@ class PlannerPolicy(Policy):
         self.current_state_of_traverser = current_state_of_traverser
         self.last_performed_action = last_performed_action
 
+    def reset_after_episode(self):
+        self.visited_states = []
+        self.call_count = 0
+
 

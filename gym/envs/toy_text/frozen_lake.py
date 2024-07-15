@@ -236,17 +236,18 @@ class FrozenLakeEnv(Env):
 
             terminated = bytes(newletter) in b"GH"
 
+            if newletter == b"G":
+                reward = 10
+            elif newletter == b"H":
+                reward = -10
+            else:
+                reward = -1
+            # ToDo: update rewards!
+
             # if newletter == b"G":
-            #     reward = 100
-            # elif newletter == b"H":
-            #     reward = -50
+            #     reward = 1
             # else:
             #     reward = 0
-
-            if newletter == b"G":
-                reward = 1
-            else:
-                reward = 0
 
             return newstate, reward, terminated
 
