@@ -24,5 +24,5 @@ conda install -c potassco telingo
 - add steal-present with high value, but forbidden norm
 
 - Implement plotting and output data:
-  - analyse diff of target and behavior
+  - both target and behavior use same q_table, plot only avg target-return over steps
   - need to check if norms are violated in the target policy, needs to be checked how to do so! 

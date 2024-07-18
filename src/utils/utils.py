@@ -76,21 +76,26 @@ def build_policy(config: str):
         raise ValueError(f"Wrong value of policy: {policy}!")
 
     obj.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
-    return obj
+    target = Policy(obj.get_q_table(), learning_rate, discount)
+    return obj, target
 
 
 def compute_expected_return(discount_rate: float, rewards: List[float]) -> float:
     """
     returns discounted sum of rewards of single episode
     """
+    G = [0] * len(rewards)
 
-    T = len(rewards)
-    G = [0] * T
+    # for t in reversed(range(T-1)):
+    #     G[t] = rewards[t + 1] + discount_rate * G[t + 1]
 
-    for t in reversed(range(T-1)):
-        G[t] = rewards[t + 1] + discount_rate * G[t + 1]
+    for t in range(len(rewards)):
+        if t > 0:
+            G[t] = rewards[t] + discount_rate * G[t-1]
+        else:
+            G[t] = rewards[t]
 
-    return G[0]
+    return G[-1]
 
 def get_average_results(results: dict):
     average_results = dict()
@@ -102,6 +107,20 @@ def get_average_results(results: dict):
             average_results[key] = column_averages.tolist()
 
     return average_results
+
+def generate_trail_of_target(target, env, max_steps):
+    state, info = env.reset()
+    trail_of_target = []
+    for step in range(max_steps):
+        action_name = target.suggest_action(state)
+        new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
+        trail_of_target.append([state, action_name, new_state, reward])
+        state = new_state
+
+        if terminated or truncated:
+            break
+
+    return trail_of_target
 
 def store_results(config: str, data):
     conf = configs.get(config)

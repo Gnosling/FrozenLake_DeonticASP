@@ -55,3 +55,7 @@ class Policy:
     # TODO: create helper function to get learned path of policy?
     def get_printed_policy(self) -> str:
         return str(self.q_table.get_all_values())
+
+    def get_q_table(self):
+        return self.q_table
+

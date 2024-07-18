@@ -31,67 +31,60 @@ class Controller:
 
         env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"), is_slippery=frozenlake.get("slippery"), render_mode='ansi')  # render_mode='human', render_mode='ansi'
         env.reset(seed=42)
-        behavior = build_policy(config)
+        behavior, target = build_policy(config)
 
         # -----------------------------------------------------------------------------
         # Training
         # -----------------------------------------------------------------------------
 
-        total_results = {"avg_behavior_return": [], "avg_target_return": []}
+        total_results = []
         for rep in range(reps):
-            return_of_behavior = []
             return_of_target = []
             print(f"Performing repetition {rep+1}", end='\r', flush=True)
             for episode in range(episodes):
                 debug_print("_____________________________________________")
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
-                trail = []  # list of [state, action_name, new_state, rewards]
+                trail_of_behavior = []  # list of [state, action_name, new_state, rewards]
                 action_name = None
 
                 for step in range(max_steps):
-                    # debug_print("_____________________________________________")
+                    debug_print("_____________________________________________")
                     debug_print(env.render())
 
                     behavior.updated_dynamic_env_aspects(env.get_current_traverser_state(), action_name)
                     action_name = behavior.suggest_action(state)
-                    action = action_name_to_number(action_name)
-                    debug_print(f'Action: {action_number_to_string(action)}')
+                    debug_print(f'Action: {action_name}')
 
-                    new_state, reward, terminated, truncated, info = env.step(action)
-                    # debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
+                    new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
+                    debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
 
-                    trail.append([state, action_name, new_state, reward])
+                    trail_of_behavior.append([state, action_name, new_state, reward])
                     if not reversed_q_learning:
                         behavior.update_after_step(state, action_name, new_state, reward)
 
                     state = new_state
 
-                    # time.sleep(0.5)
-
                     if terminated or truncated:
                         debug_print(env.render())
-                        env.reset() # this is to restart
                         break  # this is to terminate
 
                 if reversed_q_learning:
-                    behavior.update_after_end_of_episode(trail)
+                    behavior.update_after_end_of_episode(trail_of_behavior)
 
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
 
-                expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail])
-                return_of_behavior.append(expected_return)
+                trail_of_target = generate_trail_of_target(target, env, max_steps)
+                expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail_of_target])
                 return_of_target.append(expected_return)
+                # TODO: add violations of target, as dict() with countering?
                 debug_print(f"Expected return of ep {episode}: {expected_return}")
                 debug_print("_____________________________________________")
 
             debug_print("_____________________________________________")
             # debug_print(env.render())
-            debug_print(behavior.get_printed_policy())
-            total_results.get("avg_behavior_return").append(return_of_behavior)
-            total_results.get("avg_target_return").append(return_of_target)
-            # time.sleep(1)
+            total_results.append(return_of_target)
             env.close()
 
         print("Experiment completed!            ", end='\n', flush=True)
