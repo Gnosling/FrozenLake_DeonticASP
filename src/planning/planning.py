@@ -69,9 +69,9 @@ def plan_action(level: str, planning_horizon: int, current_state_of_traverser: i
     # if the optimum lies within these steps, then the optimal action will be found (otw its the optimal with these limited steps)
 
     if DEBUG_MODE:
-        clingo.clingo_main(tel, ['--quiet=1', f'--imin={planning_horizon}', '--time-limit=30', file1, file2, file3, file4, file5, file6])
+        clingo.clingo_main(tel, ['--quiet=1', f'--imin={planning_horizon}', f'--imax={planning_horizon}', '--time-limit=30', file1, file2, file3, file4, file5, file6])
     else:
-        clingo.clingo_main(tel, ['--verbose=0', '--warn=none', '--quiet=1,2,2', f'--imin={planning_horizon}', '--time-limit=30', file1, file2, file3, file4, file5, file6])
+        clingo.clingo_main(tel, ['--verbose=0', '--warn=none', '--quiet=1,2,2', f'--imin={planning_horizon}', f'--imax={planning_horizon}', '--time-limit=30', file1, file2, file3, file4, file5, file6])
 
     printed_output = output_buffer.getvalue()
     sys.stdout = sys.__stdout__  # Resets sys.stdout to its original value

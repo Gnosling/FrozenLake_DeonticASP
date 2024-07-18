@@ -10,7 +10,8 @@ nextViolations(X+Y) :- X = #count {U : currentViolation(forbidden(U))}, Y = #cou
 violations(X+Y) :- 'violations(X), nextViolations(Y).
 
 #program final.
-:- not terminalStateReached.
+% was removed to consider short planning_horizon
+% :- not terminalStateReached.
 
 #show rewards/1.
 #show currentViolation/1.

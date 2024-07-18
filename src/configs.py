@@ -17,7 +17,7 @@ configs = {
            "discount": 1.0, "learning_rate": 0.3, "reversed_q_learning": True,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,
-           "planning_strategy": "decaying_planning", "planning_horizon": 8,
+           "planning_strategy": "plan_for_new_states", "planning_horizon": 1,
            "norm_set": 1, "evaluation_function": 1
            },
 }
