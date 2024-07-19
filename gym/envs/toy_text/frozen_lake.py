@@ -300,6 +300,9 @@ class FrozenLakeEnv(Env):
             return self.traverser_path[self.traverser_tracker]
         return -1
 
+    def get_layout(self):
+        return self.desc, len(self.desc[0]), len(self.desc)
+
     def step(self, a):
         transitions = self.P[self.s][a] # transition = [prop, next_state, reward, terminated]
         i = categorical_sample([t[0] for t in transitions], self.np_random)

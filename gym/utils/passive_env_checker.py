@@ -315,6 +315,4 @@ def env_render_passive_checker(env, *args, **kwargs):
 
     result = env.render(*args, **kwargs)
 
-    # TODO: Check that the result is correct
-
     return result

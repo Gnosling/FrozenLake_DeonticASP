@@ -239,7 +239,6 @@ def check_space_limit(space, space_type: str):
                     or np.any(space.low < -1)
                     or np.any(space.high > 1)
                 ):
-                    # todo - Add to gymlibrary.ml?
                     logger.warn(
                         "For Box action spaces, we recommend using a symmetric and normalized space (range=[-1, 1] or [0, 1]). "
                         "See https://stable-baselines3.readthedocs.io/en/master/guide/rl_tips.html for more information."
@@ -306,5 +305,3 @@ def check_env(env: gym.Env, warn: bool = None, skip_render_check: bool = False):
     if not skip_render_check:
         if env.render_mode is not None:
             env_render_passive_checker(env)
-
-        # todo: recreate the environment with a different render_mode for check that each work

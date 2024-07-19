@@ -13,7 +13,7 @@ configs = {
            "planning_strategy": "plan_for_new_states", "planning_horizon": 8,
            "norm_set": 1, "evaluation_function": 1
            },
-    "A3": {"reps": 3, "episodes": 20, "max_steps": 100,
+    "A3": {"reps": 3, "episodes": 10, "max_steps": 50,
            "discount": 1.0, "learning_rate": 0.3, "reversed_q_learning": True,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,

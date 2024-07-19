@@ -97,30 +97,105 @@ def compute_expected_return(discount_rate: float, rewards: List[float]) -> float
 
     return G[-1]
 
-def get_average_results(results: dict):
-    average_results = dict()
-    for key in results.keys():
-        values = results.get(key)
-        if values:
-            np_matrix = np.array(values)
-            column_averages = np.mean(np_matrix, axis=0)
-            average_results[key] = column_averages.tolist()
+def get_average_returns(results):
+    average_returns = []
+    episodes = len(results[0])
+    repetitions = len(results)
+    for episode in range(episodes):
+        total_per_episode = 0
+        for rep in range(repetitions):
+            total_per_episode += results[rep][episode]
+        average_returns.append(total_per_episode / repetitions)
 
-    return average_results
+    return average_returns
 
-def generate_trail_of_target(target, env, max_steps):
-    state, info = env.reset()
+def get_average_violations(results, norm_set):
+    average_violations = []
+    episodes = len(results[0])
+    repetitions = len(results)
+    for episode in range(episodes):
+        total_per_episode = extract_norm_keys(norm_set)
+        avg_per_episode = dict()
+        for rep in range(repetitions):
+            for norm in total_per_episode.keys():
+                total_per_episode[norm] += results[rep][episode][norm]
+        for norm in total_per_episode.keys():
+            avg_per_episode[norm] = total_per_episode[norm] / repetitions
+        average_violations.append(avg_per_episode)
+
+    return average_violations
+
+
+def test_target(target, env, config):
+    _, _, max_steps, _, _, _, frozenlake, _, _, _, _, norm_set, evaluation_function = read_config_param(config)
+    norm_violations = extract_norm_keys(norm_set)
     trail_of_target = []
+    state, info = env.reset()
+    traverser_state = env.get_current_traverser_state()  # this is -1 if there is no traverser
+    layout, width, height = env.get_layout()
+
     for step in range(max_steps):
         action_name = target.suggest_action(state)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
+
+        check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height)
+
+        traverser_state = env.get_current_traverser_state()
         state = new_state
 
         if terminated or truncated:
             break
 
-    return trail_of_target
+    return trail_of_target, norm_violations
+
+
+def check_violations(norm_violations, trail_of_target, terminated, traverser_state, layout, width, height):
+    """
+    checks violations of norms:
+        occupiedTraverserTile
+        turnedOnTraverserTile
+        notReachedGoal
+    """
+    state, action_name, new_state, reward = trail_of_target[-1]
+
+
+    for norm in norm_violations.keys():
+
+        if norm == "notReachedGoal":
+            if terminated:
+                if layout[int(new_state/height)][new_state%width] != b"G":
+                    norm_violations[norm] += 1
+
+        elif norm == "occupiedTraverserTile":
+            if state == traverser_state:
+                norm_violations[norm] += 1
+
+        elif norm == "turnedOnTraverserTile":
+            if len(trail_of_target) > 1:
+                if state == traverser_state:
+                    _, previous_action, _, _ = trail_of_target[-2]
+                    if action_name != previous_action:
+                        norm_violations[norm] += 1
+
+        else:
+            raise ValueError(f"Unexpected norm to check: {norm}!")
+
+    return norm_violations
+
+
+def extract_norm_keys(norm_set):
+    norms = dict()
+    with open(os.path.join(os.getcwd(), "src", "planning", "deontic_reasonings", f"deontic_reasoning_{norm_set}.lp"), 'r') as file:
+        for line in file:
+            if "checks" in line.lower():
+                continue
+            if line.strip() == "":
+                break
+            key = line.strip().split(" ")[-1]
+            norms[key] = 0
+    return norms
+
 
 def store_results(config: str, data):
     conf = configs.get(config)
