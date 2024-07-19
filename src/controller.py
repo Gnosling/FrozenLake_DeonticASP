@@ -95,13 +95,13 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Storing of results
         # -----------------------------------------------------------------------------
-        store_results(config, avg_returns)
+        store_results(config, avg_returns, avg_violations)
 
         # -----------------------------------------------------------------------------
         # Plotting
         # -----------------------------------------------------------------------------
         # Todo: plot the stored_results!
-
+        plot_experiment(config)
 
         print("Experiment completed!")
 

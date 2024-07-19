@@ -1,7 +1,8 @@
 import os.path
 from typing import Tuple, List, Any
 import numpy as np
-import csv
+import matplotlib.pyplot as plt
+import ast
 
 from src.configs import configs
 from src.policies.policy import Policy
@@ -197,19 +198,56 @@ def extract_norm_keys(norm_set):
     return norms
 
 
-def store_results(config: str, data):
+def store_results(config: str, returns, violations):
     conf = configs.get(config)
     path = os.path.join(os.getcwd(), "results", f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
 
-    path = os.path.join(os.getcwd(), "results", f"{config}_results.csv")
-    with open(path, 'w', newline='') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(data.keys())
-        writer.writerows(zip(*data.values()))
-    print(f"Stored data in: \t\t {path}")
+    path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(returns))
+    print(f"Stored returns in: \t {path}")
+
+    path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(violations))
+    print(f"Stored violations in: \t {path}")
+
+
+def plot_experiment(config: str):
+    reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+    optimum = 7 # TODO: save optimum in forzenlake-config?
+    path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
+    returns = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        returns = ast.literal_eval(content)
+
+    plt.figure(figsize=(10,6))
+    plt.plot(list(range(1,len(returns)+1)), returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
+    plt.plot(list(range(1,len(returns)+1)), [optimum] * len(returns), color='limegreen', linestyle='-.', linewidth=1.2, label=f'optimum = {optimum}')
+    plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
+    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+    plt.title(f'{config} - Return of target policy')
+    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
+    plt.xlabel('episode')
+    plt.ylabel('return')
+    handles, labels = plt.gca().get_legend_handles_labels()
+    order = [1,0]
+    plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
+
+    plt.xlim(1, len(returns))
+
+    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_return.png"))
+    plt.show()
+    plt.close()
+
+    # TODO: plot violations at first, mid, and last?
+
+    # TODO: plot head-map of visited states -> needs new results
 
 def debug_print(msg: str) -> Any:
     if DEBUG_MODE:
