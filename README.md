@@ -22,6 +22,7 @@ conda install -c potassco telingo
 - let traverser-paths be cyclic, and have a level where it jumps between both paths to block the agent
   - needs new config-param
 - add steal-present with high value, but forbidden norm
+- implement norm as forbid and as obligatory? ie O(reachGoal), F(endOnNotGoalTile)
 
 - Implement plotting and output data:
   - both target and behavior use same q_table, plot only avg target-return over steps

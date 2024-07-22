@@ -195,6 +195,7 @@ def extract_norm_keys(norm_set):
                 break
             key = line.strip().split(" ")[-1]
             norms[key] = 0
+    # TODO: define order of norms to be put in the dict here! such that plots always have same order
     return norms
 
 
@@ -219,6 +220,7 @@ def store_results(config: str, returns, violations):
 def plot_experiment(config: str):
     reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
     optimum = 7 # TODO: save optimum in forzenlake-config?
+
     path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
     returns = []
     with open(path, 'r', newline='') as file:
@@ -226,8 +228,8 @@ def plot_experiment(config: str):
         returns = ast.literal_eval(content)
 
     plt.figure(figsize=(10,6))
-    plt.plot(list(range(1,len(returns)+1)), returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    plt.plot(list(range(1,len(returns)+1)), [optimum] * len(returns), color='limegreen', linestyle='-.', linewidth=1.2, label=f'optimum = {optimum}')
+    plt.plot(list(range(1,episodes+1)), returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
+    plt.plot(list(range(1,episodes+1)), [optimum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'optimum = {optimum}')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -239,13 +241,48 @@ def plot_experiment(config: str):
     order = [1,0]
     plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
 
-    plt.xlim(1, len(returns))
+    plt.xlim(1, episodes)
 
     plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_return.png"))
     plt.show()
     plt.close()
 
-    # TODO: plot violations at first, mid, and last?
+    # TODO: plot violations at first, mid, and last? --> make chart to display all over episode
+    # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
+    colors_of_norms = {
+        'occupiedTraverserTile' : 'darkred',
+        'turnedOnTraverserTile' : 'red',
+        'notReachedGoal' : 'royalblue'
+    }
+    # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
+    path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+    violations = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        violations = ast.literal_eval(content)
+
+    plt.figure(figsize=(10, 6))
+
+    norms = violations[0].keys()
+    for index, norm in enumerate(norms):
+        plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
+
+    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+    plt.title(f'{config} - Violations of target policy')
+    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
+    plt.xlabel('episode')
+    plt.ylabel('violations')
+    plt.legend(loc='upper right', framealpha=1.0)
+
+    plt.xlim(1, episodes)
+    plt.ylim(0, 10)
+    plt.yticks(range(0, 11, 1))
+
+    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_violations.png"))
+    plt.show()
+    plt.close()
+
 
     # TODO: plot head-map of visited states -> needs new results
 

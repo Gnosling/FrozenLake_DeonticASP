@@ -6,8 +6,11 @@ from .policies.planner_policy import PlannerPolicy
 
 class Controller:
 
-    # TODO: change the frozenLake env to have multiple targets, other elves and change properties?
+    def plot_experiment(self, config: str):
+        plot_experiment(config)
 
+
+    # TODO: change the frozenLake env to have multiple targets, other elves and change properties?
     def run_experiment(self, config: str):
 
         print(f"Starting experiment {config} ...")
@@ -76,6 +79,7 @@ class Controller:
             debug_print("\n_____________________________________________")
             total_returns.append(return_of_target_per_episode)
             total_violations.append(violations_of_target_per_episode)
+            # TODO: check reach goal and avg of it
             # debug_print(str(total_returns))
             # debug_print(str(total_violations))
             env.close()
