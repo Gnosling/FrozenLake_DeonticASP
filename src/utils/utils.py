@@ -219,7 +219,7 @@ def store_results(config: str, returns, violations):
 
 def plot_experiment(config: str):
     reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
-    optimum = 7 # TODO: save optimum in forzenlake-config?
+    optimum = 1
 
     path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
     returns = []
@@ -244,7 +244,7 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
 
     plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_return.png"))
-    plt.show()
+    # plt.show()
     plt.close()
 
     # TODO: plot violations at first, mid, and last? --> make chart to display all over episode
@@ -280,7 +280,7 @@ def plot_experiment(config: str):
     plt.yticks(range(0, 11, 1))
 
     plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_violations.png"))
-    plt.show()
+    # plt.show()
     plt.close()
 
 

@@ -6,14 +6,14 @@ configs = {
            "planning_strategy": None, "planning_horizon": 8,
            "norm_set": None, "evaluation_function": None
            },
-    "A2": {"reps": 3, "episodes": 20, "max_steps": 100,
-           "discount": 1.0, "learning_rate": 1.0, "reversed_q_learning": False,
+    "A2": {"reps": 10, "episodes": 10, "max_steps": 50,
+           "discount": 1.0, "learning_rate": 0.3, "reversed_q_learning": False,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,
            "planning_strategy": "plan_for_new_states", "planning_horizon": 8,
            "norm_set": 1, "evaluation_function": 1
            },
-    "A3": {"reps": 3, "episodes": 10, "max_steps": 50,
+    "A3": {"reps": 10, "episodes": 10, "max_steps": 50,
            "discount": 1.0, "learning_rate": 0.3, "reversed_q_learning": True,
            "frozenlake": {"name": "FrozenLake3x3_A", "slippery": False, "tiles": 9, "traverser_path": "3x3_A"},
            "policy": "planning", "epsilon": 0.2,
