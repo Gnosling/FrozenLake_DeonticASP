@@ -18,14 +18,14 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+        repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Training
         # -----------------------------------------------------------------------------
         total_returns = []
         total_violations = []
-        for rep in range(reps):
+        for rep in range(repetitions):
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
@@ -80,22 +80,19 @@ class Controller:
             debug_print("\n_____________________________________________")
             total_returns.append(return_of_target_per_episode)
             total_violations.append(violations_of_target_per_episode)
-            # TODO: check reach goal and avg of it
             # debug_print(str(total_returns))
             # debug_print(str(total_violations))
             env.close()
-
-        print("Experiment completed!")
-
 
         # -----------------------------------------------------------------------------
         # Evaluation
         # -----------------------------------------------------------------------------
         avg_returns = get_average_returns(total_returns)
         debug_print(f"Returns:\n{avg_returns}")
-        avg_violations = get_average_violations(total_violations, norm_set)
-        debug_print(f"Violations:\n{avg_violations}")
-
+        avg_violations = None
+        if norm_set is not None:
+            avg_violations = get_average_violations(total_violations, norm_set)
+            debug_print(f"Violations:\n{avg_violations}")
 
         # -----------------------------------------------------------------------------
         # Storing of results
@@ -105,7 +102,6 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Plotting
         # -----------------------------------------------------------------------------
-        # Todo: plot the stored_results!
         plot_experiment(config)
 
         print("Experiment completed!")

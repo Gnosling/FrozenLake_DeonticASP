@@ -26,4 +26,17 @@ conda install -c potassco telingo
 
 - Implement plotting and output data:
   - both target and behavior use same q_table, plot only avg target-return over steps
-  - need to check if norms are violated in the target policy, needs to be checked how to do so! 
+  - extend plotting for state-visits as heat map?
+
+- Experiments:
+  - First on 'crude' frozenlake with better splippery, so everythin else deactivated, pick default level (4x4_A # optimum = 0.74)
+  - A* for testing RL-params:
+    - discount should be high to make the agent use long-term rewards and it's okay because there are mostly rewards negative rewards for any step
+    - reverse-q should be better since rewards are only at goal tile
+  - B* to test policy strategies / classes
+  - Now make extensions to frozenlake
+  - C* to test norms simple with CTDs and evaluations
+  - D* to test alternative implementations of norms
+  - E* to test hard norms designed to represent concrete paradoxes
+
+

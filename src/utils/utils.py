@@ -42,15 +42,16 @@ def action_name_to_number(name: str) -> int:
         return None
 
 
-
-def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, bool, dict, bool, str, float, str, int, int, int]:
+def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, str, float, bool, dict, bool, str, float, str, int, int, int]:
     if config_name in configs.keys():
         values = configs.get(config_name)
-        reps = values.get("reps")
+        repetitions = values.get("repetitions")
         episodes = values.get("episodes")
         max_steps = values.get("max_steps")
         discount = values.get("discount")
         learning_rate = values.get("learning_rate")
+        learning_rate_strategy = values.get("learning_rate_strategy")
+        learning_decay_rate = values.get("learning_decay_rate")
         reversed_q_learning = values.get("reversed_q_learning")
         frozenlake = values.get("frozenlake")
         policy = values.get("policy")
@@ -59,26 +60,28 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, bo
         planning_horizon = values.get("planning_horizon")
         norm_set = values.get("norm_set")
         evaluation_function = values.get("evaluation_function")
-        return reps, episodes, max_steps, discount, learning_rate, reversed_q_learning,frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
+        return repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning,frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
     else:
         raise ValueError("Configuration was not found!")
 
 
 def build_policy(config: str):
-    _, _, _, discount, learning_rate, _, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+    _, _, _, discount, learning_rate, learning_rate_strategy, learning_decay_rate, _, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
 
     if policy == "greedy":
-        obj = Policy(QTable(), learning_rate, discount)
-    elif policy == "eps_greedy":
-        obj = EpsilonGreedyPolicy(QTable(), learning_rate, discount, epsilon)
+        behavior = Policy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount)
+    elif policy == "epsilon_greedy":
+        behavior = EpsilonGreedyPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
+    elif policy == "exponential_decay":
+        behavior = EpsilonGreedyPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
     elif policy == "planning":
-        obj = PlannerPolicy(QTable(), learning_rate, discount, epsilon, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
+        behavior = PlannerPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
     else:
         raise ValueError(f"Wrong value of policy: {policy}!")
 
-    obj.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
-    target = Policy(obj.get_q_table(), learning_rate, discount)
-    return obj, target
+    behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
+    target = Policy(behavior.get_q_table(), learning_rate, learning_rate_strategy, learning_decay_rate, discount)
+    return behavior, target
 
 
 def compute_expected_return(discount_rate: float, rewards: List[float]) -> float:
@@ -128,7 +131,7 @@ def get_average_violations(results, norm_set):
 
 
 def test_target(target, env, config):
-    _, _, max_steps, _, _, _, frozenlake, _, _, _, _, norm_set, evaluation_function = read_config_param(config)
+    _, _, max_steps, _, _, _, _, _, frozenlake, _, _, _, _, norm_set, evaluation_function = read_config_param(config)
     norm_violations = extract_norm_keys(norm_set)
     trail_of_target = []
     state, info = env.reset()
@@ -140,7 +143,8 @@ def test_target(target, env, config):
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
 
-        check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height)
+        if norm_violations is not None:
+            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height)
 
         traverser_state = env.get_current_traverser_state()
         state = new_state
@@ -186,6 +190,9 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
 
 
 def extract_norm_keys(norm_set):
+    if norm_set is None:
+        return None
+
     norms = dict()
     with open(os.path.join(os.getcwd(), "src", "planning", "deontic_reasonings", f"deontic_reasoning_{norm_set}.lp"), 'r') as file:
         for line in file:
@@ -211,14 +218,15 @@ def store_results(config: str, returns, violations):
         file.write(str(returns))
     print(f"Stored returns in: \t {path}")
 
-    path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(violations))
-    print(f"Stored violations in: \t {path}")
+    if violations is not None:
+        path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(violations))
+        print(f"Stored violations in: \t {path}")
 
 
 def plot_experiment(config: str):
-    reps, episodes, max_steps, discount, learning_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+    repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
     optimum = 1
 
     path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
@@ -247,41 +255,41 @@ def plot_experiment(config: str):
     # plt.show()
     plt.close()
 
-    # TODO: plot violations at first, mid, and last? --> make chart to display all over episode
-    # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
-    colors_of_norms = {
-        'occupiedTraverserTile' : 'darkred',
-        'turnedOnTraverserTile' : 'red',
-        'notReachedGoal' : 'royalblue'
-    }
-    # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
-    path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
-    violations = []
-    with open(path, 'r', newline='') as file:
-        content = file.read()
-        violations = ast.literal_eval(content)
+    if norm_set is not None:
+        # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
+        colors_of_norms = {
+            'occupiedTraverserTile' : 'darkred',
+            'turnedOnTraverserTile' : 'red',
+            'notReachedGoal' : 'royalblue'
+        }
+        # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
+        path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+        violations = []
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            violations = ast.literal_eval(content)
 
-    plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(10, 6))
 
-    norms = violations[0].keys()
-    for index, norm in enumerate(norms):
-        plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
+        norms = violations[0].keys()
+        for index, norm in enumerate(norms):
+            plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
 
-    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+        plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'{config} - Violations of target policy')
-    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
-    plt.xlabel('episode')
-    plt.ylabel('violations')
-    plt.legend(loc='upper right', framealpha=1.0)
+        plt.title(f'{config} - Violations of target policy')
+        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
+        plt.xlabel('episode')
+        plt.ylabel('violations')
+        plt.legend(loc='upper right', framealpha=1.0)
 
-    plt.xlim(1, episodes)
-    plt.ylim(0, 10)
-    plt.yticks(range(0, 11, 1))
+        plt.xlim(1, episodes)
+        plt.ylim(0, 10)
+        plt.yticks(range(0, 11, 1))
 
-    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_violations.png"))
-    # plt.show()
-    plt.close()
+        plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_violations.png"))
+        # plt.show()
+        plt.close()
 
 
     # TODO: plot head-map of visited states -> needs new results

@@ -27,7 +27,7 @@ MAPS = {
         "FHC",
         "CCG"
     ],
-    "4x4": [
+    "4x4_A": [
         "SFFF",
         "FHFH",
         "FFFH",
@@ -46,8 +46,8 @@ MAPS = {
 }
 
 TRAVERSER_PATHS = {
-    "3x3_A": [8,5,2,1,0],
-    "3x3_B": [8,7,6,3,0]
+    "3x3_Aa": [8,5,2,1,0],
+    "3x3_A": [7,7,5,5,0]
 }
 
 
@@ -242,7 +242,6 @@ class FrozenLakeEnv(Env):
             #     reward = -10
             # else:
             #     reward = -1
-            # ToDo: update rewards!
 
             if newletter == b"G":
                 reward = 1

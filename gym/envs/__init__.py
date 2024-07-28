@@ -101,7 +101,15 @@ register(
 register(
     id="FrozenLake-v1",
     entry_point="gym.envs.toy_text.frozen_lake:FrozenLakeEnv",
-    kwargs={"map_name": "4x4"},
+    kwargs={"map_name": "4x4_A"},
+    max_episode_steps=100,
+    reward_threshold=0.70,  # optimum = 0.74
+)
+
+register(
+    id="FrozenLake4x4_A",
+    entry_point="gym.envs.toy_text.frozen_lake:FrozenLakeEnv",
+    kwargs={"map_name": "4x4_A"},
     max_episode_steps=100,
     reward_threshold=0.70,  # optimum = 0.74
 )
@@ -111,7 +119,7 @@ register(
     entry_point="gym.envs.toy_text.frozen_lake:FrozenLakeEnv",
     kwargs={"map_name": "3x3_A"},
     max_episode_steps=100,
-    reward_threshold=0.70,  # optimum = 0.74
+    reward_threshold=0.70,
 )
 
 register(
@@ -119,7 +127,7 @@ register(
     entry_point="gym.envs.toy_text.frozen_lake:FrozenLakeEnv",
     kwargs={"map_name": "3x3_B"},
     max_episode_steps=100,
-    reward_threshold=0.70,  # optimum = 0.74
+    reward_threshold=0.70,
 )
 
 register(
@@ -127,7 +135,7 @@ register(
     entry_point="gym.envs.toy_text.frozen_lake:FrozenLakeEnv",
     kwargs={"map_name": "8x8"},
     max_episode_steps=200,
-    reward_threshold=0.85,  # optimum = 0.91
+    reward_threshold=0.85,
 )
 
 register(
