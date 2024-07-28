@@ -32,4 +32,4 @@ class ExponentialDecayPolicy(Policy):
             return self.q_table.get_best_action_for_state(state)
 
     def reset_after_episode(self):
-        self.call_count = 0
+        pass

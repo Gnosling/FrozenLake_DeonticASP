@@ -34,7 +34,7 @@ class Controller:
 
             return_of_target_per_episode = []
             violations_of_target_per_episode = []
-            print(f"Performing repetition {rep+1} ...")
+            print(f"Performing repetition {rep+1} ...", end='\r')
             for episode in range(episodes):
                 debug_print("_____________________________________________")
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
@@ -76,7 +76,7 @@ class Controller:
                 return_of_target_per_episode.append(expected_return)
                 violations_of_target_per_episode.append(violations_of_target)
 
-            print(f"Finished repetition {rep + 1}")
+            debug_print(f"Finished repetition {rep + 1}")
             debug_print("\n_____________________________________________")
             total_returns.append(return_of_target_per_episode)
             total_violations.append(violations_of_target_per_episode)
@@ -104,5 +104,5 @@ class Controller:
         # -----------------------------------------------------------------------------
         plot_experiment(config)
 
-        print("Experiment completed!")
+        print(f"Completed experiment: {config}")
 

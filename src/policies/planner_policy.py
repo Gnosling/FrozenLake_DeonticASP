@@ -79,6 +79,6 @@ class PlannerPolicy(Policy):
 
     def reset_after_episode(self):
         self.visited_states = []
-        self.call_count = 0
+        pass
 
 

@@ -208,18 +208,18 @@ def extract_norm_keys(norm_set):
 
 def store_results(config: str, returns, violations):
     conf = configs.get(config)
-    path = os.path.join(os.getcwd(), "results", f"{config}_config.txt")
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
 
-    path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(returns))
     print(f"Stored returns in: \t {path}")
 
     if violations is not None:
-        path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(violations))
         print(f"Stored violations in: \t {path}")
@@ -229,7 +229,7 @@ def plot_experiment(config: str):
     repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
     optimum = 1
 
-    path = os.path.join(os.getcwd(), "results", f"{config}_return.txt")
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
     returns = []
     with open(path, 'r', newline='') as file:
         content = file.read()
@@ -250,8 +250,9 @@ def plot_experiment(config: str):
     plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
 
     plt.xlim(1, episodes)
+    plt.ylim(-0.02, 1.02)
 
-    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_return.png"))
+    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_return.png"))
     # plt.show()
     plt.close()
 
@@ -263,7 +264,7 @@ def plot_experiment(config: str):
             'notReachedGoal' : 'royalblue'
         }
         # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
-        path = os.path.join(os.getcwd(), "results", f"{config}_violations.txt")
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
         violations = []
         with open(path, 'r', newline='') as file:
             content = file.read()
@@ -287,7 +288,7 @@ def plot_experiment(config: str):
         plt.ylim(0, 10)
         plt.yticks(range(0, 11, 1))
 
-        plt.savefig(os.path.join(os.getcwd(), "plots", f"{config}_violations.png"))
+        plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_violations.png"))
         # plt.show()
         plt.close()
 

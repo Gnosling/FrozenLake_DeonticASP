@@ -52,7 +52,7 @@ class Policy:
         if self.learning_rate_strategy == "constant":
             pass
         elif self.learning_rate_strategy == "linear_decay":
-            self.learning_rate = max(self.learning_rate - self.call_count * self.learning_decay_rate, 0.001)
+            self.learning_rate = max(self.learning_rate - self.call_count * self.learning_decay_rate, 0.01)
         elif self.learning_rate_strategy == "exponential_decay":
             self.learning_rate = math.exp(self.learning_decay_rate * -1 * self.call_count)
         else:
@@ -71,7 +71,7 @@ class Policy:
         return self.q_table.max_value_of(state)
 
     def reset_after_episode(self):
-        self.call_count = 0
+        pass
 
     def get_printed_policy(self) -> str:
         return str(self.q_table.get_all_values())
