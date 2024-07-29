@@ -29,7 +29,7 @@ class Controller:
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
-            env.reset(seed=42)
+            env.reset() # TODO: this seed should not be set, iff none random will be choosen, old experiments should be restarted
             behavior, target = build_policy(config)
 
             return_of_target_per_episode = []

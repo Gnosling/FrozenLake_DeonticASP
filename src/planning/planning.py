@@ -29,11 +29,14 @@ def _extract_first_action_from_telingo_output(output: str):
         for line in section.split("\n"):
             line = line.strip()
             if line.startswith("act(") and action == "":
+                # first action
                 action = line
 
             if line.startswith("eval"):
+                # last eval
                 value = int(line[5:-1])
 
+        # if last eval of section is minimum, then take first action of that section
         if value < opt:
             opt = value
             best_action = action

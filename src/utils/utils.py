@@ -8,6 +8,7 @@ from src.configs import configs
 from src.policies.policy import Policy
 from src.policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from src.policies.planner_policy import PlannerPolicy
+from src.policies.exponential_decay_policy import ExponentialDecayPolicy
 from src.policies.q_table import QTable
 from . import constants
 from .constants import *
@@ -73,7 +74,7 @@ def build_policy(config: str):
     elif policy == "epsilon_greedy":
         behavior = EpsilonGreedyPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
     elif policy == "exponential_decay":
-        behavior = EpsilonGreedyPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
+        behavior = ExponentialDecayPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
     elif policy == "planning":
         behavior = PlannerPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
     else:
