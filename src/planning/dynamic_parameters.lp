@@ -1,2 +1,4 @@
 #program initial.
-currentState(0).
+currentState(4).
+currentStateOfTraverser(-1).
+lastPerformedAction(move(right)).

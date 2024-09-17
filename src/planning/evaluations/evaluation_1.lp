@@ -1,12 +1,17 @@
-#program always.
-penalty(P) :- violations(V), P = 50 * V.
-gain(G) :- rewards(R), G = 1 * R.
+% only rewards
 
-eval(E) :- penalty(P), gain(G), F = G - P, E = -1 * F.
+#program always.
+:- forbidden(X), obligatory(X).
+forbidden(X) :- 'forbidden(X).
+obligatory(X) :- 'obligatory(X).
+
+
+gain(G) :- rewards(R), G = 1 * R.
+eval(E) :- gain(G), E = G.
 
 #program final.
-#minimize {E@1 : eval(E)}.
+#maximize {E@1 : eval(E)}.
 
-%#show penalty/1.
-%#show gain/1.
 #show eval/1.
+
+

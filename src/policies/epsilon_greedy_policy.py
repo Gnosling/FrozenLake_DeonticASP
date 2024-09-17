@@ -3,7 +3,7 @@ import random
 
 from .policy import Policy
 from .q_table import QTable
-from src.utils.constants import action_set
+from src.utils.constants import ACTION_SET
 
 
 class EpsilonGreedyPolicy(Policy):
@@ -25,7 +25,7 @@ class EpsilonGreedyPolicy(Policy):
         Returns a random action with prop epsilon
         """
         if random.random() < self.epsilon:
-            return random.choice(list(action_set))
+            return random.choice(list(ACTION_SET))
         else:
             return self.q_table.get_best_action_for_state(state)
 

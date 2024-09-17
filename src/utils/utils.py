@@ -80,7 +80,7 @@ def build_policy(config: str):
     else:
         raise ValueError(f"Wrong value of policy: {policy}!")
 
-    behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.action_set)
+    behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.ACTION_SET)
     target = Policy(behavior.get_q_table(), learning_rate, learning_rate_strategy, learning_decay_rate, discount)
     return behavior, target
 
@@ -195,7 +195,7 @@ def extract_norm_keys(norm_set):
         return None
 
     norms = dict()
-    with open(os.path.join(os.getcwd(), "src", "planning", "deontic_reasonings", f"deontic_reasoning_{norm_set}.lp"), 'r') as file:
+    with open(os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp"), 'r') as file:
         for line in file:
             if "checks" in line.lower():
                 continue

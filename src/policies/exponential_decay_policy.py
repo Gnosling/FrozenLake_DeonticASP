@@ -4,7 +4,7 @@ import math
 
 from .policy import Policy
 from .q_table import QTable
-from src.utils.constants import action_set
+from src.utils.constants import ACTION_SET
 
 class ExponentialDecayPolicy(Policy):
     """
@@ -27,7 +27,7 @@ class ExponentialDecayPolicy(Policy):
         # exponential decay
         chance = math.exp(self.epsilon * -1 * self.call_count)
         if random.random() < chance:
-            return random.choice(list(action_set))
+            return random.choice(list(ACTION_SET))
         else:
             return self.q_table.get_best_action_for_state(state)
 

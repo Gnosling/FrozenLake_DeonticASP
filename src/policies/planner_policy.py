@@ -53,7 +53,7 @@ class PlannerPolicy(Policy):
                 action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
             else:
                 if random.random() < self.epsilon:
-                    action = random.choice(list(action_set))
+                    action = random.choice(list(ACTION_SET))
                 else:
                     action = self.q_table.get_best_action_for_state(state)
 

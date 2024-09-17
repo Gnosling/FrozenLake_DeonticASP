@@ -1,7 +1,10 @@
 do:
-pip install gym[toy_text]
-conda install potassco::telingo
+create create --name FrozenLake python=3.9
+conda activate FrozenLake
+conda install swig
 conda install -c potassco telingo
+pip install -r requirements.txt
+% pip install gym[toy_text] %
 
 ## ToDo / Status:
 - Paper: https://www.overleaf.com/project/666d2ecdd9d2e0c3e9a800ac

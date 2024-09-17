@@ -37,5 +37,6 @@ terminalStateReached :- failedStateReached.
 
 % define rewards
 nextReward(-1) :- not goalStateReached.
-nextReward(10) :- goalStateReached.
-% TODO: have neg reward for failedStateReached?
+nextReward(100) :- goalStateReached.
+nextReward(-100) :- failedStateReached.
+% TODO: have neg reward for failedStateReached? -> yeah we can just set +/-100 for final things
