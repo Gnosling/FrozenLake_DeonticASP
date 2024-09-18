@@ -5,6 +5,8 @@ import math
 from .policy import Policy
 from .q_table import QTable
 from src.planning.planning import *
+from src.utils.constants import ACTION_SET
+
 
 class PlannerPolicy(Policy):
     """
@@ -33,24 +35,24 @@ class PlannerPolicy(Policy):
         # ie. -1 for short failure is better than -20+10 for long way? --> use as reason to set goal rewards high
 
         if self.strategy == "full_planning":
-            action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+            action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
 
         elif self.strategy == "plan_for_new_states":
             if state not in self.visited_states:
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
             else:
                 action = self.q_table.get_best_action_for_state(state)
 
         elif self.strategy == "epsilon_planning":
             if random.random() < self.epsilon:
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
             else:
                 action = self.q_table.get_best_action_for_state(state)
 
         # TODO: maybe combine explorations aspects here as well? -> only with the best exploration aspect --> depends on what is best in A*
         elif self.strategy == "epsilon_planning_with_epsilon_exploration":
             if random.random() < self.epsilon:
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
             else:
                 if random.random() < self.epsilon:
                     action = random.choice(list(ACTION_SET))
@@ -61,7 +63,7 @@ class PlannerPolicy(Policy):
             # exponential decay
             chance = math.exp(self.epsilon * -1 * self.call_count)
             if random.random() < chance:
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
             else:
                 action = self.q_table.get_best_action_for_state(state)
 
@@ -73,9 +75,10 @@ class PlannerPolicy(Policy):
         self.call_count = self.call_count+1
         return action
 
-    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action):
+    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action, current_presents):
         self.current_state_of_traverser = current_state_of_traverser
         self.last_performed_action = last_performed_action
+        self.current_presents = current_presents
 
     def reset_after_episode(self):
         self.visited_states = []

@@ -33,6 +33,12 @@ MAPS = {
         "FFFH",
         "HFFG"
     ],
+    "4x4_T": [
+        "SFFF",
+        "FHFH",
+        "PPFP",
+        "PPPG"
+    ],
     "8x8": [
         "SFFFFFFF",
         "FFFFFFFF",
@@ -47,7 +53,8 @@ MAPS = {
 
 TRAVERSER_PATHS = {
     "3x3_Aa": [8,5,2,1,0],
-    "3x3_A": [7,7,5,5,0]
+    "3x3_A": [7,7,5,5,0],
+    "4x4_T": [14,14,13,12,11,10,9],
 }
 
 
@@ -196,6 +203,7 @@ class FrozenLakeEnv(Env):
         self.desc = desc = np.asarray(desc, dtype="c")
         self.nrow, self.ncol = nrow, ncol = desc.shape
         self.reward_range = (0, 1)
+        self.map_name = map_name
         if traverser_path in TRAVERSER_PATHS.keys():
             self.traverser_path = TRAVERSER_PATHS[traverser_path]
             self.traverser_tracker = 0
@@ -299,6 +307,26 @@ class FrozenLakeEnv(Env):
             return self.traverser_path[self.traverser_tracker]
         return -1
 
+    def get_states_with_presents(self):
+        self.remove_present_from_tile(self.get_current_traverser_state())
+        counter = 0
+        ret = []
+        for row in range(len(self.desc)):
+            for col in range(len(self.desc[row])):
+                if self.desc[row][col] == b'P':
+                    ret.append(counter)
+                counter += 1
+        return ret
+
+    def remove_present_from_tile(self, state: int):
+        if state is None or state < 0:
+            pass
+
+        row = int(state / self.nrow)
+        col = state % self.ncol
+        if self.desc[row][col] == b'P':
+            self.desc[row][col] = b'F'
+
     def get_layout(self):
         return self.desc, len(self.desc[0]), len(self.desc)
 
@@ -312,11 +340,17 @@ class FrozenLakeEnv(Env):
         self.lastaction = a
         ret_values = (int(state), reward, terminated, False, {"prob": prob})
 
+        if tile in b"P":
+            self.remove_present_from_tile(state)
+
         if self.traverser_path:
             # case traverser exist
             if self.traverser_tracker < len(self.traverser_path)-1:
                 self.traverser_tracker += 1
             traverser_state = self.traverser_path[self.traverser_tracker]
+
+            if self.get_tile_of_state_number(traverser_state) in b"P":
+                self.remove_present_from_tile(traverser_state)
 
             if state == traverser_state and tile in b"C":
                 # terminate episode with reward 0
@@ -336,6 +370,12 @@ class FrozenLakeEnv(Env):
         self.s = categorical_sample(self.initial_state_distrib, self.np_random)
         self.traverser_tracker=0
         self.lastaction = None
+        if self.map_name is None:
+            desc = generate_random_map()
+        else:
+            desc = MAPS[self.map_name]
+        self.desc = desc = np.asarray(desc, dtype="c")
+        self.nrow, self.ncol = nrow, ncol = desc.shape
 
         if self.render_mode == "human":
             self.render()

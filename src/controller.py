@@ -29,8 +29,8 @@ class Controller:
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
-            env.reset() # TODO: this seed should not be set, iff none random will be choosen, old experiments must be restarted !!
-            # TODO: include random init in experiments?
+            env.reset()  # Note: no seed given to use random one
+            # TODO: include random initialisation in q-table  in experiments?
             behavior, target = build_policy(config)
 
             return_of_target_per_episode = []
@@ -46,7 +46,7 @@ class Controller:
                 for step in range(max_steps):
                     debug_print(env.render())
 
-                    behavior.updated_dynamic_env_aspects(env.get_current_traverser_state(), action_name)
+                    behavior.updated_dynamic_env_aspects(env.get_current_traverser_state(), action_name, env.get_states_with_presents())
                     action_name = behavior.suggest_action(state)
                     debug_print(f'Action: {action_name}')
 

@@ -58,7 +58,7 @@ class Policy:
         else:
             raise ValueError(f"invalid learning-rate strategy: {self.learning_rate_strategy}")
 
-    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action):
+    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action, current_presents):
         """
         Currently only needed in planner_policy to keep track of changes in the environment
         """

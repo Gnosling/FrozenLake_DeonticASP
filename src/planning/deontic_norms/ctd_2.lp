@@ -22,7 +22,8 @@ occupyTraverserTile :- currentState(X), currentStateOfTraverser(Y), X=Y.
 
 % If the agent and traverser occupy the same tile, then the agent must move straight
 forbidden(turnedOnTraverserTile).
-turnedOnTraverserTile :- occupyTraverserTile, act(move(X)), 'act(move(Y)), X != Y.
+turnedOnTraverserTile :- occupyTraverserTile, act(move(X)), lastPerformedAction(move(Y)), X != Y.
+% TODO: check if lastPerformedAction is the same as 'act(move(..)) !
 
 currentViolation(forbidden(X)) :- forbidden(X), X.
 
