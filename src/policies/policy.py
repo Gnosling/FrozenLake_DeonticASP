@@ -25,9 +25,8 @@ class Policy:
         self.discount = discount
         self.call_count = 0
 
-    def initialize(self, states, available_actions):
-        for state in states:
-            self.q_table.initialize_state(state, available_actions)
+    def initialize(self, states, available_actions, env):
+        self.q_table.initialize_state(states, available_actions, env)
 
     def update_after_step(self, state, action, new_state, reward):
         self.update_learning_rate()

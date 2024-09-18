@@ -9,8 +9,6 @@ class Controller:
     def plot_experiment(self, config: str):
         plot_experiment(config)
 
-
-    # TODO: change the frozenLake env to have multiple targets, other elves and change properties?
     def run_experiment(self, config: str):
 
         print(f"Starting experiment {config} ...")
@@ -18,7 +16,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+        repetitions, episodes, max_steps, learning, frozenlake, planning, deontic = read_config_param(config)
 
         # -----------------------------------------------------------------------------
         # Training
@@ -30,8 +28,7 @@ class Controller:
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
             env.reset()  # Note: no seed given to use random one
-            # TODO: include random initialisation in q-table  in experiments?
-            behavior, target = build_policy(config)
+            behavior, target = build_policy(config, env)
 
             return_of_target_per_episode = []
             violations_of_target_per_episode = []
@@ -53,7 +50,7 @@ class Controller:
                     new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
                     debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
 
-                    if not reversed_q_learning:
+                    if not learning.get("reversed_q_learning"):
                         behavior.update_after_step(state, action_name, new_state, reward)
 
                     trail_of_behavior.append([state, action_name, new_state, reward])
@@ -63,14 +60,14 @@ class Controller:
                         debug_print(env.render())
                         break
 
-                if reversed_q_learning:
+                if learning.get("reversed_q_learning"):
                     behavior.update_after_end_of_episode(trail_of_behavior)
 
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
 
                 trail_of_target, violations_of_target = test_target(target, env, config)
-                expected_return = compute_expected_return(discount, [r for [_,_,_,r] in trail_of_target])
+                expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode}: {expected_return}")
                 debug_print(f"Violations of ep {episode}: {violations_of_target}")
                 debug_print("_____________________________________________")
@@ -91,8 +88,8 @@ class Controller:
         avg_returns = get_average_returns(total_returns)
         debug_print(f"Returns:\n{avg_returns}")
         avg_violations = None
-        if norm_set is not None:
-            avg_violations = get_average_violations(total_violations, norm_set)
+        if deontic.get("norm_set") is not None:
+            avg_violations = get_average_violations(total_violations, deontic.get("norm_set"))
             debug_print(f"Violations:\n{avg_violations}")
 
         # -----------------------------------------------------------------------------

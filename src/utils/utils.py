@@ -43,45 +43,37 @@ def action_name_to_number(name: str) -> int:
         return None
 
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, float, float, str, float, bool, dict, bool, str, float, str, int, int, int]:
+def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict]:
     if config_name in configs.keys():
         values = configs.get(config_name)
         repetitions = values.get("repetitions")
         episodes = values.get("episodes")
         max_steps = values.get("max_steps")
-        discount = values.get("discount")
-        learning_rate = values.get("learning_rate")
-        learning_rate_strategy = values.get("learning_rate_strategy")
-        learning_decay_rate = values.get("learning_decay_rate")
-        reversed_q_learning = values.get("reversed_q_learning")
+        learning = values.get("learning")
         frozenlake = values.get("frozenlake")
-        policy = values.get("policy")
-        epsilon = values.get("epsilon")
-        planning_strategy = values.get("planning_strategy")
-        planning_horizon = values.get("planning_horizon")
-        norm_set = values.get("norm_set")
-        evaluation_function = values.get("evaluation_function")
-        return repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning,frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function
+        planning = values.get("planning")
+        deontic = values.get("deontic")
+        return repetitions, episodes, max_steps, learning, frozenlake, planning, deontic
     else:
         raise ValueError("Configuration was not found!")
 
 
-def build_policy(config: str):
-    _, _, _, discount, learning_rate, learning_rate_strategy, learning_decay_rate, _, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+def build_policy(config: str, env):
+    _, _, _, learning, frozenlake, planning, deontic = read_config_param(config)
 
-    if policy == "greedy":
-        behavior = Policy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount)
-    elif policy == "epsilon_greedy":
-        behavior = EpsilonGreedyPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
-    elif policy == "exponential_decay":
-        behavior = ExponentialDecayPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon)
-    elif policy == "planning":
-        behavior = PlannerPolicy(QTable(), learning_rate, learning_rate_strategy, learning_decay_rate, discount, epsilon, planning_strategy, planning_horizon, frozenlake.get("name"), norm_set, evaluation_function)
+    if planning.get("policy") == "greedy":
+        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
+    elif planning.get("policy") == "epsilon_greedy":
+        behavior = EpsilonGreedyPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"))
+    elif planning.get("policy") == "exponential_decay":
+        behavior = ExponentialDecayPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"))
+    elif planning.get("policy") == "planning":
+        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"), planning.get("planning_strategy"), planning.get("planning_horizon"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
     else:
-        raise ValueError(f"Wrong value of policy: {policy}!")
+        raise ValueError(f"Wrong value of policy: {planning.get('policy')}!")
 
-    behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.ACTION_SET)
-    target = Policy(behavior.get_q_table(), learning_rate, learning_rate_strategy, learning_decay_rate, discount)
+    behavior.initialize({s for s in range(frozenlake.get("tiles"))}, constants.ACTION_SET, env)
+    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
     return behavior, target
 
 
@@ -132,8 +124,8 @@ def get_average_violations(results, norm_set):
 
 
 def test_target(target, env, config):
-    _, _, max_steps, _, _, _, _, _, frozenlake, _, _, _, _, norm_set, evaluation_function = read_config_param(config)
-    norm_violations = extract_norm_keys(norm_set)
+    _, _, max_steps, _, frozenlake, _, deontic = read_config_param(config)
+    norm_violations = extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
     traverser_state = env.get_current_traverser_state()  # this is -1 if there is no traverser
@@ -227,7 +219,7 @@ def store_results(config: str, returns, violations):
 
 
 def plot_experiment(config: str):
-    repetitions, episodes, max_steps, discount, learning_rate, learning_rate_strategy, learning_decay_rate, reversed_q_learning, frozenlake, policy, epsilon, planning_strategy, planning_horizon, norm_set, evaluation_function = read_config_param(config)
+    repetitions, episodes, max_steps, learning, frozenlake, planning, deontic = read_config_param(config)
     optimum = 1
 
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
@@ -243,7 +235,7 @@ def plot_experiment(config: str):
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Return of target policy')
-    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
+    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episode')
     plt.ylabel('return')
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -257,7 +249,7 @@ def plot_experiment(config: str):
     # plt.show()
     plt.close()
 
-    if norm_set is not None:
+    if deontic.get("norm_set") is not None:
         # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
         colors_of_norms = {
             'occupiedTraverserTile' : 'darkred',
@@ -280,7 +272,7 @@ def plot_experiment(config: str):
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
         plt.title(f'{config} - Violations of target policy')
-        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning_strategy}, norm_set={norm_set}\n', ha='center', va='center', fontsize=9)
+        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episode')
         plt.ylabel('violations')
         plt.legend(loc='upper right', framealpha=1.0)
