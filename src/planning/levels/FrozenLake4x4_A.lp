@@ -6,7 +6,7 @@
 tile(0..tiles-1).
 
 frozen(0..3).
-frozen(4). hole(5). frozen(6), hole(7).
+frozen(4). hole(5). frozen(6). hole(7).
 frozen(8..10). hole(11).
 hole(12). frozen(13..15).
 

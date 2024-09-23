@@ -19,11 +19,12 @@ superior(forbidden(turnedOnTraverserTile),forbidden(occupyTraverserTile)).
 % The agent must not be on the same tile as the traverser
 forbidden(occupyTraverserTile).
 occupyTraverserTile :- currentState(X), currentStateOfTraverser(Y), X=Y.
+level(occupyTraverserTile,2).
 
 % If the agent and traverser occupy the same tile, then the agent must move straight
 forbidden(turnedOnTraverserTile).
 turnedOnTraverserTile :- occupyTraverserTile, act(move(X)), lastPerformedAction(move(Y)), X != Y.
-% TODO: check if lastPerformedAction is the same as 'act(move(..)) !
+level(turnedOnTraverserTile,3).
 
 currentViolation(forbidden(X)) :- forbidden(X), X.
 
@@ -31,6 +32,7 @@ currentViolation(forbidden(X)) :- forbidden(X), X.
 obligatory(reachedGoal).
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not &tel {<? goalStateReached}.
+level(reachedGoal,2).
 
 % :~ currentViolation(forbidden(occupyTraverserTile)). [1@1]
 % :~ currentViolation(forbidden(turnedOnTraverserTile)). [1@3]

@@ -6,8 +6,7 @@ forbidden(X) :- 'forbidden(X).
 obligatory(X) :- 'obligatory(X).
 
 
-gain(G) :- rewards(R), G = 1 * R.
-eval(E) :- gain(G), E = G.
+eval(E) :- rewards(R), E = 1 * R.
 
 #program final.
 #maximize {E@1 : eval(E)}.

@@ -9,12 +9,12 @@ obligatory(X) :- 'obligatory(X).
 % TODO: update file with maximize and use single violations as penalty
 
 penalty(P) :- violations(V), P = 50 * V.
-gain(G) :- rewards(R), G = 1 * R.
+benefits(G) :- rewards(R), G = 1 * R.
 
-eval(E) :- penalty(P), gain(G), F = G - P, E = -1 * F.
+eval(E) :- penalty(P), benefits(G), E = G - P.
 
 #program final.
-#minimize {E@1 : eval(E)}.
+#maximize {E@1 : eval(E)}.
 
 %#show penalty/1.
 %#show gain/1.

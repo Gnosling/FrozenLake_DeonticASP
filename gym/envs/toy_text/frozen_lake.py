@@ -297,6 +297,9 @@ class FrozenLakeEnv(Env):
         self.goal_img = None
         self.start_img = None
 
+    def get_number_of_tiles(self):
+        return self.nrow * self.ncol
+
     def get_tile_of_state_number(self, state: int):
         row = int(state / self.nrow)
         col = state % self.ncol

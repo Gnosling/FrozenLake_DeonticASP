@@ -1,9 +1,14 @@
-% using superior-ordering for conflict restrictions
+% using weak constraints and conflict-restrictions
 
 #program always.
 :- forbidden(X), obligatory(X).
 forbidden(X) :- 'forbidden(X).
 obligatory(X) :- 'obligatory(X).
+
+
+eval(E) :- rewards(R), E = 1 * R.
+:~ currentViolation(obligatory(X)), level(X,L). [10@L]
+:~ currentViolation(forbidden(X)), level(X,L). [10@L]
 
 conflict(X,Y) :- conflict(Y,X).
 superior(X,Y) :- inferior(Y,X), X != Y.
@@ -18,8 +23,5 @@ penalty(P) :- violations(V), P = 1 * V.
 :- currentViolation(obligatory(X)), superior(obligatory(X),obligatory(Y)), obligatory(Y), not currentViolation(obligatory(Y)), conflict(X,Y), X != Y.
 
 #program final.
-#maximize {E@1 : benefits(E)}.
-#minimize {P@2 : penalty(P)}.
+#maximize {E@1 : eval(E)}.
 
-#show benefits/1.
-#show penalty/1.

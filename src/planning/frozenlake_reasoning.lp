@@ -41,9 +41,26 @@ presentTaken(S) :- 'takePresent(S).
 presentTaken(S) :- 'presentTaken(S).
 
 
+% define safe tiles as tiles not next to a hole
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S-1), not hole(S+width), not hole(S-width), not leftEdge(S), not lowerEdge(S), not rightEdge(S), not upperEdge(S).
+% Special cases for edges:
+safe(S) :- tile(S), not hole(S), not hole(S-1), not hole(S+width), not hole(S-width), rightEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S+width), not hole(S-width), leftEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S-1), not hole(S+width), upperEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S-1), not hole(S-width), lowerEdge(S).
+% Special cases for corners:
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S+width), upperEdge(S), leftEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S-1), not hole(S+width), upperEdge(S), rightEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S-width), lowerEdge(S), leftEdge(S).
+safe(S) :- tile(S), not hole(S), not hole(S-1), not hole(S-width), lowerEdge(S), rightEdge(S).
+
+
 % define rewards
 nextReward(-1) :- not goalStateReached.
 nextReward(100) :- goalStateReached.
 nextReward(-100) :- failedStateReached.
 nextReward(30) :- takePresent(S), currentState(S).
 
+
+#program dynamic.
+lastPerformedAction(move(X)) :- 'act(move(X)).

@@ -1,4 +1,4 @@
-% Chisholm, deontic detachment (forbidden(turnedOnTraverserTile <- occupyTraverserTile))
+% Chisholm, factual detachment (forbidden(turnedOnTraverserTile) <- occupyTraverserTile)
 
 % Checks:
 % occupiedTraverserTile
@@ -14,7 +14,7 @@ currentViolation(forbidden(occupyTraverserTile)) :- forbidden(occupyTraverserTil
 level(occupyTraverserTile,2).
 
 % If the agent and traverser occupy the same tile, then the agent must move straight
-forbidden(turnedOnTraverserTile).
+forbidden(turnedOnTraverserTile) :- occupyTraverserTile.
 turnedOnTraverserTile :- occupyTraverserTile, act(move(X)), lastPerformedAction(move(Y)), X != Y.
 currentViolation(forbidden(turnedOnTraverserTile)) :- forbidden(turnedOnTraverserTile), turnedOnTraverserTile.
 level(turnedOnTraverserTile,3).

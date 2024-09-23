@@ -1,0 +1,19 @@
+% safe area
+
+% Checks:
+% leftSafeArea
+% didNotReturnToSafeArea
+
+#program always.
+
+% The agent must not leave the same area
+forbidden(leftSafeArea).
+leftSafeArea :- currentState(X), not safe(Y), tile(Y), X=Y, 'currentState(U), safe(V), U=V.
+currentViolation(forbidden(leftSafeArea)) :- forbidden(leftSafeArea), leftSafeArea.
+level(leftSafeArea,2).
+
+% If the agent and traverser occupy the same tile, then the agent must move straight
+forbidden(didNotReturnToSafeArea).
+didNotReturnToSafeArea :- currentState(X), not safe(Y), tile(Y), X=Y, 'currentState(U), not safe(V), tile(V), U=V.
+currentViolation(forbidden(didNotReturnToSafeArea)) :- forbidden(didNotReturnToSafeArea), didNotReturnToSafeArea.
+level(didNotReturnToSafeArea,3).

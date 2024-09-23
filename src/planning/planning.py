@@ -34,8 +34,9 @@ def _value_better_than_optimization(value, opt):
 
 def _extract_first_action_from_telingo_output(output: str):
     best_action = ""
+    best_section = ""
     max_opt_levels = 20
-    opt = [10000000 for _ in range(max_opt_levels)]
+    opt = [10000000 for _ in range(max_opt_levels)]     # TODO: OPT of section does not have all values necessary -> if omitted is higher prio than it's ok
     for section in output.split("State 0"):
         action = ""
         value = [10000000 for _ in range(max_opt_levels)]
@@ -52,6 +53,7 @@ def _extract_first_action_from_telingo_output(output: str):
         if _value_better_than_optimization(value, opt):
             opt = value
             best_action = action
+            best_section = section
 
 
     best_action = best_action.replace("(", "")
