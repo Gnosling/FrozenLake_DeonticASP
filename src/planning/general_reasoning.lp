@@ -1,13 +1,13 @@
 #program initial.
 rewards(X) :- nextReward(X).
-violations(X) :- nextViolations(X).
+violationsOfLevel(X,L) :- nextViolationsOfLevel(X,L).
 
 #program always.
 {act(move(X)) : executable(move(X))} = 1 :- not terminalStateReached.
 
 rewards(X+S) :- 'rewards(X), S = #sum {Y : nextReward(Y)}.
-nextViolations(X+Y) :- X = #count {U : currentViolation(forbidden(U))}, Y = #count {W : currentViolation(obligatory(W))}.
-violations(X+Y) :- 'violations(X), nextViolations(Y).
+nextViolationsOfLevel(X+Y,L) :- X = #count {U : currentViolation(forbidden(U)), level(U,L)}, Y = #count {W : currentViolation(obligatory(W)), level(W,L)}, level(_,L).
+violationsOfLevel(X+Y,L) :- 'violationsOfLevel(X,L), nextViolationsOfLevel(Y,L).
 
 #program final.
 % was removed to consider short planning_horizon
@@ -15,5 +15,5 @@ violations(X+Y) :- 'violations(X), nextViolations(Y).
 
 #show rewards/1.
 #show currentViolation/1.
-#show violations/1.
-#show nextViolations/1.
+#show violationsOfLevel/2.
+#show nextViolationsOfLevel/2.

@@ -15,7 +15,7 @@ pip install -r requirements.txt
   - M: occupiedTraverserTile
   - H: turnedOnTraverserTile (CTD of above)
   - M: stolePresent (took at least one) (conflicting below)
-  - M: missedPresents (did not take all) (conflicting above)
+  - M: missedPresents (did not take all available) (conflicting above)
   - L: movedAwayFromGoal (the distance to the goal tile has increased)
   - L: leftSafeArea ('safe' iff not near a hole, only triggers on exit)
   - M: didNotReturnToSafeArea (CTD of above)
@@ -24,9 +24,8 @@ pip install -r requirements.txt
 - Define settings for evaluation:
   - sum of rewards
   - scaled eval of rewards and violations
-  - rewards with weak constraints of violations
-  - rewards with hard conflict resolution and min of violations
-  - rewards with weak constraints of violations and hard conflict resolution
+  - rewards and violations of level (because the weak constraints work differently in Telingo this simulates that)
+  - additionally a 'hard' conflict resolution can be applied to those
 
 
 - check planning with learning:
@@ -40,8 +39,12 @@ pip install -r requirements.txt
 
 - Implement plotting and output data:
   - both target and behavior use same q_table, plot only avg target-return over steps
-  - extend violations chart
-  - extend plotting for state-visits as heat map?
+  - extend violations chart with new norms
+  - extend plotting for state-visits as heat map
+  - have a chart for average number of steps
+  - policy map showing the favorite action in each state
+  - simply the entire q-table as well (not for plotting)
+  - something about exploration (or use that in the heatmap to indicate areas that were not explored?)
 
 
 - Paradoxes:
