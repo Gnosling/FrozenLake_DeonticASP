@@ -10,7 +10,6 @@ superior(X,Y) :- inferior(Y,X), X != Y.
 inferior(X,Y) :- superior(Y,X), X != Y.
 
 benefits(E) :- rewards(R), E = 1 * R.
-penalty(P) :- violations(V), P = 1 * V.
 
 :- currentViolation(forbidden(X)), superior(forbidden(X),forbidden(Y)), forbidden(Y), not currentViolation(forbidden(Y)), conflict(X,Y), X != Y.
 :- currentViolation(obligatory(X)), superior(obligatory(X),forbidden(Y)), forbidden(Y), not currentViolation(forbidden(Y)), conflict(X,Y), X != Y.
@@ -19,7 +18,4 @@ penalty(P) :- violations(V), P = 1 * V.
 
 #program final.
 #maximize {E@1 : benefits(E)}.
-#minimize {P@2 : penalty(P)}.
-
-#show benefits/1.
-#show penalty/1.
+#minimize {V@L : violationsOfLevel(V,L)}.

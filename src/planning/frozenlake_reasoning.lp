@@ -3,6 +3,7 @@
 #show act/1.
 #show takePresent/1.
 #show presentTaken/1.
+#show distanceFromCurrentStateToGoal/1.
 
 #program always.
 
@@ -55,6 +56,10 @@ safe(S) :- tile(S), not hole(S), not hole(S+1), not hole(S-width), lowerEdge(S),
 safe(S) :- tile(S), not hole(S), not hole(S-1), not hole(S-width), lowerEdge(S), rightEdge(S).
 
 
+% define distance to goal
+distanceFromCurrentStateToGoal(DIS) :- DIS = X + Y, X = |(S\width) - (G\width)|, Y = |(S/height) - (G/height)|, currentState(S), goal(G).
+
+
 % define rewards
 nextReward(-1) :- not goalStateReached.
 nextReward(100) :- goalStateReached.
@@ -63,4 +68,4 @@ nextReward(30) :- takePresent(S), currentState(S).
 
 
 #program dynamic.
-lastPerformedAction(move(X)) :- 'act(move(X)).
+lastPerformedAction(move(X)) :- 'act(move(X)). % this is needed since the first last action comes from the environment

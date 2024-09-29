@@ -15,7 +15,3 @@ eval(E) :- penalty(P), benefits(G), E = G - P.
 
 #program final.
 #maximize {E@1 : eval(E)}.
-
-%#show penalty/1.
-%#show gain/1.
-#show eval/1.

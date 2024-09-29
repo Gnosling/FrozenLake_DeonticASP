@@ -14,6 +14,5 @@ violationsOfLevel(X+Y,L) :- 'violationsOfLevel(X,L), nextViolationsOfLevel(Y,L).
 % :- not terminalStateReached.
 
 #show rewards/1.
-#show currentViolation/1.
 #show violationsOfLevel/2.
-#show nextViolationsOfLevel/2.
+#show currentViolation/1.
