@@ -6,9 +6,7 @@ import ast
 
 from src.configs import configs
 from src.policies.policy import Policy
-from src.policies.epsilon_greedy_policy import EpsilonGreedyPolicy
 from src.policies.planner_policy import PlannerPolicy
-from src.policies.exponential_decay_policy import ExponentialDecayPolicy
 from src.policies.q_table import QTable
 from . import constants
 from .constants import *
@@ -61,16 +59,10 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict
 def build_policy(config: str, env):
     _, _, _, learning, frozenlake, planning, deontic = read_config_param(config)
 
-    if planning.get("policy") == "greedy":
+    if planning is None:
         behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
-    elif planning.get("policy") == "epsilon_greedy":
-        behavior = EpsilonGreedyPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"))
-    elif planning.get("policy") == "exponential_decay":
-        behavior = ExponentialDecayPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"))
-    elif planning.get("policy") == "planning":
-        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), planning.get("epsilon"), planning.get("planning_strategy"), planning.get("planning_horizon"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
     else:
-        raise ValueError(f"Wrong value of policy: {planning.get('policy')}!")
+        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("planning_strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
 
     behavior.initialize({s for s in range(env.get_number_of_tiles())}, constants.ACTION_SET, env)
     target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
@@ -94,7 +86,7 @@ def compute_expected_return(discount_rate: float, rewards: List[float]) -> float
 
     return G[-1]
 
-def get_average_returns(results):
+def get_average_numbers(results):
     average_returns = []
     episodes = len(results[0])
     repetitions = len(results)
@@ -131,11 +123,15 @@ def test_target(target, env, config):
     traverser_state = env.get_current_traverser_state()  # this is -1 if there is no traverser
     layout, width, height = env.get_layout()
     goal_state = env.get_goal_state()
+    slips = 0
 
     for step in range(max_steps):
-        action_name = target.suggest_action(state)
-        new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
-        trail_of_target.append([state, action_name, new_state, reward])
+        proposed_action = target.suggest_action(state)
+        new_state, reward, terminated, truncated, info = env.step(action_name_to_number(proposed_action))
+        trail_of_target.append([state, proposed_action, new_state, reward])
+
+        if info.get("prob") == 0.1:
+            slips += 1
 
         if norm_violations is not None:
             check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height, goal_state)
@@ -146,7 +142,7 @@ def test_target(target, env, config):
         if terminated or truncated:
             break
 
-    return trail_of_target, norm_violations
+    return trail_of_target, norm_violations, slips
 
 
 def check_violations(norm_violations, trail_of_target, terminated, traverser_state, layout, width, height, goal):
@@ -174,6 +170,7 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
         elif norm == "turnedOnTraverserTile":
             if len(trail_of_target) > 1:
                 if state == traverser_state:
+                    # TODO: this is the proposed action, and thus correct even if slipped
                     _, previous_action, _, _ = trail_of_target[-2]
                     if action_name != previous_action:
                         norm_violations[norm] += 1
@@ -211,7 +208,7 @@ def extract_norm_keys(norm_set):
     return dict(sorted(norms.items()))
 
 
-def store_results(config: str, returns, violations):
+def store_results(config: str, returns, steps, slips, violations):
     conf = configs.get(config)
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
@@ -221,7 +218,17 @@ def store_results(config: str, returns, violations):
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(returns))
-    print(f"Stored returns in: \t {path}")
+    print(f"Stored return in: \t {path}")
+
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(steps))
+    print(f"Stored steps in: \t {path}")
+
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(slips))
+    print(f"Stored slips in: \t {path}")
 
     if violations is not None:
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
@@ -261,13 +268,50 @@ def plot_experiment(config: str):
     # plt.show()
     plt.close()
 
+
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps.txt")
+    steps = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        steps = ast.literal_eval(content)
+
+    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips.txt")
+    slips = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        slips = ast.literal_eval(content)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(list(range(1, episodes + 1)), steps, label='number of steps', linewidth=1.7, color='royalblue',
+             marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), slips, label='number of slips', linewidth=1.7, color='yellow',
+             marker='o', markersize=4)
+    plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
+    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+    plt.title(f'{config} - Average number of steps and of slips of target policy')
+    plt.figtext(0.5, 0.01,
+                f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n',
+                ha='center', va='center', fontsize=9)
+    plt.xlabel('episode')
+    plt.ylabel('number')
+    plt.legend(loc='upper right', framealpha=1.0)
+
+    plt.xlim(1, episodes)
+    plt.ylim(-0.02, max(steps)+2)
+
+    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_steps.png"))
+    # plt.show()
+    plt.close()
+
+
     if deontic.get("norm_set") is not None:
         # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
         colors_of_norms = {
-            'occupiedTraverserTile' : 'darkred',
-            'turnedOnTraverserTile' : 'red',
-            'notReachedGoal' : 'royalblue',
-            'movedAwayFromGoal' : 'olive',
+            'occupiedTraverserTile': 'darkred',
+            'turnedOnTraverserTile': 'red',
+            'notReachedGoal': 'royalblue',
+            'movedAwayFromGoal': 'olive',
         }
         # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
