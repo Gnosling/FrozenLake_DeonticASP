@@ -130,6 +130,7 @@ def test_target(target, env, config):
     state, info = env.reset()
     traverser_state = env.get_current_traverser_state()  # this is -1 if there is no traverser
     layout, width, height = env.get_layout()
+    goal_state = env.get_goal_state()
 
     for step in range(max_steps):
         action_name = target.suggest_action(state)
@@ -137,7 +138,7 @@ def test_target(target, env, config):
         trail_of_target.append([state, action_name, new_state, reward])
 
         if norm_violations is not None:
-            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height)
+            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height, goal_state)
 
         traverser_state = env.get_current_traverser_state()
         state = new_state
@@ -148,12 +149,13 @@ def test_target(target, env, config):
     return trail_of_target, norm_violations
 
 
-def check_violations(norm_violations, trail_of_target, terminated, traverser_state, layout, width, height):
+def check_violations(norm_violations, trail_of_target, terminated, traverser_state, layout, width, height, goal):
     """
-    checks violations of norms:
+    checks violations of norms in the current step of:
+        notReachedGoal
         occupiedTraverserTile
         turnedOnTraverserTile
-        notReachedGoal
+        movedAwayFromGoal
     """
     state, action_name, new_state, reward = trail_of_target[-1]
 
@@ -162,7 +164,7 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
 
         if norm == "notReachedGoal":
             if terminated:
-                if layout[int(new_state/height)][new_state%width] != b"G":
+                if new_state != goal:
                     norm_violations[norm] += 1
 
         elif norm == "occupiedTraverserTile":
@@ -175,6 +177,12 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
                     _, previous_action, _, _ = trail_of_target[-2]
                     if action_name != previous_action:
                         norm_violations[norm] += 1
+
+        elif norm == "movedAwayFromGoal":
+            previous_distance = abs(state%width - goal%width) + abs(int(state/height) - int(goal/height))
+            new_distance = abs(new_state%width - goal%width) + abs(int(new_state/height) - int(goal/height))
+            if new_distance > previous_distance:
+                norm_violations[norm] += 1
 
         else:
             raise ValueError(f"Unexpected norm to check: {norm}!")
@@ -190,15 +198,17 @@ def extract_norm_keys(norm_set):
     reached_section = False
     with open(os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp"), 'r') as file:
         for line in file:
-            if "checks:" in line.lower():
+            if "norms:" in line.lower():
                 reached_section = True
                 continue
-            if reached_section and line.strip() == "":
+            if not reached_section:
+                continue
+            if line.strip() == "":
                 break
             key = line.strip().split(" ")[-1]
             norms[key] = 0
     # TODO: define order of norms to be put in the dict here! such that plots always have same order
-    return norms
+    return dict(sorted(norms.items()))
 
 
 def store_results(config: str, returns, violations):
@@ -256,7 +266,8 @@ def plot_experiment(config: str):
         colors_of_norms = {
             'occupiedTraverserTile' : 'darkred',
             'turnedOnTraverserTile' : 'red',
-            'notReachedGoal' : 'royalblue'
+            'notReachedGoal' : 'royalblue',
+            'movedAwayFromGoal' : 'olive',
         }
         # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")

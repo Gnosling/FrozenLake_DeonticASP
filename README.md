@@ -36,12 +36,14 @@ pip install -r requirements.txt
   - needs new config-param
   - not really needed since path is hardcoded
 
+- implement strategies for exploration for q-table!
+- debug what happens if violations and rewards have same level
 
 - Implement plotting and output data:
   - both target and behavior use same q_table, plot only avg target-return over steps
   - extend violations chart with new norms
   - extend plotting for state-visits as heat map
-  - have a chart for average number of steps
+  - have a chart for average number of steps and average number of slips
   - policy map showing the favorite action in each state
   - simply the entire q-table as well (not for plotting)
   - something about exploration (or use that in the heatmap to indicate areas that were not explored?)

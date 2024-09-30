@@ -1,6 +1,6 @@
 % moving to goal
 
-% Checks:
+% Norms:
 % notReachedGoal
 % movedAwayFromGoal
 
@@ -10,7 +10,7 @@
 forbidden(movedAwayFromGoal).
 movedAwayFromGoal :- Y > X, 'distanceFromCurrentStateToGoal(X), distanceFromCurrentStateToGoal(Y).
 currentViolation(forbidden(movedAwayFromGoal)) :- forbidden(movedAwayFromGoal), movedAwayFromGoal.
-level(movedAwayFromGoal,2).
+level(movedAwayFromGoal,1).
 
 
 % The agent must reach the goal tile

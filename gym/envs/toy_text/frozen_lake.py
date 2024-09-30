@@ -53,8 +53,9 @@ MAPS = {
 
 TRAVERSER_PATHS = {
     "3x3_Aa": [8,5,2,1,0],
-    "3x3_A": [7,7,5,5,0],
-    "4x4_T": [14,14,13,12,11,10,9],
+    "3x3_A": [6,1],
+    "4x4_A": [13,9,13,9,13,9,13,9,13,9,13,9,13,9],
+    "4x4_T": [6,2,6,2,6,2,6,2,6,2,6],
 }
 
 
@@ -304,6 +305,14 @@ class FrozenLakeEnv(Env):
         row = int(state / self.nrow)
         col = state % self.ncol
         return self.desc[row][col]
+
+    def get_goal_state(self):
+        counter = 0
+        for row in range(len(self.desc)):
+            for col in range(len(self.desc[row])):
+                if self.desc[row][col] == b'G':
+                    return counter
+                counter += 1
 
     def get_current_traverser_state(self) -> int:
         if self.traverser_path:
