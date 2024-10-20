@@ -1,4 +1,4 @@
-do:
+first time setup:
 create create --name FrozenLake python=3.9
 conda activate FrozenLake
 conda install swig
@@ -10,7 +10,7 @@ pip install -r requirements.txt
 - Paper: https://www.overleaf.com/project/666d2ecdd9d2e0c3e9a800ac
 
 
-- Implement Norms:
+- Norms:
   - H: notReachedGoal
   - M: occupiedTraverserTile
   - H: turnedOnTraverserTile (CTD of above)
@@ -21,25 +21,49 @@ pip install -r requirements.txt
   - M: didNotReturnToSafeArea (CTD of above)
 
 
-- Define settings for evaluation:
+- Evaluation:
   - sum of rewards
   - scaled eval of rewards and violations
   - rewards and violations of level (because the weak constraints work differently in Telingo this simulates that)
   - additionally a 'hard' conflict resolution can be applied to those
 
+---------------
 
 - check planning with learning:
   - test combis + RL learning
 
 
-- let traverser-paths be cyclic, and have a level where it jumps between both paths to block the agent
-  - needs new config-param
-  - not really needed since path is hardcoded
+- non-deterministic policy --> not needed / beneficial
 
+
+### policy can be enforced afterwards:
+  - experiment what happens if the norms (or even the traverser?) change and trigger a fixing (eg. trained agent now has to follow more norms)
+- --> guardrail (maybe utilizes something from davide?, at least emery's approach):
+  - reduces action selections before policy (only on current state) beforehand (can be checked in python-code)
+  - might restrict optimal solutions, but simple and hopefully effective
+- --> fixing (sebastians approach):
+  - the next enf-horizon actions are analysed by ASP-planner for norm violations and potentially fixed, no policy changed though
+  - the current act(move(X)) of the path must be inserted dynamically and checked for violations, if any occured then activate normal planning
+  - need special ASP-checker of norms
+  - compared to others high computational effort, but most flexible and best monitoring 
+- --> reward_shaping (paper-one):
+  - the rewards use penalties if violations occur, up to the last enf-horizon states
+  - (maybe we can use alteration of the policy still, as maybe the fourth mode?)
+  - might worsen policy also is in the 'real' testing phase, but could improve, check paper to see how to do that
+  - --> as long as function is potential-based, there is no drop in optimal policy
+
+
+- should the traverser be part of the state-info? --> yes --> define state representation in overleaf (maybe use both?)
+- --> this is pair of states (also include presents?-> yes)
+- --> state space should be fine since it's: Tiles×Tiles×(Possible Configurations of Presents), at worst T^2 x 2^T x actions, but there aren't that many presents there
+- --> use at most 3 presents, maybe less then it's fine
 - implement strategies for exploration for q-table!
+- implement new plannig strategy for comparing actions and pick better?
+- implement distance based init of table
 - debug what happens if violations and rewards have same level
 
-- Implement plotting and output data:
+
+### Implement plotting and output data:
   - both target and behavior use same q_table, plot only avg target-return over steps
   - extend violations chart with new norms
   - extend plotting for state-visits as heat map
@@ -48,6 +72,7 @@ pip install -r requirements.txt
   - simply the entire q-table as well (not for plotting)
   - something about exploration (or use that in the heatmap to indicate areas that were not explored?)
 
+---------------
 
 - Paradoxes:
   - Ross's paradox
@@ -61,6 +86,7 @@ pip install -r requirements.txt
   - Fence paradox
   - Chisholm's paradox
 
+---------------
 
 - Experiments:
   - First on 'crude' frozenlake with better splippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
@@ -71,6 +97,7 @@ pip install -r requirements.txt
     - random initialisation?? safe initialisation??
   - B* to test policy strategies / classes:
     - test out epsilon -> no signifant value, due to all values lacking at the start
+    - test out different starting tiles on same level? with same policy?
   - Now make extensions to frozenlake
   - C* to test norms simple with CTDs and all evaluations
   - D* to test alternative implementations of norms (ie. forbid neg / oblig pos; deontic vs. factual)

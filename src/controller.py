@@ -18,6 +18,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         repetitions, episodes, max_steps, learning, frozenlake, planning, deontic = read_config_param(config)
 
+
         # -----------------------------------------------------------------------------
         # Training
         # -----------------------------------------------------------------------------
@@ -42,12 +43,13 @@ class Controller:
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
                 trail_of_behavior = []  # list of [state, action_name, new_state, rewards]
+                # Note: a state is (current_position, traverser_position, list_of_presents)
                 action_name = None
 
                 for step in range(max_steps):
                     debug_print(env.render())
 
-                    behavior.updated_dynamic_env_aspects(env.get_current_traverser_state(), action_name, env.get_states_with_presents())
+                    behavior.updated_dynamic_env_aspects(action_name)
                     action_name = behavior.suggest_action(state)
                     debug_print(f'Action: {action_name}')
 
@@ -89,6 +91,7 @@ class Controller:
             total_slips.append(slips_of_target_per_episode)
             env.close()
 
+
         # -----------------------------------------------------------------------------
         # Evaluation
         # -----------------------------------------------------------------------------
@@ -102,10 +105,12 @@ class Controller:
             avg_violations = get_average_violations(total_violations, deontic.get("norm_set"))
             debug_print(f"Violations:\n{avg_violations}")
 
+
         # -----------------------------------------------------------------------------
         # Storing of results
         # -----------------------------------------------------------------------------
         store_results(config, avg_returns, avg_steps, avg_slips, avg_violations)
+
 
         # -----------------------------------------------------------------------------
         # Plotting

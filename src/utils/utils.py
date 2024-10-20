@@ -3,6 +3,7 @@ from typing import Tuple, List, Any
 import numpy as np
 import matplotlib.pyplot as plt
 import ast
+import itertools
 
 from src.configs import configs
 from src.policies.policy import Policy
@@ -55,6 +56,10 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict
     else:
         raise ValueError("Configuration was not found!")
 
+def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
+    presents.sort()
+    return (current_tile, traverser_tile, presents)
+
 
 def build_policy(config: str, env):
     _, _, _, learning, frozenlake, planning, deontic = read_config_param(config)
@@ -62,9 +67,15 @@ def build_policy(config: str, env):
     if planning is None:
         behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("planning_strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
+        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
 
-    behavior.initialize({s for s in range(env.get_number_of_tiles())}, constants.ACTION_SET, env)
+    presents = tuple(env.get_tiles_with_presents())
+    subsets = [tuple(comb) for i in range(len(presents) + 1) for comb in itertools.combinations(presents, i)]
+    behavior.initialize({ (s,t,subset) # a state is a tuple (current_position, traverser_position, presents_positions
+                          for s in range(env.get_number_of_tiles())
+                          for t in range(-1, env.get_number_of_tiles())
+                          for subset in subsets},
+                        constants.ACTION_SET, env)
     target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
     return behavior, target
 
@@ -120,9 +131,9 @@ def test_target(target, env, config):
     norm_violations = extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
-    traverser_state = env.get_current_traverser_state()  # this is -1 if there is no traverser
+    traverser_state = env.get_current_traverser_position()  # this is -1 if there is no traverser
     layout, width, height = env.get_layout()
-    goal_state = env.get_goal_state()
+    goal_state = env.get_goal_tile()
     slips = 0
 
     for step in range(max_steps):
@@ -136,7 +147,7 @@ def test_target(target, env, config):
         if norm_violations is not None:
             check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height, goal_state)
 
-        traverser_state = env.get_current_traverser_state()
+        traverser_state = env.get_current_traverser_position()
         state = new_state
 
         if terminated or truncated:
@@ -155,7 +166,7 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
     """
     state, action_name, new_state, reward = trail_of_target[-1]
 
-
+    # TODO: this needs to be updated for new states!
     for norm in norm_violations.keys():
 
         if norm == "notReachedGoal":

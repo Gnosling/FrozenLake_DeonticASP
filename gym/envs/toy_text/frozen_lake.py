@@ -36,8 +36,8 @@ MAPS = {
     "4x4_T": [
         "SFFF",
         "FHFH",
-        "PPFP",
-        "PPPG"
+        "FPFP",
+        "FFPG"
     ],
     "8x8": [
         "SFFFFFFF",
@@ -301,12 +301,12 @@ class FrozenLakeEnv(Env):
     def get_number_of_tiles(self):
         return self.nrow * self.ncol
 
-    def get_tile_of_state_number(self, state: int):
+    def get_tile_symbol_of_state_number(self, state: int):
         row = int(state / self.nrow)
         col = state % self.ncol
         return self.desc[row][col]
 
-    def get_goal_state(self):
+    def get_goal_tile(self):
         counter = 0
         for row in range(len(self.desc)):
             for col in range(len(self.desc[row])):
@@ -314,13 +314,13 @@ class FrozenLakeEnv(Env):
                     return counter
                 counter += 1
 
-    def get_current_traverser_state(self) -> int:
+    def get_current_traverser_position(self) -> int:
         if self.traverser_path:
             return self.traverser_path[self.traverser_tracker]
         return -1
 
-    def get_states_with_presents(self):
-        self.remove_present_from_tile(self.get_current_traverser_state())
+    def get_tiles_with_presents(self):
+        self.remove_present_from_tile(self.get_current_traverser_position())
         counter = 0
         ret = []
         for row in range(len(self.desc)):
@@ -328,14 +328,15 @@ class FrozenLakeEnv(Env):
                 if self.desc[row][col] == b'P':
                     ret.append(counter)
                 counter += 1
+        ret.sort()
         return ret
 
-    def remove_present_from_tile(self, state: int):
-        if state is None or state < 0:
+    def remove_present_from_tile(self, tile: int):
+        if tile is None or tile < 0:
             pass
 
-        row = int(state / self.nrow)
-        col = state % self.ncol
+        row = int(tile / self.nrow)
+        col = tile % self.ncol
         if self.desc[row][col] == b'P':
             self.desc[row][col] = b'F'
 
@@ -343,30 +344,34 @@ class FrozenLakeEnv(Env):
         return self.desc, len(self.desc[0]), len(self.desc)
 
     def step(self, a):
-        transitions = self.P[self.s][a] # transition = [prop, next_state, reward, terminated]
+        transitions = self.P[self.s][a] # transition = [prop, next_position, reward, terminated]
         i = categorical_sample([t[0] for t in transitions], self.np_random)
-        prob, state, reward, terminated = transitions[i]
-        tile = self.get_tile_of_state_number(state)
+        prob, current_position, reward, terminated = transitions[i]
+        tile = self.get_tile_symbol_of_state_number(current_position)
 
-        self.s = state
+        self.s = current_position
         self.lastaction = a
-        ret_values = (int(state), reward, terminated, False, {"prob": prob})
+        presents = tuple(self.get_tiles_with_presents())
+        ret_values = ( (int(current_position), -1, presents), reward, terminated, False, {"prob": prob})
 
         if tile in b"P":
-            self.remove_present_from_tile(state)
+            self.remove_present_from_tile(current_position)
 
         if self.traverser_path:
             # case traverser exist
             if self.traverser_tracker < len(self.traverser_path)-1:
                 self.traverser_tracker += 1
-            traverser_state = self.traverser_path[self.traverser_tracker]
+            traverser_position = self.traverser_path[self.traverser_tracker]
 
-            if self.get_tile_of_state_number(traverser_state) in b"P":
-                self.remove_present_from_tile(traverser_state)
+            if self.get_tile_symbol_of_state_number(traverser_position) in b"P":
+                self.remove_present_from_tile(traverser_position)
+                presents = tuple(self.get_tiles_with_presents())
 
-            if state == traverser_state and tile in b"C":
+            ret_values = ((int(current_position), traverser_position, presents), reward, terminated, False, {"prob": prob})
+
+            if current_position == traverser_position and tile in b"C":
                 # terminate episode with reward 0
-                ret_values = (int(state), 0, True, False, {"prob": prob})
+                ret_values = ((int(current_position), traverser_position, presents), 0, True, False, {"prob": prob})
 
         if self.render_mode == "human":
             self.render()
@@ -391,7 +396,14 @@ class FrozenLakeEnv(Env):
 
         if self.render_mode == "human":
             self.render()
-        return int(self.s), {"prob": 1}
+
+        if self.traverser_path:
+            traverser_position = self.traverser_path[self.traverser_tracker]
+        else:
+            traverser_position = -1
+
+        presents = tuple(self.get_tiles_with_presents())
+        return (int(self.s), traverser_position, presents), {"prob": 1}
 
     def render(self):
         if self.render_mode is None:

@@ -24,7 +24,6 @@ class PlannerPolicy(Policy):
         self.norm_set = norm_set
         self.evaluation_function = evaluation_function
         self.visited_states = []
-        self.current_state_of_traverser = -1
         self.last_performed_action = None
 
 
@@ -38,19 +37,19 @@ class PlannerPolicy(Policy):
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
-            action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
+            action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
 
         elif self.strategy == "plan_for_new_states":
             if state not in self.visited_states:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
             else:
                 action = self._retrieve_action_from_table(state)
 
         elif self.strategy == "delta_greedy_planning":
             if random.random() < self.delta:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
             else:
                 action = self._retrieve_action_from_table(state)
 
@@ -59,7 +58,7 @@ class PlannerPolicy(Policy):
             chance = math.exp(self.delta * -1 * self.call_count)
             if random.random() < chance:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.current_state_of_traverser, self.last_performed_action, state, self.current_presents, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
             else:
                 action = self._retrieve_action_from_table(state)
 
@@ -82,10 +81,8 @@ class PlannerPolicy(Policy):
             return self.q_table.get_best_action_for_state(state)
 
 
-    def updated_dynamic_env_aspects(self, current_state_of_traverser, last_performed_action, current_presents):
-        self.current_state_of_traverser = current_state_of_traverser
+    def updated_dynamic_env_aspects(self, last_performed_action):
         self.last_performed_action = last_performed_action
-        self.current_presents = current_presents
 
     def reset_after_episode(self):
         self.visited_states = []

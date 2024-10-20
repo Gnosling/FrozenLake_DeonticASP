@@ -63,7 +63,7 @@ def _extract_first_action_from_telingo_output(output: str):
     return best_action.upper()
 
 
-def plan_action(level: str, planning_horizon: int, current_state_of_traverser: int, last_performed_action: str, current_state: int = 0, presents: list = None, norm_set: int = 1, evaluation_function: int = 1):
+def plan_action(level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, evaluation_function: int = 1):
     """
     calls potassco's telingo to perform ASP-solving.
     uses general_reasoner for RL, frozenlake_reasoner for frozenlake, level-data and a helper file to handle dynamic properties (eg. to parse the currrent-state in the solver)
@@ -73,7 +73,7 @@ def plan_action(level: str, planning_horizon: int, current_state_of_traverser: i
     file1 = os.path.join(os.getcwd(), "src", "planning", "general_reasoning.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_reasoning.lp")
     file3 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
-    _fill_file_for_dynamic_parameters(current_state, current_state_of_traverser, last_performed_action, presents)
+    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2])) # TODO: update with new state
     file4 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
     file5 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp")
     file6 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")

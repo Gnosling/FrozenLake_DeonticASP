@@ -1,9 +1,10 @@
 configs = {
     "T1": {"repetitions": 20, "episodes": 100, "max_steps": 50,
              "learning": {"discount": 0.9, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None, "epsilon": 0.3, "initialisation": "safe", "reversed_q_learning": True},
-             "frozenlake": {"name": "FrozenLake4x4_A", "slippery": True, "traverser_path": "4x4_A"},
-             "planning" : {"delta": 0.5, "planning_strategy": "delta_greedy_planning", "planning_horizon": 12},
-             "deontic": {"norm_set": 7, "evaluation_function": 3}
+             "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
+             "planning" : {"delta": 0.5, "strategy": "delta_greedy_planning", "planning_horizon": 12},
+             "deontic": {"norm_set": 7, "evaluation_function": 3},
+             "enforcing": {"norm_set": 7, "strategy": "guardrail | fixing | alteration", "enforcing_horizon": 3},
              },
     "T2": {"repetitions": 10, "episodes": 10, "max_steps": 50,
            "discount": 1.0, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": 0, "reversed_q_learning": False,
