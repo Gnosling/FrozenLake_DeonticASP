@@ -1,10 +1,9 @@
 from src import *
 
 controller = Controller()
-# controller.run_experiment("A25")
+# controller.plot_experiment("T1")
 controller.run_experiment("T1")
-# controller.run_experiment("B17")
-# controller.run_experiment("B18")
+
 
 # test_suite = "A"
 # test_size = test_suite_size.get(test_suite)

@@ -1,6 +1,6 @@
 % Chisholm, deontic detachment (forbidden(turnedOnTraverserTile <- occupyTraverserTile))
 
-% Checks:
+% Norms:
 % occupiedTraverserTile
 % turnedOnTraverserTile
 % notReachedGoal

@@ -1,6 +1,6 @@
 % presents
 
-% Checks:
+% Norms:
 % notReachedGoal
 % stolePresent
 % missedPresents

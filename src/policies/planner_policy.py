@@ -40,6 +40,7 @@ class PlannerPolicy(Policy):
             action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
 
         elif self.strategy == "plan_for_new_states":
+            # TODO: like full new states or only for new positions?
             if state not in self.visited_states:
                 debug_print("planning was triggered")
                 action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)

@@ -1,8 +1,9 @@
 % safe area
 
-% Checks:
+% Norms:
 % leftSafeArea
 % didNotReturnToSafeArea
+% notReachedGoal
 
 #program always.
 
@@ -18,4 +19,10 @@ didNotReturnToSafeArea :- currentState(X), not safe(Y), tile(Y), X=Y, 'currentSt
 currentViolation(forbidden(didNotReturnToSafeArea)) :- forbidden(didNotReturnToSafeArea), didNotReturnToSafeArea.
 level(didNotReturnToSafeArea,3).
 
-% TODO: test those norms a bit more
+% The agent must reach the goal tile
+obligatory(reachedGoal).
+reachedGoal :- goalStateReached.
+level(reachedGoal,4).
+
+#program final.
+currentViolation(obligatory(reachedGoal)) :- not reachedGoal.

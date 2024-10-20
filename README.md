@@ -14,7 +14,7 @@ pip install -r requirements.txt
   - H: notReachedGoal
   - M: occupiedTraverserTile
   - H: turnedOnTraverserTile (CTD of above)
-  - M: stolePresent (took at least one) (conflicting below)
+  - M: stolePresent (took at least one) (conflicting below) (Agent always picks up first)
   - M: missedPresents (did not take all available) (conflicting above)
   - L: movedAwayFromGoal (the distance to the goal tile has increased)
   - L: leftSafeArea ('safe' iff not near a hole, only triggers on exit)

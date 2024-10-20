@@ -145,7 +145,7 @@ def test_target(target, env, config):
             slips += 1
 
         if norm_violations is not None:
-            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, layout, width, height, goal_state)
+            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, env, width, height, goal_state)
 
         traverser_state = env.get_current_traverser_position()
         state = new_state
@@ -155,41 +155,87 @@ def test_target(target, env, config):
 
     return trail_of_target, norm_violations, slips
 
-
-def check_violations(norm_violations, trail_of_target, terminated, traverser_state, layout, width, height, goal):
+def tile_is_safe(tile: int, env, width, height):
     """
-    checks violations of norms in the current step of:
-        notReachedGoal
-        occupiedTraverserTile
-        turnedOnTraverserTile
-        movedAwayFromGoal
+    checks if there are holes next to the input tile, if so returns false
+    """
+    if env.get_tile_symbol_of_state_number(tile) in b'H':
+        return False
+
+    row = tile/height
+    col = tile%width
+    adjacent_tiles = []
+    if row > 0:
+        adjacent_tiles.append(tile-width)
+    if row < height-1:
+        adjacent_tiles.append(tile+width)
+    if col > 0:
+        adjacent_tiles.append(tile-1)
+    if col < width-1:
+        adjacent_tiles.append(tile+1)
+
+    for neighbour in adjacent_tiles:
+        if env.get_tile_symbol_of_state_number(neighbour) in b'H':
+            return False
+
+    return True
+
+def check_violations(norm_violations, trail_of_target, terminated, traverser_state, env, width, height, goal):
+    """
+    checks violations of norms in the current step and fills up norm_violations dictionary with the counter of the respective violation
     """
     state, action_name, new_state, reward = trail_of_target[-1]
+    old_position = state[0]
+    new_position = new_state[0]
+    previous_presents = list(state[2])
+    remaining_presents = list(new_state[2])
 
-    # TODO: this needs to be updated for new states!
     for norm in norm_violations.keys():
-
         if norm == "notReachedGoal":
             if terminated:
-                if new_state != goal:
+                if new_position != goal:
                     norm_violations[norm] += 1
 
         elif norm == "occupiedTraverserTile":
-            if state == traverser_state:
+            if old_position == traverser_state:
                 norm_violations[norm] += 1
 
         elif norm == "turnedOnTraverserTile":
             if len(trail_of_target) > 1:
-                if state == traverser_state:
-                    # TODO: this is the proposed action, and thus correct even if slipped
+                if old_position == traverser_state:
+                    # TODO: this is the proposed action, and thus correct even if slipped -> is ok i guess
                     _, previous_action, _, _ = trail_of_target[-2]
                     if action_name != previous_action:
                         norm_violations[norm] += 1
 
+        elif norm == "stolePresent":
+            if len(previous_presents) != len(remaining_presents):
+                difference = [p for p in previous_presents if p not in remaining_presents]
+                # Note: Agent always picks up first
+                if new_position in difference:
+                    norm_violations[norm] += 1
+
+        elif norm == "missedPresents":
+            if terminated:
+                remaining_presents = list(new_state[2])
+                if len(remaining_presents) > 0:
+                    norm_violations[norm] += 1
+
+
         elif norm == "movedAwayFromGoal":
-            previous_distance = abs(state%width - goal%width) + abs(int(state/height) - int(goal/height))
-            new_distance = abs(new_state%width - goal%width) + abs(int(new_state/height) - int(goal/height))
+            previous_distance = abs(old_position%width - goal%width) + abs(int(old_position/height) - int(goal/height))
+            new_distance = abs(new_position%width - goal%width) + abs(int(new_position/height) - int(goal/height))
             if new_distance > previous_distance:
+                norm_violations[norm] += 1
+
+        elif norm == "leftSafeArea":
+            # old was, new is not
+            if tile_is_safe(old_position, env, width, height) and not tile_is_safe(new_position, env, width, height):
+                norm_violations[norm] += 1
+
+        elif norm == "didNotReturnToSafeArea":
+            # both are not safe
+            if not tile_is_safe(old_position, env, width, height) and not tile_is_safe(new_position, env, width, height):
                 norm_violations[norm] += 1
 
         else:
@@ -322,9 +368,13 @@ def plot_experiment(config: str):
             'occupiedTraverserTile': 'darkred',
             'turnedOnTraverserTile': 'red',
             'notReachedGoal': 'royalblue',
-            'movedAwayFromGoal': 'olive',
-        }
-        # ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow', 'purple', 'orange', 'brown'] https://matplotlib.org/stable/gallery/color/named_colors.html
+            'movedAwayFromGoal': 'mediumseagreen',
+            'leftSafeArea': 'gold',
+            'didNotReturnToSafeArea': 'darkorange',
+            'stolePresent': 'deeppink',
+            'missedPresents': 'mediumvioletred'
+        } # see https://matplotlib.org/stable/gallery/color/named_colors.html
+
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
         violations = []
         with open(path, 'r', newline='') as file:
@@ -346,8 +396,8 @@ def plot_experiment(config: str):
         plt.legend(loc='upper right', framealpha=1.0)
 
         plt.xlim(1, episodes)
-        plt.ylim(0, 10)
-        plt.yticks(range(0, 11, 1))
+        plt.ylim(0, 20)
+        plt.yticks(range(0, 21, 1))
 
         plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_violations.png"))
         # plt.show()

@@ -37,9 +37,12 @@ failedStateReached :- currentState(S), hole(S).
 failedStateReached :- currentState(S), currentStateOfTraverser(S), cracked(S).
 terminalStateReached :- goalStateReached.
 terminalStateReached :- failedStateReached.
-takePresent(S) :- currentState(S), present(S), not presentTaken(S), not currentStateOfTraverser(S).
+
+% handle presents (agent always picks up first)
+takePresent(S) :- currentState(S), present(S), not presentTaken(S).
 presentTaken(S) :- 'takePresent(S).
 presentTaken(S) :- 'presentTaken(S).
+presentTaken(S) :- currentStateOfTraverser(S), present(S), not presentTaken(S), not currentState(S).
 
 
 % define safe tiles as tiles not next to a hole

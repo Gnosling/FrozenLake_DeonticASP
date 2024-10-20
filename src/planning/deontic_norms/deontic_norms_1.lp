@@ -1,4 +1,4 @@
-% Checks:
+% Norms:
 % notReachedGoal
 
 #program always.
