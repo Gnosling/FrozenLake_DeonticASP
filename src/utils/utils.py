@@ -42,7 +42,67 @@ def action_name_to_number(name: str) -> int:
         return None
 
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict]:
+def extract_performed_action(state, new_state, width):
+    diff = new_state - state
+    if diff == 1:
+        return "RIGHT"
+    elif diff == -1:
+        return "LEFT"
+    elif diff == width:
+        return "DOWN"
+    elif diff == -width:
+        return "UP"
+
+def _compute_successors(state, action, width, height):
+    """
+    returns all possible states the action could slip into
+    """
+    successors = []
+    left_edge = state % width == 0
+    right_edge = state % width == width-1
+    upper_edge = int(state/width) == 0
+    lower_edge = int(state/width) == height-1
+
+    if action == "LEFT":
+        if not left_edge:
+            successors.append(state-1)
+        if not upper_edge:
+            successors.append(state-width)
+        if not lower_edge:
+            successors.append(state+width)
+        if left_edge or upper_edge or lower_edge:
+            successors.append(state)
+    elif action == "DOWN":
+        if not left_edge:
+            successors.append(state - 1)
+        if not lower_edge:
+            successors.append(state + width)
+        if not right_edge:
+            successors.append(state + 1)
+        if left_edge or right_edge or lower_edge:
+            successors.append(state)
+    elif action == "RIGHT":
+        if not upper_edge:
+            successors.append(state-width)
+        if not lower_edge:
+            successors.append(state+width)
+        if not right_edge:
+            successors.append(state + 1)
+        if right_edge or upper_edge or lower_edge:
+            successors.append(state)
+    elif action == "UP":
+        if not left_edge:
+            successors.append(state - 1)
+        if not upper_edge:
+            successors.append(state-width)
+        if not right_edge:
+            successors.append(state + 1)
+        if left_edge or upper_edge or right_edge:
+            successors.append(state)
+
+    return successors
+
+def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict, dict]:
     if config_name in configs.keys():
         values = configs.get(config_name)
         repetitions = values.get("repetitions")
@@ -52,7 +112,8 @@ def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict
         frozenlake = values.get("frozenlake")
         planning = values.get("planning")
         deontic = values.get("deontic")
-        return repetitions, episodes, max_steps, learning, frozenlake, planning, deontic
+        enforcing = values.get("enforcing")
+        return repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing
     else:
         raise ValueError("Configuration was not found!")
 
@@ -62,7 +123,7 @@ def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
 
 
 def build_policy(config: str, env):
-    _, _, _, learning, frozenlake, planning, deontic = read_config_param(config)
+    _, _, _, learning, frozenlake, planning, deontic, _= read_config_param(config)
 
     if planning is None:
         behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
@@ -114,7 +175,7 @@ def get_average_violations(results, norm_set):
     episodes = len(results[0])
     repetitions = len(results)
     for episode in range(episodes):
-        total_per_episode = extract_norm_keys(norm_set)
+        total_per_episode = _extract_norm_keys(norm_set)
         avg_per_episode = dict()
         for rep in range(repetitions):
             for norm in total_per_episode.keys():
@@ -127,27 +188,25 @@ def get_average_violations(results, norm_set):
 
 
 def test_target(target, env, config):
-    _, _, max_steps, _, frozenlake, _, deontic = read_config_param(config)
-    norm_violations = extract_norm_keys(deontic.get("norm_set"))
+    _, _, max_steps, _, frozenlake, _, deontic, _ = read_config_param(config)
+    norm_violations = _extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
-    traverser_state = env.get_current_traverser_position()  # this is -1 if there is no traverser
     layout, width, height = env.get_layout()
-    goal_state = env.get_goal_tile()
     slips = 0
 
     for step in range(max_steps):
         proposed_action = target.suggest_action(state)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(proposed_action))
         trail_of_target.append([state, proposed_action, new_state, reward])
+        last_performed_action = extract_performed_action(state, new_state, width)
 
         if info.get("prob") == 0.1:
             slips += 1
 
         if norm_violations is not None:
-            check_violations(norm_violations, trail_of_target, terminated or step == max_steps-1, traverser_state, env, width, height, goal_state)
+            _check_violations(norm_violations, trail_of_target, last_performed_action, terminated or step == max_steps - 1, env)
 
-        traverser_state = env.get_current_traverser_position()
         state = new_state
 
         if terminated or truncated:
@@ -155,7 +214,7 @@ def test_target(target, env, config):
 
     return trail_of_target, norm_violations, slips
 
-def tile_is_safe(tile: int, env, width, height):
+def _tile_is_safe(tile: int, env, width, height):
     """
     checks if there are holes next to the input tile, if so returns false
     """
@@ -180,13 +239,17 @@ def tile_is_safe(tile: int, env, width, height):
 
     return True
 
-def check_violations(norm_violations, trail_of_target, terminated, traverser_state, env, width, height, goal):
+def _check_violations(norm_violations, trail_of_target, last_performed_action, terminated, env):
     """
     checks violations of norms in the current step and fills up norm_violations dictionary with the counter of the respective violation
     """
-    state, action_name, new_state, reward = trail_of_target[-1]
+    layout, width, height = env.get_layout()
+    goal = env.get_goal_tile()
+
+    state, action_name, new_state, _ = trail_of_target[-1]
     old_position = state[0]
     new_position = new_state[0]
+    traverser_state = state[0] # TODO: which traveser shouldt be taken here?
     previous_presents = list(state[2])
     remaining_presents = list(new_state[2])
 
@@ -197,15 +260,15 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
                     norm_violations[norm] += 1
 
         elif norm == "occupiedTraverserTile":
-            if old_position == traverser_state:
+            if old_position == traverser_state: # TODO: old or new position?
                 norm_violations[norm] += 1
 
         elif norm == "turnedOnTraverserTile":
             if len(trail_of_target) > 1:
                 if old_position == traverser_state:
-                    # TODO: this is the proposed action, and thus correct even if slipped -> is ok i guess
-                    _, previous_action, _, _ = trail_of_target[-2]
-                    if action_name != previous_action:
+                    # _, previous_action, _, _ = trail_of_target[-2] # Note: last_proposed_action is not the same as last_performed_action
+                    # TODO: test this violation!
+                    if action_name != last_performed_action:
                         norm_violations[norm] += 1
 
         elif norm == "stolePresent":
@@ -230,12 +293,12 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
 
         elif norm == "leftSafeArea":
             # old was, new is not
-            if tile_is_safe(old_position, env, width, height) and not tile_is_safe(new_position, env, width, height):
+            if _tile_is_safe(old_position, env, width, height) and not _tile_is_safe(new_position, env, width, height):
                 norm_violations[norm] += 1
 
         elif norm == "didNotReturnToSafeArea":
             # both are not safe
-            if not tile_is_safe(old_position, env, width, height) and not tile_is_safe(new_position, env, width, height):
+            if not _tile_is_safe(old_position, env, width, height) and not _tile_is_safe(new_position, env, width, height):
                 norm_violations[norm] += 1
 
         else:
@@ -244,7 +307,7 @@ def check_violations(norm_violations, trail_of_target, terminated, traverser_sta
     return norm_violations
 
 
-def extract_norm_keys(norm_set):
+def _extract_norm_keys(norm_set):
     if norm_set is None:
         return None
 
@@ -264,6 +327,43 @@ def extract_norm_keys(norm_set):
     # TODO: define order of norms to be put in the dict here! such that plots always have same order
     return dict(sorted(norms.items()))
 
+
+def guardrail(enforcing_config, state, previous_state, last_performed_action, last_proposed_action, env):
+    """
+    guardrails the 'allowed' moves for the given state.
+    returns the norm-confirm next actions selectable for this state
+    (only considers direct violations in the successor and no future violations of all paths)
+    """
+    allowed_actions = {action for action in constants.ACTION_SET}
+    if enforcing_config is None:
+        return allowed_actions
+
+    layout, width, height = env.get_layout()
+    goal = env.get_goal_tile()
+    holes = env.get_tiles_with_holes()
+    sum_of_violations = dict()
+
+    # Note: foreach action all non-deterministic successors are added to the trail and checked
+    # If all actions are not allowed, then the one with the minimal sum is returned
+    # TODO: should it consider all successors -> i guess so
+    for action in constants.ACTION_SET:
+        for successor in _compute_successors(state, action, width, height):
+            trail = [[previous_state, last_proposed_action, state, False]]
+            norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
+            terminated = successor == goal or successor in holes
+
+            trail.append([state, action, successor, terminated])
+            _check_violations(norm_violations, trail, last_performed_action, terminated, env)
+            if any(value > 0 for value in norm_violations.values()):
+                allowed_actions.remove(action)
+                sum_of_violations[action] = sum(norm_violations.values())
+                break
+
+    if not allowed_actions:
+        minimal_violating_action = min(sum_of_violations, key=sum_of_violations.get)
+        return list(minimal_violating_action)
+    else:
+        return allowed_actions
 
 def store_results(config: str, returns, steps, slips, violations):
     conf = configs.get(config)
@@ -295,7 +395,8 @@ def store_results(config: str, returns, steps, slips, violations):
 
 
 def plot_experiment(config: str):
-    repetitions, episodes, max_steps, learning, frozenlake, planning, deontic = read_config_param(config)
+    # TODO: use seperate plots for enforcing?
+    repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     optimum = 1
 
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")

@@ -36,18 +36,19 @@ pip install -r requirements.txt
 - non-deterministic policy --> not needed / beneficial
 
 
-### policy can be enforced afterwards:
-  - experiment what happens if the norms (or even the traverser?) change and trigger a fixing (eg. trained agent now has to follow more norms)
+### policy can be enforced:
+The enforcement can happen during the training (ie. behavior policy) or afterwards (ie. the final target-policies).
+
 - --> guardrail (maybe utilizes something from davide?, at least emery's approach):
   - reduces action selections before policy (only on current state) beforehand (can be checked in python-code)
-  - might restrict optimal solutions, but simple and hopefully effective
+  - might restrict optimal solutions and exploration, but simple and hopefully effective
 - --> fixing (sebastians approach):
-  - the next enf-horizon actions are analysed by ASP-planner for norm violations and potentially fixed, no policy changed though
+  - the next enforcing-horizon actions are analysed by ASP-planner for norm violations and potentially fixed, no policy changed though
   - the current act(move(X)) of the path must be inserted dynamically and checked for violations, if any occured then activate normal planning
-  - need special ASP-checker of norms
+  - need special ASP-checker of norms, how does this relate with the normal planner?
   - compared to others high computational effort, but most flexible and best monitoring 
 - --> reward_shaping (paper-one):
-  - the rewards use penalties if violations occur, up to the last enf-horizon states
+  - the rewards use penalties if violations occur, up to the last enforcing-horizon states
   - (maybe we can use alteration of the policy still, as maybe the fourth mode?)
   - might worsen policy also is in the 'real' testing phase, but could improve, check paper to see how to do that
   - --> as long as function is potential-based, there is no drop in optimal policy

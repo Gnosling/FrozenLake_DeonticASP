@@ -44,8 +44,8 @@ class Policy:
     def value_of_state_action_pair(self, state, action) -> float:
         return self.q_table.value_of(state, action)
 
-    def suggest_action(self, state) -> Any:
-        return self.q_table.get_best_action_for_state(state)
+    def suggest_action(self, state, enforcing, env) -> Any:
+        return self.q_table.get_best_action_for_state(state) # TODO: use enforcing even here as well for target after training
 
     def update_learning_rate(self):
         if self.learning_rate_strategy == "constant":
@@ -57,9 +57,9 @@ class Policy:
         else:
             raise ValueError(f"invalid learning-rate strategy: {self.learning_rate_strategy}")
 
-    def updated_dynamic_env_aspects(self, last_performed_action):
+    def updated_dynamic_env_aspects(self, last_performed_action, last_proposed_action, previous_state):
         """
-        Currently only needed in planner_policy to keep track of past actions in the environment
+        Currently only needed in planner_policy to keep track of past events in the environment
         """
         pass
 

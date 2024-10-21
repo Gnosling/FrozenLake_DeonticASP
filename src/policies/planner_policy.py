@@ -7,6 +7,7 @@ from .q_table import QTable
 from src.planning.planning import *
 from src.utils.constants import ACTION_SET
 from src.utils.constants import debug_print
+from src.utils.utils import guardrail
 
 
 class PlannerPolicy(Policy):
@@ -25,46 +26,51 @@ class PlannerPolicy(Policy):
         self.evaluation_function = evaluation_function
         self.visited_states = []
         self.last_performed_action = None
+        self.last_proposed_action = None
+        self.previous_state = None
 
 
-    def suggest_action(self, state) -> Any:
+    def suggest_action(self, state, enforcing, env) -> Any:
         """
-        depending on the planning_strategy different suggestion are made using parts of ASP-solving and RL-Learning
+        depending on the planning_strategy different suggestion are made using parts of ASP-solving and RL-Learning.
+        Enforcing strategies are also handled here.
         """
         action = None
-        # TODO: since planning might yield short solutions, what happens is the way is too long,
-        # ie. -1 for short failure is better than -20+10 for long way? --> use as reason to set goal rewards high
+
+        allowed_actions = ACTION_SET
+        if "guardrail" in enforcing.get("strategy"):
+            allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
-            action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+            action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
 
         elif self.strategy == "plan_for_new_states":
-            # TODO: like full new states or only for new positions?
+            # TODO: use full new states or only for new positions?
             if state not in self.visited_states:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
             else:
-                action = self._retrieve_action_from_table(state)
+                action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_greedy_planning":
             if random.random() < self.delta:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
             else:
-                action = self._retrieve_action_from_table(state)
+                action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_decaying_planning":
             # exponential decay
             chance = math.exp(self.delta * -1 * self.call_count)
             if random.random() < chance:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function)
+                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
             else:
-                action = self._retrieve_action_from_table(state)
+                action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "no_planning":
-            action = self._retrieve_action_from_table(state)
+            action = self._retrieve_action_from_table(state, allowed_actions)
 
         else:
             raise ValueError(f"invalid planning strategy: {self.strategy}")
@@ -74,16 +80,18 @@ class PlannerPolicy(Policy):
         self.call_count = self.call_count+1
         return action
 
-    def _retrieve_action_from_table(self, state):
+    def _retrieve_action_from_table(self, state, allowed_actions):
         if random.random() < self.epsilon:
             debug_print("exploration was triggered")
-            return random.choice(list(ACTION_SET))
+            return random.choice(list(allowed_actions))
         else:
-            return self.q_table.get_best_action_for_state(state)
+            return self.q_table.get_best_allowed_action_for_state(state, allowed_actions)
 
 
-    def updated_dynamic_env_aspects(self, last_performed_action):
+    def updated_dynamic_env_aspects(self, last_performed_action, last_proposed_action, previous_state):
         self.last_performed_action = last_performed_action
+        self.last_proposed_action = last_proposed_action
+        self.previous_state = previous_state
 
     def reset_after_episode(self):
         self.visited_states = []

@@ -72,3 +72,5 @@ nextReward(30) :- takePresent(S), currentState(S).
 
 #program dynamic.
 lastPerformedAction(move(X)) :- 'act(move(X)). % this is needed since the first last action comes from the environment
+% since only the first moves might be guardrailed, every succeeding move is allowed
+allowed_actions(move((left))). allowed_actions(move((down))). allowed_actions(move((right))). allowed_actions(move((up))).

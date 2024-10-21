@@ -16,7 +16,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        repetitions, episodes, max_steps, learning, frozenlake, planning, deontic = read_config_param(config)
+        repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
 
         # -----------------------------------------------------------------------------
@@ -42,15 +42,18 @@ class Controller:
                 debug_print("_____________________________________________")
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
-                trail_of_behavior = []  # list of [state, action_name, new_state, rewards]
+                layout, width, height = env.get_layout()
+                trail_of_behavior = []  # list of [state, proposed_action_name, new_state, rewards]
                 # Note: a state is (current_position, traverser_position, list_of_presents)
+                last_performed_action = None
                 action_name = None
+                previous_state = None
 
                 for step in range(max_steps):
                     debug_print(env.render())
 
-                    behavior.updated_dynamic_env_aspects(action_name)
-                    action_name = behavior.suggest_action(state)
+                    behavior.updated_dynamic_env_aspects(last_performed_action, action_name, previous_state)
+                    action_name = behavior.suggest_action(state, enforcing, env)
                     debug_print(f'Action: {action_name}')
 
                     new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
@@ -60,6 +63,8 @@ class Controller:
                         behavior.update_after_step(state, action_name, new_state, reward)
 
                     trail_of_behavior.append([state, action_name, new_state, reward])
+                    previous_state = state
+                    last_performed_action = extract_performed_action(state, new_state, width)
                     state = new_state
 
                     if terminated or truncated:
@@ -72,7 +77,6 @@ class Controller:
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
 
-                # TODO: analyse values of target learning might be too weak (works though but values are low), eithe increase episodes or learning rate
                 trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode}: {expected_return}")

@@ -4,7 +4,7 @@ configs = {
            "learning": {"discount": 0.9, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None, "epsilon": 0.3, "initialisation": "safe", "reversed_q_learning": True},
            "planning": {"delta": 1, "strategy": "delta_greedy_planning", "planning_horizon": 12},
            "deontic": {"norm_set": 4, "evaluation_function": 3},
-           "enforcing": {"norm_set": 7, "strategy": "guardrail | fixing | alteration", "enforcing_horizon": 3},
+           "enforcing": {"norm_set": 7, "strategy": "guardrail | fixing | alteration", "enforcing_horizon": 3, "phase": "during_training | after_training"},
            },
 
     "T2": {"repetitions": 10, "episodes": 10, "max_steps": 50,

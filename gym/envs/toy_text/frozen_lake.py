@@ -326,6 +326,17 @@ class FrozenLakeEnv(Env):
             return self.traverser_path[self.traverser_tracker]
         return -1
 
+    def get_tiles_with_holes(self):
+        counter = 0
+        ret = []
+        for row in range(len(self.desc)):
+            for col in range(len(self.desc[row])):
+                if self.desc[row][col] == b'H':
+                    ret.append(counter)
+                counter += 1
+        ret.sort()
+        return ret
+
     def get_tiles_with_presents(self):
         self.remove_present_from_tile(self.get_current_traverser_position())
         counter = 0
