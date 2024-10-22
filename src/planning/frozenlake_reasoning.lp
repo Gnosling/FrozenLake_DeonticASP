@@ -8,26 +8,37 @@
 #program always.
 
 % define possible actions
-executable(move(left)) :- currentState(L), frozen(L-1), not leftEdge(L), not terminalStateReached.
-executable(move(down)) :- currentState(L), frozen(L+width), not lowerEdge(L), not terminalStateReached.
-executable(move(right)) :- currentState(L), frozen(L+1), not rightEdge(L), not terminalStateReached.
-executable(move(up)) :- currentState(L), frozen(L-width), not upperEdge(L), not terminalStateReached.
+executable(move(left)) :- currentState(L), frozen(L-1), not leftEdge(L).
+executable(move(left)) :- currentState(L), frozen(L), leftEdge(L).
+executable(move(down)) :- currentState(L), frozen(L+width), not lowerEdge(L).
+executable(move(down)) :- currentState(L), frozen(L), lowerEdge(L).
+executable(move(right)) :- currentState(L), frozen(L+1), not rightEdge(L).
+executable(move(right)) :- currentState(L), frozen(L), rightEdge(L).
+executable(move(up)) :- currentState(L), frozen(L-width), not upperEdge(L).
+executable(move(up)) :- currentState(L), frozen(L), upperEdge(L).
 
-executable(move(left)) :- currentState(L), cracked(L-1), not leftEdge(L), not terminalStateReached.
-executable(move(down)) :- currentState(L), cracked(L+width), not lowerEdge(L), not terminalStateReached.
-executable(move(right)) :- currentState(L), cracked(L+1), not rightEdge(L), not terminalStateReached.
-executable(move(up)) :- currentState(L), cracked(L-width), not upperEdge(L), not terminalStateReached.
+executable(move(left)) :- currentState(L), cracked(L-1), not leftEdge(L).
+executable(move(left)) :- currentState(L), cracked(L), leftEdge(L).
+executable(move(down)) :- currentState(L), cracked(L+width), not lowerEdge(L).
+executable(move(down)) :- currentState(L), cracked(L), lowerEdge(L).
+executable(move(right)) :- currentState(L), cracked(L+1), not rightEdge(L).
+executable(move(right)) :- currentState(L), cracked(L), rightEdge(L).
+executable(move(up)) :- currentState(L), cracked(L-width), not upperEdge(L).
+executable(move(up)) :- currentState(L), cracked(L), upperEdge(L).
 
 % assume traverser and presents don't move
 currentStateOfTraverser(X) :- 'currentStateOfTraverser(X).
 present(S) :- 'present(S).
 
 % define transitions
-% currentState(L):- currentState(L), not act(move(_)).
-currentState(L-1) :- 'act(move(left)), 'currentState(L).
-currentState(L+1) :- 'act(move(right)), 'currentState(L).
-currentState(L-width):- 'act(move(up)), 'currentState(L).
-currentState(L+width) :- 'act(move(down)), 'currentState(L).
+currentState(L-1) :- 'act(move(left)), 'currentState(L), not leftEdge(L).
+currentState(L) :- 'act(move(left)), 'currentState(L), leftEdge(L).
+currentState(L+1) :- 'act(move(right)), 'currentState(L), not rightEdge(L).
+currentState(L) :- 'act(move(right)), 'currentState(L), rightEdge(L).
+currentState(L-width):- 'act(move(up)), 'currentState(L), not upperEdge(L).
+currentState(L):- 'act(move(up)), 'currentState(L), upperEdge(L).
+currentState(L+width) :- 'act(move(down)), 'currentState(L), not lowerEdge(L).
+currentState(L) :- 'act(move(down)), 'currentState(L), lowerEdge(L).
 :- currentState(X), currentState(Y), X != Y.
 
 
@@ -73,4 +84,4 @@ nextReward(30) :- takePresent(S), currentState(S).
 #program dynamic.
 lastPerformedAction(move(X)) :- 'act(move(X)). % this is needed since the first last action comes from the environment
 % since only the first moves might be guardrailed, every succeeding move is allowed
-allowed_actions(move((left))). allowed_actions(move((down))). allowed_actions(move((right))). allowed_actions(move((up))).
+allowedAction(move((left))). allowedAction(move((down))). allowedAction(move((right))). allowedAction(move((up))).

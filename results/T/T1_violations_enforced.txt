@@ -1,0 +1,1 @@
+{'didNotReturnToSafeArea': 34.666666666666664, 'leftSafeArea': 5.333333333333333, 'notReachedGoal': 1.0}

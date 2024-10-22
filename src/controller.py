@@ -65,7 +65,7 @@ class Controller:
 
                     trail_of_behavior.append([state, action_name, new_state, reward])
                     previous_state = state
-                    last_performed_action = extract_performed_action(state, new_state, width)
+                    last_performed_action = extract_performed_action(state[0], new_state[0], width)
                     state = new_state
 
                     if terminated or truncated:
@@ -78,7 +78,7 @@ class Controller:
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
 
-                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config)
+                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config, False)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode}: {expected_return}")
                 debug_print(f"Violations of ep {episode}: {violations_of_target}")
@@ -121,7 +121,7 @@ class Controller:
             steps_of_targets = []
             slips_of_targets = []
             for target in final_target_policies:
-                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config)
+                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config, True)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 return_of_targets.append(expected_return)
                 violations_of_targets.append(violations_of_target)

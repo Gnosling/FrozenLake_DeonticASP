@@ -120,8 +120,8 @@ class QTable:
         returns the best action within the allowed_actions-set
         """
         available_actions = {action: self.table[state][action] for action in allowed_actions}
-        current_maximal_estimate = max(v for _, v in available_actions)
-        current_optimal_actions = [a for (a, v) in available_actions
+        current_maximal_estimate = max(available_actions.items())[1]
+        current_optimal_actions = [a for (a, v) in available_actions.items()
                                    if v == current_maximal_estimate]
 
         return random.choice(current_optimal_actions)

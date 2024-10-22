@@ -285,7 +285,12 @@ class FrozenLakeEnv(Env):
                         else:
                             li.append((1.0, *update_probability_matrix(row, col, a)))
 
-        self.observation_space = spaces.Discrete(nS)
+        nS = nrow * ncol
+        self.observation_space = spaces.Tuple((
+            spaces.Discrete(nS),
+            spaces.Discrete(nS+1),
+            spaces.Sequence(spaces.Discrete(nS+1))
+        ))
         self.action_space = spaces.Discrete(nA)
 
         self.render_mode = render_mode

@@ -38,6 +38,7 @@ pip install -r requirements.txt
 
 ### policy can be enforced:
 The enforcement can happen during the training (ie. behavior policy) or afterwards (ie. the final target-policies).
+During training if exploration is triggered no enforce-ment is applied.
 
 - --> guardrail (maybe utilizes something from davide?, at least emery's approach):
   - reduces action selections before policy (only on current state) beforehand (can be checked in python-code)

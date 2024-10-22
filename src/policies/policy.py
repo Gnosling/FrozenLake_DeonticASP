@@ -53,7 +53,7 @@ class Policy:
     def suggest_action(self, state, enforcing, env) -> Any:
 
         allowed_actions = ACTION_SET
-        if enforcing and enforcing.get("phase") == "during_training":
+        if enforcing:
             if "guardrail" in enforcing.get("strategy"):
                 allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action,
                                             self.last_proposed_action, env)

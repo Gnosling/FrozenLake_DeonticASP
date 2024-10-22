@@ -81,7 +81,7 @@ class PlannerPolicy(Policy):
     def _retrieve_action_from_table(self, state, allowed_actions):
         if random.random() < self.epsilon:
             debug_print("exploration was triggered")
-            return random.choice(list(allowed_actions))
+            return random.choice(list(ACTION_SET))  # Note: exploration is never restricted
         else:
             return self.q_table.get_best_allowed_action_for_state(state, allowed_actions)
 

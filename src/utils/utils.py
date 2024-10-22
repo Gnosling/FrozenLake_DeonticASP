@@ -1,13 +1,12 @@
 import os.path
 from typing import Tuple, List, Any
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 import ast
 import itertools
 
 from src.configs import configs
-from src.policies.policy import Policy
-from src.policies.planner_policy import PlannerPolicy
 from src.policies.q_table import QTable
 from . import constants
 from .constants import *
@@ -42,8 +41,8 @@ def action_name_to_number(name: str) -> int:
         return None
 
 
-def extract_performed_action(state, new_state, width):
-    diff = new_state - state
+def extract_performed_action(current_position: int, new_position : int, width):
+    diff = new_position - current_position
     if diff == 1:
         return "RIGHT"
     elif diff == -1:
@@ -53,54 +52,84 @@ def extract_performed_action(state, new_state, width):
     elif diff == -width:
         return "UP"
 
-def _compute_successors(state, action, width, height):
+def _compute_non_determinisic_successors(current_position: int, action, width, height):
     """
     returns all possible states the action could slip into
     """
     successors = []
-    left_edge = state % width == 0
-    right_edge = state % width == width-1
-    upper_edge = int(state/width) == 0
-    lower_edge = int(state/width) == height-1
+    left_edge = current_position % width == 0
+    right_edge = current_position % width == width - 1
+    upper_edge = int(current_position / width) == 0
+    lower_edge = int(current_position / width) == height - 1
 
     if action == "LEFT":
         if not left_edge:
-            successors.append(state-1)
+            successors.append(current_position - 1)
         if not upper_edge:
-            successors.append(state-width)
+            successors.append(current_position - width)
         if not lower_edge:
-            successors.append(state+width)
+            successors.append(current_position + width)
         if left_edge or upper_edge or lower_edge:
-            successors.append(state)
+            successors.append(current_position)
     elif action == "DOWN":
         if not left_edge:
-            successors.append(state - 1)
+            successors.append(current_position - 1)
         if not lower_edge:
-            successors.append(state + width)
+            successors.append(current_position + width)
         if not right_edge:
-            successors.append(state + 1)
+            successors.append(current_position + 1)
         if left_edge or right_edge or lower_edge:
-            successors.append(state)
+            successors.append(current_position)
     elif action == "RIGHT":
         if not upper_edge:
-            successors.append(state-width)
+            successors.append(current_position - width)
         if not lower_edge:
-            successors.append(state+width)
+            successors.append(current_position + width)
         if not right_edge:
-            successors.append(state + 1)
+            successors.append(current_position + 1)
         if right_edge or upper_edge or lower_edge:
-            successors.append(state)
+            successors.append(current_position)
     elif action == "UP":
         if not left_edge:
-            successors.append(state - 1)
+            successors.append(current_position - 1)
         if not upper_edge:
-            successors.append(state-width)
+            successors.append(current_position - width)
         if not right_edge:
-            successors.append(state + 1)
+            successors.append(current_position + 1)
         if left_edge or upper_edge or right_edge:
-            successors.append(state)
+            successors.append(current_position)
 
     return successors
+
+def _compute_successor(current_position: int, action, width, height):
+    """
+    returns the expected successor
+    """
+    left_edge = current_position % width == 0
+    right_edge = current_position % width == width - 1
+    upper_edge = int(current_position / width) == 0
+    lower_edge = int(current_position / width) == height - 1
+
+    if action == "LEFT":
+        if not left_edge:
+            return current_position-1
+        else:
+            return current_position
+    elif action == "DOWN":
+        if not lower_edge:
+            return current_position+width
+        else:
+            return current_position
+    elif action == "RIGHT":
+        if not right_edge:
+            return current_position+1
+        else:
+            return current_position
+    elif action == "UP":
+        if not upper_edge:
+            return current_position-width
+        else:
+            return current_position
 
 def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict, dict]:
     if config_name in configs.keys():
@@ -123,6 +152,8 @@ def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
 
 
 def build_policy(config: str, env):
+    from src.policies.policy import Policy
+    from src.policies.planner_policy import PlannerPolicy
     _, _, _, learning, frozenlake, planning, deontic, _= read_config_param(config)
 
     if planning is None:
@@ -187,7 +218,7 @@ def get_average_violations(results, norm_set):
     return average_violations
 
 
-def test_target(target, env, config):
+def test_target(target, env, config, after_training):
     _, _, max_steps, _, frozenlake, _, deontic, enforcing = read_config_param(config)
     norm_violations = _extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
@@ -200,11 +231,18 @@ def test_target(target, env, config):
 
     for step in range(max_steps):
         target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
-        action_name = target.suggest_action(state, enforcing)
+        if enforcing:
+            if (after_training and enforcing.get("phase") == "after_training") or (not after_training and enforcing.get("phase") == "during_training"):
+                action_name = target.suggest_action(state, enforcing, env)
+            else:
+                action_name = target.suggest_action(state, None, env)
+        else:
+            action_name = target.suggest_action(state, None, env)
+
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
         previous_state = state
-        last_performed_action = extract_performed_action(state, new_state, width)
+        last_performed_action = extract_performed_action(state[0], new_state[0], width)
 
         if info.get("prob") == 0.1:
             slips += 1
@@ -350,23 +388,23 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
 
     # Note: foreach action all non-deterministic successors are added to the trail and checked
     # If all actions are not allowed, then the one with the minimal sum is returned
-    # TODO: should it consider all successors -> i guess so
+    # TODO: should it consider all successors or only the expected?
     for action in constants.ACTION_SET:
-        for successor in _compute_successors(state, action, width, height):
-            trail = [[previous_state, last_proposed_action, state, False]]
-            norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
-            terminated = successor == goal or successor in holes
+        successor = _compute_successor(state[0], action, width, height)
+        trail = [[previous_state, last_proposed_action, state, False]]
+        norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
+        terminated = successor == goal or successor in holes
 
-            trail.append([state, action, successor, terminated])
-            _check_violations(norm_violations, trail, last_performed_action, terminated, env)
-            if any(value > 0 for value in norm_violations.values()):
-                allowed_actions.remove(action)
-                sum_of_violations[action] = sum(norm_violations.values())
-                break
+        trail.append([state, action, (successor, state[1], state[2]), terminated])
+        _check_violations(norm_violations, trail, last_performed_action, terminated, env)
+        if any(value > 0 for value in norm_violations.values()):
+            allowed_actions.remove(action)
+            sum_of_violations[action] = sum(norm_violations.values())
 
     if not allowed_actions:
-        minimal_violating_action = min(sum_of_violations, key=sum_of_violations.get)
-        return list(minimal_violating_action)
+        minimal_violation = min(sum_of_violations.values())
+        allowed_actions = [action for action, value in sum_of_violations.items() if value == minimal_violation]
+        return allowed_actions
     else:
         return allowed_actions
 
@@ -383,7 +421,7 @@ def store_results(config: str, returns, steps, slips, violations, enforced_retur
         file.write(str(returns))
     print(f"Stored return in: \t {path}")
 
-    if enforced_returns:
+    if enforced_returns is not None:
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_returns))
@@ -395,7 +433,7 @@ def store_results(config: str, returns, steps, slips, violations, enforced_retur
         file.write(str(steps))
     print(f"Stored steps in: \t {path}")
 
-    if enforced_steps:
+    if enforced_steps is not None:
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_steps))
@@ -407,7 +445,7 @@ def store_results(config: str, returns, steps, slips, violations, enforced_retur
         file.write(str(slips))
     print(f"Stored slips in: \t {path}")
 
-    if enforced_slips:
+    if enforced_slips is not None:
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_slips))

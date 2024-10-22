@@ -13,7 +13,7 @@ def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_trave
         file.write(f"currentState({current_state}).\n")
         if current_state_of_traverser is not None:
             file.write(f"currentStateOfTraverser({current_state_of_traverser}).\n")
-        if last_performed_action is not None:
+        if last_performed_action:
             file.write(f"lastPerformedAction(move({last_performed_action.lower()})).\n")
         if presents:
             for present in presents:
