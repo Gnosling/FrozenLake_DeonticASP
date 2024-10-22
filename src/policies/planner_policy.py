@@ -25,9 +25,6 @@ class PlannerPolicy(Policy):
         self.norm_set = norm_set
         self.evaluation_function = evaluation_function
         self.visited_states = []
-        self.last_performed_action = None
-        self.last_proposed_action = None
-        self.previous_state = None
 
 
     def suggest_action(self, state, enforcing, env) -> Any:
@@ -38,8 +35,9 @@ class PlannerPolicy(Policy):
         action = None
 
         allowed_actions = ACTION_SET
-        if "guardrail" in enforcing.get("strategy"):
-            allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
+        if enforcing and enforcing.get("phase") == "during_training":
+            if "guardrail" in enforcing.get("strategy"):
+                allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
@@ -86,12 +84,6 @@ class PlannerPolicy(Policy):
             return random.choice(list(allowed_actions))
         else:
             return self.q_table.get_best_allowed_action_for_state(state, allowed_actions)
-
-
-    def updated_dynamic_env_aspects(self, last_performed_action, last_proposed_action, previous_state):
-        self.last_performed_action = last_performed_action
-        self.last_proposed_action = last_proposed_action
-        self.previous_state = previous_state
 
     def reset_after_episode(self):
         self.visited_states = []

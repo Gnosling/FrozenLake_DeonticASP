@@ -1,5 +1,8 @@
 from typing import Any
 from .q_table import QTable
+from src.utils.constants import ACTION_SET
+from src.utils.constants import debug_print
+from src.utils.utils import guardrail
 
 import math
 
@@ -24,6 +27,9 @@ class Policy:
         self.learning_decay_rate = learning_decay_rate
         self.discount = discount
         self.call_count = 0
+        self.last_performed_action = None
+        self.last_proposed_action = None
+        self.previous_state = None
 
     def initialize(self, states, available_actions, env):
         self.q_table.initialize_state(states, available_actions, env)
@@ -45,7 +51,14 @@ class Policy:
         return self.q_table.value_of(state, action)
 
     def suggest_action(self, state, enforcing, env) -> Any:
-        return self.q_table.get_best_action_for_state(state) # TODO: use enforcing even here as well for target after training
+
+        allowed_actions = ACTION_SET
+        if enforcing and enforcing.get("phase") == "during_training":
+            if "guardrail" in enforcing.get("strategy"):
+                allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action,
+                                            self.last_proposed_action, env)
+
+        return self.q_table.get_best_allowed_action_for_state(state, allowed_actions)
 
     def update_learning_rate(self):
         if self.learning_rate_strategy == "constant":
@@ -57,11 +70,10 @@ class Policy:
         else:
             raise ValueError(f"invalid learning-rate strategy: {self.learning_rate_strategy}")
 
-    def updated_dynamic_env_aspects(self, last_performed_action, last_proposed_action, previous_state):
-        """
-        Currently only needed in planner_policy to keep track of past events in the environment
-        """
-        pass
+    def update_dynamic_env_aspects(self, last_performed_action, last_proposed_action, previous_state):
+        self.last_performed_action = last_performed_action
+        self.last_proposed_action = last_proposed_action
+        self.previous_state = previous_state
 
     def value_of_state(self, state):
         """

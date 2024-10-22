@@ -188,17 +188,22 @@ def get_average_violations(results, norm_set):
 
 
 def test_target(target, env, config):
-    _, _, max_steps, _, frozenlake, _, deontic, _ = read_config_param(config)
+    _, _, max_steps, _, frozenlake, _, deontic, enforcing = read_config_param(config)
     norm_violations = _extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
     layout, width, height = env.get_layout()
     slips = 0
+    last_performed_action = None
+    action_name = None
+    previous_state = None
 
     for step in range(max_steps):
-        proposed_action = target.suggest_action(state)
-        new_state, reward, terminated, truncated, info = env.step(action_name_to_number(proposed_action))
-        trail_of_target.append([state, proposed_action, new_state, reward])
+        target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
+        action_name = target.suggest_action(state, enforcing)
+        new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
+        trail_of_target.append([state, action_name, new_state, reward])
+        previous_state = state
         last_performed_action = extract_performed_action(state, new_state, width)
 
         if info.get("prob") == 0.1:
@@ -365,33 +370,61 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
     else:
         return allowed_actions
 
-def store_results(config: str, returns, steps, slips, violations):
+def store_results(config: str, returns, steps, slips, violations, enforced_returns, enforced_steps, enforced_slips, enforced_violations):
     conf = configs.get(config)
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
 
+
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(returns))
     print(f"Stored return in: \t {path}")
+
+    if enforced_returns:
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return_enforced.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_returns))
+        print(f"Stored enforced return in: \t {path}")
+
 
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(steps))
     print(f"Stored steps in: \t {path}")
 
+    if enforced_steps:
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps_enforced.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_steps))
+        print(f"Stored enforced return in: \t {path}")
+
+
     path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(slips))
     print(f"Stored slips in: \t {path}")
 
-    if violations is not None:
+    if enforced_slips:
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips_enforced.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_slips))
+        print(f"Stored enforced slips in: \t {path}")
+
+
+    if violations:
         path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(violations))
         print(f"Stored violations in: \t {path}")
+
+    if enforced_violations:
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations_enforced.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_violations))
+        print(f"Stored enforced violations in: \t {path}")
 
 
 def plot_experiment(config: str):

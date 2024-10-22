@@ -26,6 +26,7 @@ class Controller:
         total_violations = []
         total_steps = []
         total_slips = []
+        final_target_policies = []
         for rep in range(repetitions):
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
                            is_slippery=frozenlake.get("slippery"),
@@ -52,7 +53,7 @@ class Controller:
                 for step in range(max_steps):
                     debug_print(env.render())
 
-                    behavior.updated_dynamic_env_aspects(last_performed_action, action_name, previous_state)
+                    behavior.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
                     action_name = behavior.suggest_action(state, enforcing, env)
                     debug_print(f'Action: {action_name}')
 
@@ -93,6 +94,7 @@ class Controller:
             total_violations.append(violations_of_target_per_episode)
             total_steps.append(steps_of_target_per_episode)
             total_slips.append(slips_of_target_per_episode)
+            final_target_policies.append(target)
             env.close()
 
 
@@ -105,15 +107,37 @@ class Controller:
         debug_print(f"Steps:\n{avg_steps}")
         avg_slips = get_average_numbers(total_slips)
         avg_violations = None
-        if deontic.get("norm_set") is not None:
+        if deontic.get("norm_set"):
             avg_violations = get_average_violations(total_violations, deontic.get("norm_set"))
             debug_print(f"Violations:\n{avg_violations}")
+
+        avg_enforced_returns = None
+        avg_enforced_violations = None
+        avg_enforced_steps = None
+        avg_enforced_slips = None
+        if enforcing and enforcing.get("phase") == "after_training":
+            return_of_targets = []
+            violations_of_targets = []
+            steps_of_targets = []
+            slips_of_targets = []
+            for target in final_target_policies:
+                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config)
+                expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
+                return_of_targets.append(expected_return)
+                violations_of_targets.append(violations_of_target)
+                steps_of_targets.append(len(trail_of_target))
+                slips_of_targets.append(slips_of_target)
+            avg_enforced_returns = sum(return_of_targets) / len(return_of_targets)
+            avg_enforced_violations = {norm: sum(violation[norm] for violation in violations_of_targets) / len(violations_of_targets) for norm in violations_of_targets[0]}
+            avg_enforced_steps = sum(steps_of_targets) / len(steps_of_targets)
+            avg_enforced_slips = sum(slips_of_targets) / len(slips_of_targets)
 
 
         # -----------------------------------------------------------------------------
         # Storing of results
         # -----------------------------------------------------------------------------
-        store_results(config, avg_returns, avg_steps, avg_slips, avg_violations)
+        store_results(config, avg_returns, avg_steps, avg_slips, avg_violations,
+                      avg_enforced_returns, avg_enforced_steps, avg_enforced_slips, avg_enforced_violations)
 
 
         # -----------------------------------------------------------------------------
