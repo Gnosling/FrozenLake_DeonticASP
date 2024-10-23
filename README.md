@@ -44,8 +44,9 @@ During training if exploration is triggered no enforce-ment is applied.
   - reduces action selections before policy (only on current state) beforehand (can be checked in python-code)
   - might restrict optimal solutions and exploration, but simple and hopefully effective
 - --> fixing (sebastians approach):
-  - the next enforcing-horizon actions are analysed by ASP-planner for norm violations and potentially fixed, no policy changed though
-  - the current act(move(X)) of the path must be inserted dynamically and checked for violations, if any occured then activate normal planning
+  - the next enforcing-horizon actions proposed by policy are analysed by ASP-planner for norm violations, no policy changed though
+  - -> the horizon must be high enough to compute a path to the end of the level, if reachedGoal-norm is used
+  - the current act(move(X)) of the path must be inserted dynamically and checked for violations (also non-deterministic ones?), if any occured then activate normal planning
   - need special ASP-checker of norms, how does this relate with the normal planner?
   - compared to others high computational effort, but most flexible and best monitoring 
 - --> reward_shaping (paper-one):

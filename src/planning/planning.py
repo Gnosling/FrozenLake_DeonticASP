@@ -7,7 +7,7 @@ import subprocess
 #from src.utils.utils import debug_print
 
 
-def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_traverser: int, last_performed_action: str, presents: list, allowed_actions: list):
+def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_traverser: int, last_performed_action: str, presents: list, allowed_actions: list = None, action_path: list = None):
     with open(os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp"), "w") as file:
         file.write("#program initial.\n")
         file.write(f"currentState({current_state}).\n")
@@ -21,6 +21,10 @@ def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_trave
         if allowed_actions:
             for action in allowed_actions:
                 file.write(f"allowedAction(move({action.lower()})).\n")
+        if action_path:
+            file.write("#program always.\n")
+            for index, action in enumerate(action_path):
+                file.write(f"givenAction({action.lower()},{index}).\n")
 
 
 def _value_better_than_optimization(value, opt):
@@ -66,6 +70,15 @@ def _extract_first_action_from_telingo_output(output: str):
     return best_action.upper()
 
 
+def _extract_validation_result_from_telingo_output(output: str):
+    if "UNSATISFIABLE" in output:
+        return False
+    elif "SATISFIABLE" in output:
+        return True
+    else:
+        raise ValueError('Checking threw an unexpected error!')
+
+
 def plan_action(level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, evaluation_function: int = 1, allowed_actions=None):
     """
     calls potassco's telingo to perform ASP-solving.
@@ -76,7 +89,7 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     file1 = os.path.join(os.getcwd(), "src", "planning", "general_reasoning.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_reasoning.lp")
     file3 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
-    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), allowed_actions)
+    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
     file4 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
     file5 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp")
     file6 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")
@@ -85,12 +98,13 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     # Note: planning_horizon is needed to force telingo to explore that many states, ie. imin lowerbounds the states telingo unfolds
     #   if the optimum lies within these steps, then the optimal action will be found (otw its the optimal with these limited steps)
     # Note: Weak constraints must add positive penalties, such that telingo handles the return value correctly
+    # TODO: if the planning horizon is too low (or also the enforcing one), agent might prefer to not move away from start -> is avoided with moving_to_goal norm
 
     # Note: starts already in the active python environment
     command = [
         # f'call',  f'{ANACONDA_PATH}', f'{CONDA_ENV_NAME}', f'&&',
         f'python', f'-m', f'telingo',
-        f'--quiet=1',
+        f'--quiet=1,1,1',
         f'--imin={planning_horizon}', f'--imax={planning_horizon}',
         f'--time-limit=30',
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"', f'"{file5}"', f'"{file6}"'
@@ -118,3 +132,52 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     os.remove(bat_file_path)
 
     return _extract_first_action_from_telingo_output(output)
+
+def validate_path(actions: list, level: str, enforcing_horizon: int, last_performed_action: str, state: tuple, enforcing_norm_set: int):
+    """
+    calls potassco's telingo to perform ASP-checking.
+    uses frozenlake_checking, level-data and a helper file to handle dynamic properties
+    returns True if and only if the checked path is valid meaning no norm-violations were identified
+    """
+
+    file1 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_checking.lp")
+    file2 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
+    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), None, actions)
+    file3 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
+    file4 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{enforcing_norm_set}.lp")
+
+    # Note: starts already in the active python environment
+    command = [
+        # f'call',  f'{ANACONDA_PATH}', f'{CONDA_ENV_NAME}', f'&&',
+        f'python', f'-m', f'telingo',
+        f'--quiet=1,1,1',
+        f'--imin={enforcing_horizon}', f'--imax={enforcing_horizon}',
+        f'--time-limit=30',
+        f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"'
+    ]
+
+    bat_content = f"""
+        @echo off
+        {' '.join(command)}
+        """
+
+    bat_file_path = os.path.join(os.getcwd(), 'run_telingo.bat')
+    with open(bat_file_path, 'w') as bat_file:
+        bat_file.write(bat_content)
+
+    result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True)
+
+    output = result.stdout
+    errors_and_warnings = result.stderr
+
+    if 'traceback' in errors_and_warnings or 'error' in errors_and_warnings:
+        print("Telingo Errors and Warnings:")
+        print(errors_and_warnings)
+
+    os.remove(bat_file_path)
+
+    return _extract_validation_result_from_telingo_output(output)
+
+
+
+

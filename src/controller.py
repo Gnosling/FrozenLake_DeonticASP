@@ -54,7 +54,7 @@ class Controller:
                     debug_print(env.render())
 
                     behavior.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
-                    action_name = behavior.suggest_action(state, enforcing, env)
+                    action_name = behavior.suggest_action(state, env)
                     debug_print(f'Action: {action_name}')
 
                     new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))

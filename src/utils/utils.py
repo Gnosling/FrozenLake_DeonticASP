@@ -101,7 +101,7 @@ def _compute_non_determinisic_successors(current_position: int, action, width, h
 
     return successors
 
-def _compute_successor(current_position: int, action, width, height):
+def compute_successor(current_position: int, action, width, height):
     """
     returns the expected successor
     """
@@ -154,12 +154,12 @@ def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
 def build_policy(config: str, env):
     from src.policies.policy import Policy
     from src.policies.planner_policy import PlannerPolicy
-    _, _, _, learning, frozenlake, planning, deontic, _= read_config_param(config)
+    _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
     if planning is None:
-        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
+        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), enforcing)
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"))
+        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"), enforcing)
 
     presents = tuple(env.get_tiles_with_presents())
     subsets = [tuple(comb) for i in range(len(presents) + 1) for comb in itertools.combinations(presents, i)]
@@ -168,7 +168,7 @@ def build_policy(config: str, env):
                           for t in range(-1, env.get_number_of_tiles())
                           for subset in subsets},
                         constants.ACTION_SET, env)
-    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"))
+    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), enforcing)
     return behavior, target
 
 
@@ -220,6 +220,14 @@ def get_average_violations(results, norm_set):
 
 def test_target(target, env, config, after_training):
     _, _, max_steps, _, frozenlake, _, deontic, enforcing = read_config_param(config)
+    if enforcing:
+        # enables / disables enforcing in the right phase
+        if after_training and enforcing.get("phase") == "after_training":
+            target.set_enforcing(enforcing)
+        # elif not after_training and enforcing.get("phase") == "during_training":
+        #     target.set_enforcing(enforcing)
+        else:
+            target.set_enforcing(None)
     norm_violations = _extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
@@ -231,14 +239,7 @@ def test_target(target, env, config, after_training):
 
     for step in range(max_steps):
         target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
-        if enforcing:
-            if (after_training and enforcing.get("phase") == "after_training") or (not after_training and enforcing.get("phase") == "during_training"):
-                action_name = target.suggest_action(state, enforcing, env)
-            else:
-                action_name = target.suggest_action(state, None, env)
-        else:
-            action_name = target.suggest_action(state, None, env)
-
+        action_name = target.suggest_action(state, env)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
         previous_state = state
@@ -390,7 +391,7 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
     # If all actions are not allowed, then the one with the minimal sum is returned
     # TODO: should it consider all successors or only the expected?
     for action in constants.ACTION_SET:
-        successor = _compute_successor(state[0], action, width, height)
+        successor = compute_successor(state[0], action, width, height)
         trail = [[previous_state, last_proposed_action, state, False]]
         norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
         terminated = successor == goal or successor in holes

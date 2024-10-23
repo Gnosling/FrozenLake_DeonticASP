@@ -15,19 +15,18 @@ class PlannerPolicy(Policy):
     This policy uses ASP as planning and epsilon greedy exploration, there are different strategies when the planning should be triggered
     """
 
-    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, epsilon: float, strategy: str, planning_horizon: int, delta: int, level: str, norm_set: int, evaluation_function: int):
-        super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount)
+    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, epsilon: float, strategy: str, planning_horizon: int, delta: int, level: str, norm_set: int, evaluation_function: int, enforcing = None):
+        super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing)
         self.epsilon = epsilon
         self.delta = delta
         self.strategy = strategy
         self.planning_horizon = planning_horizon
-        self.level = level
         self.norm_set = norm_set
         self.evaluation_function = evaluation_function
         self.visited_states = []
 
 
-    def suggest_action(self, state, enforcing, env) -> Any:
+    def suggest_action(self, state, env) -> Any:
         """
         depending on the planning_strategy different suggestion are made using parts of ASP-solving and RL-Learning.
         Enforcing strategies are also handled here.
@@ -35,9 +34,12 @@ class PlannerPolicy(Policy):
         action = None
 
         allowed_actions = ACTION_SET
-        if enforcing and enforcing.get("phase") == "during_training":
-            if "guardrail" in enforcing.get("strategy"):
-                allowed_actions = guardrail(enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
+        if self.enforcing and self.enforcing.get("phase") == "during_training":
+            if "guardrail" in self.enforcing.get("strategy"):
+                allowed_actions = guardrail(self.enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
+
+            if "fixing" in self.enforcing.get("strategy"):
+                return self._check_and_fix_path(state, env)
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
