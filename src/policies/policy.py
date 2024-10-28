@@ -91,6 +91,7 @@ class Policy:
         else:
             # Note: evaluation_set 3 is used per default
             # TODO: maybe implement an evaluation set that does not care about rewards and use it here
+            # TODO: use planning_horizon here?
             return plan_action(self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set, 3, ACTION_SET)
 
 
