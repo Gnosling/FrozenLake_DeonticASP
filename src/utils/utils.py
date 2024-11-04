@@ -2,6 +2,7 @@ import os.path
 from typing import Tuple, List, Any
 import numpy as np
 import random
+import copy
 import matplotlib.pyplot as plt
 import ast
 import itertools
@@ -162,6 +163,7 @@ def compute_expected_predecessor(current_position: int, last_action, width, heig
         else:
             return previous_position
 
+    return previous_position
 
 def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict, dict]:
     if config_name in configs.keys():
@@ -273,10 +275,10 @@ def test_target(target, env, config, after_training):
         target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
         action_name = target.suggest_action(state, env)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
-        if after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
-            target.update_after_step(state, action_name, new_state, reward, env, after_training)
-            # TODO: i guess reversed learning is not useful here
         trail_of_target.append([state, action_name, new_state, reward])
+        if after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
+            target.update_after_step(state, action_name, new_state, reward, trail_of_target, env, after_training)
+            # TODO: i guess reversed learning is not useful here
         previous_state = state
         last_performed_action = extract_performed_action(state[0], new_state[0], width)
 
@@ -530,47 +532,45 @@ def get_state_value(state, norms, level_of_norms, env):
     value = value / 100  # Note: this is to scale all rewards down
     return value
 
-def get_state_action_value(state, action, last_action, norms, level_of_norms, env):
+def get_state_action_penalty(trail, last_action, terminated, norms, level_of_norms, env):
     """
-    Computes the state-action-value under the given norms.
+    Computes the state-action-penalty under the given norms.
     Violations are scaled with scaling_factor**(level_of_norms[norm]-1).
     """
+    if not trail:
+        return 0
+
     scaling_factor = 2
-    # TODO: call use this function for the norm-initialisation?
-    layout, width, height = env.get_layout()
-    goal = env.get_goal_tile()
-
-    expected_old_state = (compute_expected_predecessor(state[0], last_action, width, height), state[1], state[2])
-    expected_successor = compute_expected_successor(state[0], action, width, height)
-    expected_remaining_presents = [elem for elem in state[2] if elem != expected_successor]
-    expected_new_state = (expected_successor, state[1], expected_remaining_presents)
-    terminated = goal == expected_successor
-
-    trail = [[expected_old_state, last_action, state, 0], [state, action, expected_new_state, terminated]]
+    # TODO: call use this function for the norm-initialisation? Also checkout reverse_q-learning with this
     # Note: trail[i] = [state, action, new_state, reward], but rewards does not matter for violations
-
     _check_violations(norms, trail, last_action, terminated, env)
 
-    value = 0
+    penalty = 0
     for norm, violations in norms.items():
         if violations > 0:
-            value += violations * (scaling_factor**(level_of_norms[norm]-1))
+            penalty += violations * (scaling_factor**(level_of_norms[norm]-1))
 
-    value = value /100  # Note: this is to scale all rewards down
-    return value
+    penalty = -penalty /100  # Note: this is to scale all rewards down, penalties are negative
+    return penalty
 
 
-def get_shaped_rewards(enforcing, discount, last_action, state, action, new_state, env):
+def get_shaped_rewards(enforcing, discount, last_action, state, action, new_state, trail, env):
     norms = _extract_norm_keys(enforcing.get("norm_set"))
     level_of_norms = _extract_norm_levels(enforcing.get("norm_set"))
+    terminated = env.is_terminated()
     shaped_rewards = 0
     if "optimal_reward_shaping" in enforcing.get("strategy"):
         shaped_rewards = discount * get_state_value(new_state, norms, level_of_norms, env) - get_state_value(state, norms, level_of_norms, env)
     elif "full_reward_shaping" in enforcing.get("strategy"):
-        # NOTE: the full shaping uses _check_violations(..) for state_actions, hence both need separate norms-dicts
-        shaped_rewards = (discount * (get_state_action_value(new_state, action, last_action, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env))
-                          -(get_state_action_value(state, action, last_action, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+        # NOTE: the full shaping uses _check_violations(..) for state_actions penalties, hence both need separate norms-dicts
+        if len(trail) <= 1:
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              -(get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], None, False, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+        else:
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              -(get_state_action_penalty(trail[:-1], None, False, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
     return shaped_rewards
+
 
 
 def store_results(config: str, returns, steps, slips, violations, enforced_returns, enforced_steps, enforced_slips, enforced_violations):

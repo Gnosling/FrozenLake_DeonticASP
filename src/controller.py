@@ -3,6 +3,9 @@ import gym
 from .utils.utils import *
 from .policies.planner_policy import PlannerPolicy
 
+import warnings
+warnings.filterwarnings("ignore", message=".*is not within the observation space.*")
+
 
 class Controller:
 
@@ -57,18 +60,20 @@ class Controller:
                     action_name = behavior.suggest_action(state, env)
                     debug_print(f'Action: {action_name}')
 
-                    new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
+                    new_state, reward, terminated, _, info = env.step(action_name_to_number(action_name))
                     debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
+                    trail_of_behavior.append([state, action_name, new_state, reward])
+                    if step == max_steps-1:
+                        env.set_terminated(True)
 
                     if not learning.get("reversed_q_learning"):
-                        behavior.update_after_step(state, action_name, new_state, reward, env)
+                        behavior.update_after_step(state, action_name, new_state, reward, trail_of_behavior, env)
 
-                    trail_of_behavior.append([state, action_name, new_state, reward])
                     previous_state = state
                     last_performed_action = extract_performed_action(state[0], new_state[0], width)
                     state = new_state
 
-                    if terminated or truncated:
+                    if terminated:
                         debug_print(env.render())
                         break
 

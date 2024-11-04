@@ -225,6 +225,7 @@ class FrozenLakeEnv(Env):
         self.initial_state_distrib /= self.initial_state_distrib.sum()
 
         self.P = {s: {a: [] for a in range(nA)} for s in range(nS)}
+        self.terminated = False
 
         def to_s(row, col):
             return row * ncol + col
@@ -366,6 +367,12 @@ class FrozenLakeEnv(Env):
     def get_layout(self):
         return self.desc, len(self.desc[0]), len(self.desc)
 
+    def is_terminated(self):
+        return self.terminated
+
+    def set_terminated(self, terminated):
+        self.terminated = terminated
+
     def step(self, a):
         transitions = self.P[self.s][a] # transition = [prop, next_position, reward, terminated]
         i = categorical_sample([t[0] for t in transitions], self.np_random)
@@ -394,10 +401,12 @@ class FrozenLakeEnv(Env):
 
             if current_position == traverser_position and tile in b"C":
                 # terminate episode with reward 0
-                ret_values = ((int(current_position), traverser_position, presents), 0, True, False, {"prob": prob})
+                terminated = True
+                ret_values = ((int(current_position), traverser_position, presents), 0, terminated, False, {"prob": prob})
 
         if self.render_mode == "human":
             self.render()
+        self.set_terminated(terminated)
         return ret_values
 
     def reset(

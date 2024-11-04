@@ -40,11 +40,11 @@ class Policy:
     def initialize(self, states, available_actions, env):
         self.q_table.initialize_state(states, available_actions, env)
 
-    def update_after_step(self, state, action, new_state, reward, env, after_training=False):
+    def update_after_step(self, state, action, new_state, reward, trail, env, after_training=False):
         self._update_learning_rate()
         if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"):
             if (self.enforcing.get("phase") == "during_training" and not after_training) or (self.enforcing.get("phase") == "after_training" and after_training):
-                reward = reward + get_shaped_rewards(self.enforcing, self.discount, self.last_performed_action, state, action, new_state, env)
+                reward = reward + get_shaped_rewards(self.enforcing, self.discount, self.last_performed_action, state, action, new_state, trail, env)
         delta = (self.learning_rate
                  * (reward + self.discount * self.value_of_state(new_state) - self.q_table.value_of(state, action)))
         self.q_table.update(state, action, delta)
@@ -54,8 +54,10 @@ class Policy:
         """
         updates q-table in reversed step order
         """
+        counter = -0
         for state, action, new_state, reward in reversed(trail):
-            self.update_after_step(state, action, new_state, reward, env)
+            self.update_after_step(state, action, new_state, reward, trail[:counter], env)
+            counter += 1
 
     def value_of_state_action_pair(self, state, action) -> float:
         return self.q_table.value_of(state, action)
