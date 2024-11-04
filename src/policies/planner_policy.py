@@ -21,6 +21,7 @@ class PlannerPolicy(Policy):
         self.delta = delta
         self.strategy = strategy
         self.planning_horizon = planning_horizon
+        self.suggestion_called_count = 0
         self.norm_set = norm_set
         self.evaluation_function = evaluation_function
         self.visited_states = []
@@ -62,7 +63,7 @@ class PlannerPolicy(Policy):
 
         elif self.strategy == "delta_decaying_planning":
             # exponential decay
-            chance = math.exp(self.delta * -1 * self.call_count)
+            chance = math.exp(self.delta * -1 * self.suggestion_called_count)
             if random.random() < chance:
                 debug_print("planning was triggered")
                 action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
@@ -77,7 +78,7 @@ class PlannerPolicy(Policy):
 
         if state not in self.visited_states:
             self.visited_states.append(state)
-        self.call_count = self.call_count+1
+        self.suggestion_called_count = self.suggestion_called_count + 1
         return action
 
     def _retrieve_action_from_table(self, state, allowed_actions):

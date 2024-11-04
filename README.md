@@ -18,7 +18,7 @@ pip install -r requirements.txt
   - H: turnedOnTraverserTile (CTD of above)
     - shaped_rewards: not possible in potential-based, f'(not_turned_on_traverser) = 1
   - M: stolePresent (took at least one) (conflicting below) (Agent always picks up first)
-    - shaped_rewards: f(states_not_in_present_location) = 1
+    - shaped_rewards: f(state) = number_of_left_presents
   - M: missedPresents (did not take all available) (conflicting above)
     - shaped_rewards: f(state) = -number_of_left_presents
   - L: movedAwayFromGoal (the distance to the goal tile has increased)
@@ -68,10 +68,11 @@ During training if exploration is triggered no enforce-ment is applied.
     - this guarantees policy invariance of original and shaped
     - in each step: old_rewards + enforced_rewards
     - instead of actions, states are evaluated: discounted_F(successor) - F(prev_state)
-    - these plus-rewards can be the level of the norm, scaled with 25
+    - these plus-rewards can be scaled by the level of the norm and the sum can be downsized
     - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs
 
 #### Implement norm-init for q-table
+(check out that respective paper)
 
 - should the traverser be part of the state-info? --> yes --> define state representation in overleaf (maybe use both?)
 - --> this is pair of states (also include presents?-> yes)

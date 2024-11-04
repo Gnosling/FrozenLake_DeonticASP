@@ -16,7 +16,7 @@ level(movedAwayFromGoal,1).
 % The agent must reach the goal tile
 obligatory(reachedGoal).
 reachedGoal :- goalStateReached.
-level(reachedGoal,2).
+level(reachedGoal,3).
 
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not reachedGoal.

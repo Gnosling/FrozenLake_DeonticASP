@@ -101,7 +101,7 @@ def _compute_non_determinisic_successors(current_position: int, action, width, h
 
     return successors
 
-def compute_successor(current_position: int, action, width, height):
+def compute_expected_successor(current_position: int, action, width, height) -> int:
     """
     returns the expected successor
     """
@@ -130,6 +130,38 @@ def compute_successor(current_position: int, action, width, height):
             return current_position-width
         else:
             return current_position
+
+def compute_expected_predecessor(current_position: int, last_action, width, height) -> int:
+    """
+    returns the expected predecessor
+    """
+    left_edge = current_position % width == 0
+    right_edge = current_position % width == width - 1
+    upper_edge = int(current_position / width) == 0
+    lower_edge = int(current_position / width) == height - 1
+    previous_position = current_position
+
+    if last_action == "LEFT":
+        if not right_edge:
+            return previous_position + 1
+        else:
+            return previous_position
+    elif last_action == "DOWN":
+        if not upper_edge:
+            return previous_position - width
+        else:
+            return previous_position
+    elif last_action == "RIGHT":
+        if not left_edge:
+            return previous_position - 1
+        else:
+            return previous_position
+    elif last_action == "UP":
+        if not lower_edge:
+            return previous_position + width
+        else:
+            return previous_position
+
 
 def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict, dict]:
     if config_name in configs.keys():
@@ -241,6 +273,9 @@ def test_target(target, env, config, after_training):
         target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
         action_name = target.suggest_action(state, env)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
+        if after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
+            target.update_after_step(state, action_name, new_state, reward, env, after_training)
+            # TODO: i guess reversed learning is not useful here
         trail_of_target.append([state, action_name, new_state, reward])
         previous_state = state
         last_performed_action = extract_performed_action(state[0], new_state[0], width)
@@ -282,6 +317,9 @@ def _tile_is_safe(tile: int, env, width, height):
             return False
 
     return True
+
+def _distance_to_goal(position, goal, width, height):
+    return abs(position % width - goal % width) + abs(int(position / height) - int(goal / height))
 
 def _check_violations(norm_violations, trail_of_target, last_performed_action, terminated, env):
     """
@@ -330,8 +368,8 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
 
 
         elif norm == "movedAwayFromGoal":
-            previous_distance = abs(old_position%width - goal%width) + abs(int(old_position/height) - int(goal/height))
-            new_distance = abs(new_position%width - goal%width) + abs(int(new_position/height) - int(goal/height))
+            previous_distance = _distance_to_goal(old_position, goal, width, height)
+            new_distance = _distance_to_goal(new_position, goal, width, height)
             if new_distance > previous_distance:
                 norm_violations[norm] += 1
 
@@ -371,6 +409,43 @@ def _extract_norm_keys(norm_set):
     # TODO: define order of norms to be put in the dict here! such that plots always have same order
     return dict(sorted(norms.items()))
 
+def _extract_norm_levels(norm_set):
+    """
+    returns a dict of norms and their level in the deontic-files, if no level is given then 0 is returned as default-level
+    """
+    if norm_set is None:
+        return None
+
+    norms = dict()
+    reached_section = False
+    passed_norms = False
+    with open(os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp"),
+              'r') as file:
+        for line in file:
+            line = line.strip()
+            if "norms:" in line.lower():
+                reached_section = True
+                continue
+            if not reached_section:
+                continue
+            if line == "":
+                continue
+            if line.startswith("#program"):
+                passed_norms = True
+                continue
+
+            if not passed_norms:
+                key = line.strip().split(" ")[-1]
+                norms[key] = 0
+            else:
+                if line.startswith("level"):
+                    norm_string = line.split(",")[0].split("(")[1]
+                    norm_level = int(line.split(",")[1].split(")")[0])
+                    for key in norms.keys():
+                        if key.lower() in norm_string.lower() or norm_string.lower() in key.lower():
+                            norms[key] = norm_level
+
+    return norms
 
 def guardrail(enforcing_config, state, previous_state, last_performed_action, last_proposed_action, env):
     """
@@ -391,12 +466,12 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
     # If all actions are not allowed, then the one with the minimal sum is returned
     # TODO: should it consider all successors or only the expected?
     for action in constants.ACTION_SET:
-        successor = compute_successor(state[0], action, width, height)
+        successor = compute_expected_successor(state[0], action, width, height)
         trail = [[previous_state, last_proposed_action, state, False]]
         norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
         terminated = successor == goal or successor in holes
 
-        trail.append([state, action, (successor, state[1], state[2]), terminated])
+        trail.append([state, action, (successor, state[1], state[2]), 0])
         _check_violations(norm_violations, trail, last_performed_action, terminated, env)
         if any(value > 0 for value in norm_violations.values()):
             allowed_actions.remove(action)
@@ -408,6 +483,95 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
         return allowed_actions
     else:
         return allowed_actions
+
+
+def get_state_value(state, norms, level_of_norms, env):
+    """
+    Computes the state-value function under the given norms, CTDs cannot be expressed as state-functions.
+    Violations are scaled with scaling_factor**(level_of_norms[norm]-1).
+    """
+    value = 0
+    scaling_factor = 2
+    layout, width, height = env.get_layout()
+    goal = env.get_goal_tile()
+    for norm in norms.keys():
+        if norm == "notReachedGoal":
+            if state[0] == goal:
+                value += 1 * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "occupiedTraverserTile":
+            if state[0] != state[1]:
+                value += 1 * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "turnedOnTraverserTile":
+            continue  # Note: CTD cannot be checked as state-function
+
+        elif norm == "stolePresent":
+            if len(state[2]) > 0:
+                value += len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "missedPresents":
+            if len(state[2]) > 0:
+                value += -len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "movedAwayFromGoal":
+            value += -_distance_to_goal(state[0], goal, width, height)/0.8 * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "leftSafeArea":
+            if _tile_is_safe(state[0], env, width, height):
+                value += 1 * (scaling_factor**(level_of_norms[norm]-1))
+
+        elif norm == "didNotReturnToSafeArea":
+            continue  # Note: CTD cannot be checked as state-function
+
+        else:
+            raise ValueError(f"Unexpected norm to check: {norm}!")
+
+    value = value / 100  # Note: this is to scale all rewards down
+    return value
+
+def get_state_action_value(state, action, last_action, norms, level_of_norms, env):
+    """
+    Computes the state-action-value under the given norms.
+    Violations are scaled with scaling_factor**(level_of_norms[norm]-1).
+    """
+    scaling_factor = 2
+    # TODO: call use this function for the norm-initialisation?
+    layout, width, height = env.get_layout()
+    goal = env.get_goal_tile()
+
+    expected_old_state = (compute_expected_predecessor(state[0], last_action, width, height), state[1], state[2])
+    expected_successor = compute_expected_successor(state[0], action, width, height)
+    expected_remaining_presents = [elem for elem in state[2] if elem != expected_successor]
+    expected_new_state = (expected_successor, state[1], expected_remaining_presents)
+    terminated = goal == expected_successor
+
+    trail = [[expected_old_state, last_action, state, 0], [state, action, expected_new_state, terminated]]
+    # Note: trail[i] = [state, action, new_state, reward], but rewards does not matter for violations
+
+    _check_violations(norms, trail, last_action, terminated, env)
+
+    value = 0
+    for norm, violations in norms.items():
+        if violations > 0:
+            value += violations * (scaling_factor**(level_of_norms[norm]-1))
+
+    value = value /100  # Note: this is to scale all rewards down
+    return value
+
+
+def get_shaped_rewards(enforcing, discount, last_action, state, action, new_state, env):
+    norms = _extract_norm_keys(enforcing.get("norm_set"))
+    level_of_norms = _extract_norm_levels(enforcing.get("norm_set"))
+    shaped_rewards = 0
+    if "optimal_reward_shaping" in enforcing.get("strategy"):
+        shaped_rewards = discount * get_state_value(new_state, norms, level_of_norms, env) - get_state_value(state, norms, level_of_norms, env)
+    elif "full_reward_shaping" in enforcing.get("strategy"):
+        # NOTE: the full shaping uses _check_violations(..) for state_actions, hence both need separate norms-dicts
+        shaped_rewards = (discount * (get_state_action_value(new_state, action, last_action, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env))
+                          -(get_state_action_value(state, action, last_action, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+    return shaped_rewards
+
 
 def store_results(config: str, returns, steps, slips, violations, enforced_returns, enforced_steps, enforced_slips, enforced_violations):
     conf = configs.get(config)

@@ -60,7 +60,7 @@ MAPS = {
 TRAVERSER_PATHS = {
     "3x3_Aa": [8,5,2,1,0],
     "3x3_A": [6,1],
-    "4x4_A": [13,9,13,9,13,9,13,9,13,9,13,9,13,9],
+    "4x4_A": [13,9] * int(100/2),
     "4x4_B": [13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9],
     "4x4_T": [6,2,6,2,6,2,6,2,6,2,6],
 }
@@ -329,7 +329,7 @@ class FrozenLakeEnv(Env):
     def get_current_traverser_position(self) -> int:
         if self.traverser_path:
             return self.traverser_path[self.traverser_tracker]
-        return -1
+        return -1 # TODO: could this be None?
 
     def get_tiles_with_holes(self):
         counter = 0

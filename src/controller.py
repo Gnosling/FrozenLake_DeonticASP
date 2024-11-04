@@ -61,7 +61,7 @@ class Controller:
                     debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
 
                     if not learning.get("reversed_q_learning"):
-                        behavior.update_after_step(state, action_name, new_state, reward)
+                        behavior.update_after_step(state, action_name, new_state, reward, env)
 
                     trail_of_behavior.append([state, action_name, new_state, reward])
                     previous_state = state
@@ -73,7 +73,7 @@ class Controller:
                         break
 
                 if learning.get("reversed_q_learning"):
-                    behavior.update_after_end_of_episode(trail_of_behavior)
+                    behavior.update_after_end_of_episode(trail_of_behavior, env)
 
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
