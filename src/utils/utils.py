@@ -53,7 +53,7 @@ def extract_performed_action(current_position: int, new_position : int, width):
     elif diff == -width:
         return "UP"
 
-def _compute_non_determinisic_successors(current_position: int, action, width, height):
+def compute_non_determinisic_successors(current_position: int, action, width, height):
     """
     returns all possible states the action could slip into
     """
@@ -240,7 +240,7 @@ def get_average_violations(results, norm_set):
     episodes = len(results[0])
     repetitions = len(results)
     for episode in range(episodes):
-        total_per_episode = _extract_norm_keys(norm_set)
+        total_per_episode = extract_norm_keys(norm_set)
         avg_per_episode = dict()
         for rep in range(repetitions):
             for norm in total_per_episode.keys():
@@ -262,7 +262,7 @@ def test_target(target, env, config, after_training):
         #     target.set_enforcing(enforcing)
         else:
             target.set_enforcing(None)
-    norm_violations = _extract_norm_keys(deontic.get("norm_set"))
+    norm_violations = extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
     layout, width, height = env.get_layout()
@@ -320,7 +320,7 @@ def _tile_is_safe(tile: int, env, width, height):
 
     return True
 
-def _distance_to_goal(position, goal, width, height):
+def distance_to_goal(position, goal, width, height):
     return abs(position % width - goal % width) + abs(int(position / height) - int(goal / height))
 
 def _check_violations(norm_violations, trail_of_target, last_performed_action, terminated, env):
@@ -331,9 +331,13 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
     goal = env.get_goal_tile()
 
     state, action_name, new_state, _ = trail_of_target[-1]
+    previous_action = None
+    if len(trail_of_target) > 1:
+        _, previous_action, _, _ = trail_of_target[-2]
     old_position = state[0]
     new_position = new_state[0]
-    traverser_state = state[0] # TODO: which traveser shouldt be taken here?
+    old_traverser_position = state[1]
+    new_traverser_position = new_state[1]
     previous_presents = list(state[2])
     remaining_presents = list(new_state[2])
 
@@ -344,15 +348,14 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
                     norm_violations[norm] += 1
 
         elif norm == "occupiedTraverserTile":
-            if old_position == traverser_state: # TODO: old or new position?
+            if new_position == new_traverser_position:
                 norm_violations[norm] += 1
 
         elif norm == "turnedOnTraverserTile":
             if len(trail_of_target) > 1:
-                if old_position == traverser_state:
+                if old_position == old_traverser_position:
                     # _, previous_action, _, _ = trail_of_target[-2] # Note: last_proposed_action is not the same as last_performed_action
-                    # TODO: test this violation!
-                    if action_name != last_performed_action:
+                    if previous_action != last_performed_action:
                         norm_violations[norm] += 1
 
         elif norm == "stolePresent":
@@ -370,8 +373,8 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
 
 
         elif norm == "movedAwayFromGoal":
-            previous_distance = _distance_to_goal(old_position, goal, width, height)
-            new_distance = _distance_to_goal(new_position, goal, width, height)
+            previous_distance = distance_to_goal(old_position, goal, width, height)
+            new_distance = distance_to_goal(new_position, goal, width, height)
             if new_distance > previous_distance:
                 norm_violations[norm] += 1
 
@@ -391,7 +394,7 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
     return norm_violations
 
 
-def _extract_norm_keys(norm_set):
+def extract_norm_keys(norm_set):
     if norm_set is None:
         return None
 
@@ -411,7 +414,7 @@ def _extract_norm_keys(norm_set):
     # TODO: define order of norms to be put in the dict here! such that plots always have same order
     return dict(sorted(norms.items()))
 
-def _extract_norm_levels(norm_set):
+def extract_norm_levels(norm_set):
     """
     returns a dict of norms and their level in the deontic-files, if no level is given then 0 is returned as default-level
     """
@@ -466,11 +469,10 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
 
     # Note: foreach action all non-deterministic successors are added to the trail and checked
     # If all actions are not allowed, then the one with the minimal sum is returned
-    # TODO: should it consider all successors or only the expected?
     for action in constants.ACTION_SET:
         successor = compute_expected_successor(state[0], action, width, height)
         trail = [[previous_state, last_proposed_action, state, False]]
-        norm_violations = _extract_norm_keys(enforcing_config.get("norm_set"))
+        norm_violations = extract_norm_keys(enforcing_config.get("norm_set"))
         terminated = successor == goal or successor in holes
 
         trail.append([state, action, (successor, state[1], state[2]), 0])
@@ -517,7 +519,7 @@ def get_state_value(state, norms, level_of_norms, env):
                 value += -len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "movedAwayFromGoal":
-            value += -_distance_to_goal(state[0], goal, width, height)/0.8 * (scaling_factor**(level_of_norms[norm]-1))
+            value += -distance_to_goal(state[0], goal, width, height) / 0.8 * (scaling_factor ** (level_of_norms[norm] - 1))
 
         elif norm == "leftSafeArea":
             if _tile_is_safe(state[0], env, width, height):
@@ -541,7 +543,6 @@ def get_state_action_penalty(trail, last_action, terminated, norms, level_of_nor
         return 0
 
     scaling_factor = 2
-    # TODO: call use this function for the norm-initialisation? Also checkout reverse_q-learning with this
     # Note: trail[i] = [state, action, new_state, reward], but rewards does not matter for violations
     _check_violations(norms, trail, last_action, terminated, env)
 
@@ -555,8 +556,8 @@ def get_state_action_penalty(trail, last_action, terminated, norms, level_of_nor
 
 
 def get_shaped_rewards(enforcing, discount, last_action, state, action, new_state, trail, env):
-    norms = _extract_norm_keys(enforcing.get("norm_set"))
-    level_of_norms = _extract_norm_levels(enforcing.get("norm_set"))
+    norms = extract_norm_keys(enforcing.get("norm_set"))
+    level_of_norms = extract_norm_levels(enforcing.get("norm_set"))
     terminated = env.is_terminated()
     shaped_rewards = 0
     if "optimal_reward_shaping" in enforcing.get("strategy"):
@@ -564,11 +565,11 @@ def get_shaped_rewards(enforcing, discount, last_action, state, action, new_stat
     elif "full_reward_shaping" in enforcing.get("strategy"):
         # NOTE: the full shaping uses _check_violations(..) for state_actions penalties, hence both need separate norms-dicts
         if len(trail) <= 1:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              -(get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], None, False, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], None, False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
         else:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              -(get_state_action_penalty(trail[:-1], None, False, _extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty(trail[:-1], None, False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
     return shaped_rewards
 
 

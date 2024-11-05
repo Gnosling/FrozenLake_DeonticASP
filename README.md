@@ -57,22 +57,20 @@ During training if exploration is triggered no enforce-ment is applied.
   - the current act(move(X)) of the path must be inserted dynamically and checked for violations (also non-deterministic ones?), if any occured then activate normal planning
   - compared to others high computational effort, but most flexible and best monitoring 
 - --> reward_shaping (paper-one):
-  - the rewards use penalties if violations occur
-  - (maybe we can use alteration of the policy still, as maybe the fourth mode?)
-  - might worsen policy also is in the 'real' testing phase, but could improve, check paper to see how to do that
-  - --> as long as function is potential-based, there is no drop in optimal policy
-  - --> and in fact learning can be speed up by this
+  - as long as function is potential-based, there is no drop in optimal policy and in fact learning can be speed up by this
   - What is potential-based for FrozenLake?
-    - with uncertainty, only positive linear transformations, meaning?
+    - with uncertainty, only positive linear transformations, but the state-function diff handles that already
     - reward of transitions is the difference of function output of both states
     - this guarantees policy invariance of original and shaped
     - in each step: old_rewards + enforced_rewards
     - instead of actions, states are evaluated: discounted_F(successor) - F(prev_state)
     - these plus-rewards can be scaled by the level of the norm and the sum can be downsized
-    - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs
+    - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs which is no longer optimal
 
 #### Implement norm-init for q-table
-(check out that respective paper)
+- State-function can be used here (maybe even the full shaping?)
+- This is independent of enforcing 
+
 
 - should the traverser be part of the state-info? --> yes --> define state representation in overleaf (maybe use both?)
 - --> this is pair of states (also include presents?-> yes)
@@ -81,7 +79,6 @@ During training if exploration is triggered no enforce-ment is applied.
 - implement strategies for exploration for q-table!
 - implement new plannig strategy for comparing actions and pick better?
 - implement distance based init of table
-- debug what happens if violations and rewards have same level
 
 
 ### Implement plotting and output data:

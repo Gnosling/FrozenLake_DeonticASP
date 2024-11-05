@@ -16,13 +16,12 @@ class PlannerPolicy(Policy):
     """
 
     def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, epsilon: float, strategy: str, planning_horizon: int, delta: int, level: str, norm_set: int, evaluation_function: int, enforcing = None):
-        super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing)
+        super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing, norm_set)
         self.epsilon = epsilon
         self.delta = delta
         self.strategy = strategy
         self.planning_horizon = planning_horizon
         self.suggestion_called_count = 0
-        self.norm_set = norm_set
         self.evaluation_function = evaluation_function
         self.visited_states = []
 
@@ -47,7 +46,6 @@ class PlannerPolicy(Policy):
             action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
 
         elif self.strategy == "plan_for_new_states":
-            # TODO: use full new states or only for new positions?
             if state not in self.visited_states:
                 debug_print("planning was triggered")
                 action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)

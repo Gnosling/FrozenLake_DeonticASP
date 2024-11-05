@@ -16,7 +16,7 @@ class Policy:
     This is the most general policy, suggesting without enforcing only the best known action (greedy)
     """
 
-    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, level: str, enforcing=None):
+    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, level: str, enforcing=None, norm_set=None):
         """
         Args:
         q_table                             the Q-Table to store learned values for state-action pairs
@@ -33,15 +33,16 @@ class Policy:
         self.update_called_count = 0
         self.level = level
         self.enforcing = enforcing
+        self.norm_set = norm_set
         self.last_performed_action = None
         self.last_proposed_action = None
         self.previous_state = None
 
     def initialize(self, states, available_actions, env):
-        self.q_table.initialize_state(states, available_actions, env)
+        self.q_table.initialize_state(states, available_actions, self.norm_set, env)
 
     def update_after_step(self, state, action, new_state, reward, trail, env, after_training=False):
-        self._update_learning_rate()
+        self._update_learning_rate() # TODO: test_learning rate updates
         if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"):
             if (self.enforcing.get("phase") == "during_training" and not after_training) or (self.enforcing.get("phase") == "after_training" and after_training):
                 reward = reward + get_shaped_rewards(self.enforcing, self.discount, self.last_performed_action, state, action, new_state, trail, env)
@@ -54,10 +55,13 @@ class Policy:
         """
         updates q-table in reversed step order
         """
-        counter = -0
+        counter = 0
         for state, action, new_state, reward in reversed(trail):
-            self.update_after_step(state, action, new_state, reward, trail[:counter], env)
-            counter += 1
+            if counter == 0:
+                self.update_after_step(state, action, new_state, reward, trail, env)
+            else:
+                self.update_after_step(state, action, new_state, reward, trail[:counter], env)
+            counter -= 1
 
     def value_of_state_action_pair(self, state, action) -> float:
         return self.q_table.value_of(state, action)

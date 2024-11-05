@@ -85,15 +85,41 @@ class QTable:
                                 self.table[key][action] = 0
 
 
-    def initialize_state(self, states, available_actions: Set, env):
+    def _init_table_by_state_function(self, states, available_actions, norm_set, env):
+        from src.utils.utils import get_state_value, extract_norm_levels, extract_norm_keys
+        norms = extract_norm_keys(norm_set)
+        level_of_norms = extract_norm_levels(norm_set)
+        for state in states:
+            value = get_state_value(state, norms, level_of_norms, env)
+            for action in available_actions:
+                self.table[state][action] += value
+
+    def _init_table_by_distance(self, states, available_actions, env):
+        from src.utils.utils import compute_expected_successor, distance_to_goal
+        layout, width, height = env.get_layout()
+        goal = env.get_goal_tile()
+        for state in states:
+            for action in available_actions:
+                successor = compute_expected_successor(state[0], action, width, height)
+                diff = distance_to_goal(state[0], goal, width, height) - distance_to_goal(successor, goal, width, height)
+                self.table[state][action] += diff / 10
+
+    def initialize_state(self, states, available_actions: Set, norm_set, env):
         if self.initialization == "random":
             for state in states:
                 self.table[state] = {a: round(random.uniform(0, 0.2), 2) for a in available_actions}
+        elif self.initialization == "distance":
+            for state in states:
+                self.table[state] = {a: 0.1 for a in available_actions}
+            self._init_table_by_distance(states, available_actions, env)
         elif self.initialization == "safe":
             for state in states:
                 self.table[state] = {a: 0 for a in available_actions}
             self._init_table_for_safe_states_and_action(states, available_actions, env)
-        # TODO: also use super-safe init? and rename the other cautious?
+        elif self.initialization == "state_function":
+            for state in states:
+                self.table[state] = {a: 0.1 for a in available_actions}
+            self._init_table_by_state_function(states, available_actions, norm_set, env)
         else:
             for state in states:
                 self.table[state] = {a: 0 for a in available_actions}
@@ -120,7 +146,7 @@ class QTable:
         returns the best action within the allowed_actions-set
         """
         available_actions = {action: self.table[state][action] for action in allowed_actions}
-        current_maximal_estimate = max(available_actions.items())[1]
+        current_maximal_estimate = max(available_actions.values())
         current_optimal_actions = [a for (a, v) in available_actions.items()
                                    if v == current_maximal_estimate]
 
