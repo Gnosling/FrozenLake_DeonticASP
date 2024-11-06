@@ -12,7 +12,7 @@ class QTable:
         self.table = dict()
         self.initialization = initialization
 
-    def _init_table_for_safe_states_and_action(self, states, available_actions, env):
+    def _init_table_by_safe_states_and_action(self, states, available_actions, env):
         layout, width, height = env.get_layout()
         safe_tiles = b'FPSG' # Note: safe tiles get a value of 0.2, cracked are only half save so they get 0.1
         for tile_number in range(width * height):
@@ -84,7 +84,6 @@ class QTable:
                             for key in current_states:
                                 self.table[key][action] = 0
 
-
     def _init_table_by_state_function(self, states, available_actions, norm_set, env):
         from src.utils.utils import get_state_value, extract_norm_levels, extract_norm_keys
         norms = extract_norm_keys(norm_set)
@@ -104,6 +103,27 @@ class QTable:
                 diff = distance_to_goal(state[0], goal, width, height) - distance_to_goal(successor, goal, width, height)
                 self.table[state][action] += diff / 10
 
+    def _init_table_by_state_action_penalty(self, states, available_actions, norm_set, env):
+        """
+        Initialises QTable by state-action-penalty of norms.
+        But only for the expected successor, and also 'turnedOnTraverserTile' can not be checked since it needs at least two steps.
+        """
+        from src.utils.utils import get_state_action_penalty, extract_norm_levels, extract_norm_keys, compute_expected_successor
+        layout, width, height = env.get_layout()
+        holes = env.get_tiles_with_holes()
+        cracks = env.get_tiles_with_cracks()
+        goal = env.get_goal_tile()
+        level_of_norms = extract_norm_levels(norm_set)
+        terminated = False
+        for state in states:
+            for action in available_actions:
+                successor = compute_expected_successor(state[0], action, width, height)
+                if ((state[0] == goal or state[0] in holes or (state[0] == state[1] and state[0] in cracks))
+                        or (successor == goal or successor in holes or (successor == state[1] and successor in cracks))):
+                    terminated = True
+                penalty = get_state_action_penalty([state, action, (successor, state[1], state[2]), 0], terminated, extract_norm_keys(norm_set), level_of_norms, env)
+                self.table[state][action] += penalty
+
     def initialize_state(self, states, available_actions: Set, norm_set, env):
         if self.initialization == "random":
             for state in states:
@@ -115,11 +135,15 @@ class QTable:
         elif self.initialization == "safe":
             for state in states:
                 self.table[state] = {a: 0 for a in available_actions}
-            self._init_table_for_safe_states_and_action(states, available_actions, env)
+            self._init_table_by_safe_states_and_action(states, available_actions, env)
         elif self.initialization == "state_function":
             for state in states:
                 self.table[state] = {a: 0.1 for a in available_actions}
             self._init_table_by_state_function(states, available_actions, norm_set, env)
+        elif self.initialization == "state_action_penalty":
+            for state in states:
+                self.table[state] = {a: 0.5 for a in available_actions}
+            self._init_table_by_state_action_penalty(states, available_actions, norm_set, env)
         else:
             for state in states:
                 self.table[state] = {a: 0 for a in available_actions}

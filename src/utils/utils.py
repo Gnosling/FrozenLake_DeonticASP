@@ -52,6 +52,9 @@ def extract_performed_action(current_position: int, new_position : int, width):
         return "DOWN"
     elif diff == -width:
         return "UP"
+    else:
+        # Note: agent can slip on edges in the same tile
+        return None
 
 def compute_non_determinisic_successors(current_position: int, action, width, height):
     """
@@ -286,7 +289,7 @@ def test_target(target, env, config, after_training):
             slips += 1
 
         if norm_violations is not None:
-            _check_violations(norm_violations, trail_of_target, last_performed_action, terminated or step == max_steps - 1, env)
+            _check_violations(norm_violations, trail_of_target, terminated or step == max_steps - 1, env)
 
         state = new_state
 
@@ -295,12 +298,14 @@ def test_target(target, env, config, after_training):
 
     return trail_of_target, norm_violations, slips
 
-def _tile_is_safe(tile: int, env, width, height):
+def _tile_is_safe(tile: int, env):
     """
     checks if there are holes next to the input tile, if so returns false
     """
     if env.get_tile_symbol_of_state_number(tile) in b'H':
         return False
+
+    layout, width, height = env.get_layout()
 
     row = tile/height
     col = tile%width
@@ -323,7 +328,7 @@ def _tile_is_safe(tile: int, env, width, height):
 def distance_to_goal(position, goal, width, height):
     return abs(position % width - goal % width) + abs(int(position / height) - int(goal / height))
 
-def _check_violations(norm_violations, trail_of_target, last_performed_action, terminated, env):
+def _check_violations(norm_violations, trail_of_target, terminated, env):
     """
     checks violations of norms in the current step and fills up norm_violations dictionary with the counter of the respective violation
     """
@@ -331,9 +336,11 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
     goal = env.get_goal_tile()
 
     state, action_name, new_state, _ = trail_of_target[-1]
-    previous_action = None
+    last_performed_action = extract_performed_action(state[0], new_state[0], width)
+    second_last_performed_action = None
     if len(trail_of_target) > 1:
-        _, previous_action, _, _ = trail_of_target[-2]
+        second_last_state, second_last_action_name, _, _ = trail_of_target[-2]
+        second_last_performed_action = extract_performed_action(second_last_state[0], state[0], width)
     old_position = state[0]
     new_position = new_state[0]
     old_traverser_position = state[1]
@@ -354,9 +361,10 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
         elif norm == "turnedOnTraverserTile":
             if len(trail_of_target) > 1:
                 if old_position == old_traverser_position:
-                    # _, previous_action, _, _ = trail_of_target[-2] # Note: last_proposed_action is not the same as last_performed_action
-                    if previous_action != last_performed_action:
-                        norm_violations[norm] += 1
+                    if second_last_performed_action is not None and last_performed_action is not None:
+                        # Note: if one of them is 'no movement' then there was no turn # TODO: test this!
+                        if second_last_performed_action != last_performed_action:
+                            norm_violations[norm] += 1
 
         elif norm == "stolePresent":
             if len(previous_presents) != len(remaining_presents):
@@ -371,7 +379,6 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
                 if len(remaining_presents) > 0:
                     norm_violations[norm] += 1
 
-
         elif norm == "movedAwayFromGoal":
             previous_distance = distance_to_goal(old_position, goal, width, height)
             new_distance = distance_to_goal(new_position, goal, width, height)
@@ -380,12 +387,12 @@ def _check_violations(norm_violations, trail_of_target, last_performed_action, t
 
         elif norm == "leftSafeArea":
             # old was, new is not
-            if _tile_is_safe(old_position, env, width, height) and not _tile_is_safe(new_position, env, width, height):
+            if _tile_is_safe(old_position, env) and not _tile_is_safe(new_position, env):
                 norm_violations[norm] += 1
 
         elif norm == "didNotReturnToSafeArea":
             # both are not safe
-            if not _tile_is_safe(old_position, env, width, height) and not _tile_is_safe(new_position, env, width, height):
+            if not _tile_is_safe(old_position, env) and not _tile_is_safe(new_position, env):
                 norm_violations[norm] += 1
 
         else:
@@ -476,7 +483,7 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
         terminated = successor == goal or successor in holes
 
         trail.append([state, action, (successor, state[1], state[2]), 0])
-        _check_violations(norm_violations, trail, last_performed_action, terminated, env)
+        _check_violations(norm_violations, trail, terminated, env)
         if any(value > 0 for value in norm_violations.values()):
             allowed_actions.remove(action)
             sum_of_violations[action] = sum(norm_violations.values())
@@ -498,9 +505,14 @@ def get_state_value(state, norms, level_of_norms, env):
     scaling_factor = 2
     layout, width, height = env.get_layout()
     goal = env.get_goal_tile()
+    holes = env.get_tiles_with_holes()
+    cracks = env.get_tiles_with_cracks()
+    terminated = False
+    if state[0] == goal or state[0] in holes or (state[0] == state[1] and state[0] in cracks): # TODO: test this
+        terminated = True
     for norm in norms.keys():
         if norm == "notReachedGoal":
-            if state[0] == goal:
+            if terminated:
                 value += 1 * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "occupiedTraverserTile":
@@ -515,14 +527,14 @@ def get_state_value(state, norms, level_of_norms, env):
                 value += len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "missedPresents":
-            if len(state[2]) > 0:
+            if terminated and len(state[2]) > 0:
                 value += -len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "movedAwayFromGoal":
             value += -distance_to_goal(state[0], goal, width, height) / 0.8 * (scaling_factor ** (level_of_norms[norm] - 1))
 
         elif norm == "leftSafeArea":
-            if _tile_is_safe(state[0], env, width, height):
+            if _tile_is_safe(state[0], env):
                 value += 1 * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "didNotReturnToSafeArea":
@@ -534,7 +546,8 @@ def get_state_value(state, norms, level_of_norms, env):
     value = value / 100  # Note: this is to scale all rewards down
     return value
 
-def get_state_action_penalty(trail, last_action, terminated, norms, level_of_norms, env):
+
+def get_state_action_penalty(trail, terminated, norms, level_of_norms, env):
     """
     Computes the state-action-penalty under the given norms.
     Violations are scaled with scaling_factor**(level_of_norms[norm]-1).
@@ -543,8 +556,8 @@ def get_state_action_penalty(trail, last_action, terminated, norms, level_of_nor
         return 0
 
     scaling_factor = 2
-    # Note: trail[i] = [state, action, new_state, reward], but rewards does not matter for violations
-    _check_violations(norms, trail, last_action, terminated, env)
+    # Note: trail[i] = [state, action, new_state, reward], but rewards don't matter for violations
+    _check_violations(norms, trail, terminated, env)
 
     penalty = 0
     for norm, violations in norms.items():
@@ -555,7 +568,7 @@ def get_state_action_penalty(trail, last_action, terminated, norms, level_of_nor
     return penalty
 
 
-def get_shaped_rewards(enforcing, discount, last_action, state, action, new_state, trail, env):
+def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     norms = extract_norm_keys(enforcing.get("norm_set"))
     level_of_norms = extract_norm_levels(enforcing.get("norm_set"))
     terminated = env.is_terminated()
@@ -565,11 +578,11 @@ def get_shaped_rewards(enforcing, discount, last_action, state, action, new_stat
     elif "full_reward_shaping" in enforcing.get("strategy"):
         # NOTE: the full shaping uses _check_violations(..) for state_actions penalties, hence both need separate norms-dicts
         if len(trail) <= 1:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              - (get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], None, False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
         else:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, last_action, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              - (get_state_action_penalty(trail[:-1], None, False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty(trail[:-1], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
     return shaped_rewards
 
 

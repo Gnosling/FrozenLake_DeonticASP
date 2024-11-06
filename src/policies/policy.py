@@ -45,7 +45,7 @@ class Policy:
         self._update_learning_rate() # TODO: test_learning rate updates
         if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"):
             if (self.enforcing.get("phase") == "during_training" and not after_training) or (self.enforcing.get("phase") == "after_training" and after_training):
-                reward = reward + get_shaped_rewards(self.enforcing, self.discount, self.last_performed_action, state, action, new_state, trail, env)
+                reward = reward + get_shaped_rewards(self.enforcing, self.discount, state, new_state, trail, env)
         delta = (self.learning_rate
                  * (reward + self.discount * self.value_of_state(new_state) - self.q_table.value_of(state, action)))
         self.q_table.update(state, action, delta)
