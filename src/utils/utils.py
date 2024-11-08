@@ -328,18 +328,18 @@ def _tile_is_safe(tile: int, env):
 def distance_to_goal(position, goal, width, height):
     return abs(position % width - goal % width) + abs(int(position / height) - int(goal / height))
 
-def _check_violations(norm_violations, trail_of_target, terminated, env):
+def _check_violations(norm_violations, trail, terminated, env):
     """
     checks violations of norms in the current step and fills up norm_violations dictionary with the counter of the respective violation
     """
     layout, width, height = env.get_layout()
     goal = env.get_goal_tile()
 
-    state, action_name, new_state, _ = trail_of_target[-1]
+    state, action_name, new_state, _ = trail[-1]
     last_performed_action = extract_performed_action(state[0], new_state[0], width)
     second_last_performed_action = None
-    if len(trail_of_target) > 1:
-        second_last_state, second_last_action_name, _, _ = trail_of_target[-2]
+    if len(trail) > 1:
+        second_last_state, second_last_action_name, _, _ = trail[-2]
         second_last_performed_action = extract_performed_action(second_last_state[0], state[0], width)
     old_position = state[0]
     new_position = new_state[0]
@@ -359,10 +359,10 @@ def _check_violations(norm_violations, trail_of_target, terminated, env):
                 norm_violations[norm] += 1
 
         elif norm == "turnedOnTraverserTile":
-            if len(trail_of_target) > 1:
+            if len(trail) > 1:
                 if old_position == old_traverser_position:
                     if second_last_performed_action is not None and last_performed_action is not None:
-                        # Note: if one of them is 'no movement' then there was no turn # TODO: test this!
+                        # Note: if one of them is 'no movement' then there was no turn
                         if second_last_performed_action != last_performed_action:
                             norm_violations[norm] += 1
 
@@ -512,7 +512,7 @@ def get_state_value(state, norms, level_of_norms, env):
         terminated = True
     for norm in norms.keys():
         if norm == "notReachedGoal":
-            if terminated:
+            if terminated and state[0] == goal:
                 value += 1 * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "occupiedTraverserTile":
@@ -531,7 +531,7 @@ def get_state_value(state, norms, level_of_norms, env):
                 value += -len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
         elif norm == "movedAwayFromGoal":
-            value += -distance_to_goal(state[0], goal, width, height) / 0.8 * (scaling_factor ** (level_of_norms[norm] - 1))
+            value += (-distance_to_goal(state[0], goal, width, height) / 0.8) * (scaling_factor ** (level_of_norms[norm] - 1))
 
         elif norm == "leftSafeArea":
             if _tile_is_safe(state[0], env):

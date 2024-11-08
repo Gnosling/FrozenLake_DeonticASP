@@ -114,14 +114,14 @@ class QTable:
         cracks = env.get_tiles_with_cracks()
         goal = env.get_goal_tile()
         level_of_norms = extract_norm_levels(norm_set)
-        terminated = False
         for state in states:
             for action in available_actions:
                 successor = compute_expected_successor(state[0], action, width, height)
+                terminated = False
                 if ((state[0] == goal or state[0] in holes or (state[0] == state[1] and state[0] in cracks))
                         or (successor == goal or successor in holes or (successor == state[1] and successor in cracks))):
                     terminated = True
-                penalty = get_state_action_penalty([state, action, (successor, state[1], state[2]), 0], terminated, extract_norm_keys(norm_set), level_of_norms, env)
+                penalty = get_state_action_penalty([[state, action, (successor, state[1], state[2]), 0]], terminated, extract_norm_keys(norm_set), level_of_norms, env)
                 self.table[state][action] += penalty
 
     def initialize_state(self, states, available_actions: Set, norm_set, env):

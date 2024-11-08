@@ -22,7 +22,7 @@ level(turnedOnTraverserTile,3).
 
 % The agent must reach the goal tile
 obligatory(reachedGoal).
-level(reachedGoal,4). % TODO: move level up for all reachedGoal
+level(reachedGoal,4).
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not &tel {<? goalStateReached}.
 
