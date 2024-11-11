@@ -37,13 +37,6 @@ pip install -r requirements.txt
 
 ---------------
 
-- check planning with learning:
-  - test combis + RL learning
-
-
-- non-deterministic policy --> not needed / beneficial
-
-
 ### policy can be enforced:
 The enforcement can happen during the training (ie. behavior policy) or afterwards (ie. the final target-policies).
 During training if exploration is triggered no enforce-ment is applied.
@@ -67,32 +60,29 @@ During training if exploration is triggered no enforce-ment is applied.
     - these plus-rewards can be scaled by the level of the norm and the sum can be downsized
     - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs which is no longer optimal
 
-#### Implement norm-init for q-table
-- State-function can be used here (maybe even the full shaping?)
-- This is independent of enforcing 
+<br/>
+<br/>
 
-
+###### Some other notes
 - should the traverser be part of the state-info? --> yes --> define state representation in overleaf (maybe use both?)
 - --> this is pair of states (also include presents?-> yes)
 - --> state space should be fine since it's: Tiles×Tiles×(Possible Configurations of Presents), at worst T^2 x 2^T x actions, but there aren't that many presents there
 - --> use at most 3 presents, maybe less then it's fine
-- implement strategies for exploration for q-table!
-- implement new plannig strategy for comparing actions and pick better?
-- implement distance based init of table
+- non-deterministic policy --> not needed / beneficial
 
+<br/>
+<br/>
 
 ### Implement plotting and output data:
-  - both target and behavior use same q_table, plot only avg target-return over steps
-  - extend violations chart with new norms
+  - both target and behavior use same q_table, plot only avg target-return over steps instead of episodes ??
+  - have run-times plotted
   - extend plotting for state-visits as heat map
-  - have a chart for average number of steps and average number of slips
   - policy map showing the favorite action in each state
   - simply the entire q-table as well (not for plotting)
   - something about exploration (or use that in the heatmap to indicate areas that were not explored?)
 
 ---------------
-
-- Paradoxes:
+### Paradoxes:
   - Ross's paradox
   - Prior's paradox (Paradox of derived obligation)
   - {\AA}qvist’s paradox of Epistemic Obligation
@@ -105,8 +95,7 @@ During training if exploration is triggered no enforce-ment is applied.
   - Chisholm's paradox
 
 ---------------
-
-- Experiments:
+### Experiments:
   - First on 'crude' frozenlake with better splippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
   - A* for testing RL-params:
     - discount should be high to make the agent use long-term rewards and it's okay because there are mostly rewards negative rewards for any step

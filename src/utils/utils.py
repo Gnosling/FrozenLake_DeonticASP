@@ -3,6 +3,7 @@ from typing import Tuple, List, Any
 import numpy as np
 import random
 import copy
+import time
 import matplotlib.pyplot as plt
 import ast
 import itertools
@@ -265,7 +266,9 @@ def test_target(target, env, config, after_training):
         #     target.set_enforcing(enforcing)
         else:
             target.set_enforcing(None)
-    norm_violations = extract_norm_keys(deontic.get("norm_set"))
+    norm_violations = None
+    if deontic:
+        norm_violations = extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
     state, info = env.reset()
     layout, width, height = env.get_layout()
@@ -273,6 +276,7 @@ def test_target(target, env, config, after_training):
     last_performed_action = None
     action_name = None
     previous_state = None
+    start_time = time.time()
 
     for step in range(max_steps):
         target.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
@@ -296,7 +300,8 @@ def test_target(target, env, config, after_training):
         if terminated or truncated:
             break
 
-    return trail_of_target, norm_violations, slips
+    end_time = time.time()
+    return trail_of_target, norm_violations, slips, end_time-start_time
 
 def _tile_is_safe(tile: int, env):
     """
@@ -586,66 +591,85 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-
-def store_results(config: str, returns, steps, slips, violations, enforced_returns, enforced_steps, enforced_slips, enforced_violations):
+def store_results(config: str, returns, steps, slips, violations, training_times, inference_times, enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times):
     conf = configs.get(config)
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_config.txt")
+    experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
+    if not os.path.exists(experiment_folder):
+        os.makedirs(experiment_folder)
+
+    path = os.path.join(experiment_folder, f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
 
 
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
+    path = os.path.join(experiment_folder, f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(returns))
     print(f"Stored return in: \t {path}")
 
     if enforced_returns is not None:
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return_enforced.txt")
+        path = os.path.join(experiment_folder, f"{config}_return_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_returns))
         print(f"Stored enforced return in: \t {path}")
 
 
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps.txt")
+    path = os.path.join(experiment_folder, f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(steps))
     print(f"Stored steps in: \t {path}")
 
     if enforced_steps is not None:
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps_enforced.txt")
+        path = os.path.join(experiment_folder, f"{config}_steps_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_steps))
         print(f"Stored enforced return in: \t {path}")
 
 
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips.txt")
+    path = os.path.join(experiment_folder, f"{config}_slips.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(slips))
     print(f"Stored slips in: \t {path}")
 
     if enforced_slips is not None:
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips_enforced.txt")
+        path = os.path.join(experiment_folder, f"{config}_slips_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_slips))
         print(f"Stored enforced slips in: \t {path}")
 
 
     if violations:
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
+        path = os.path.join(experiment_folder, f"{config}_violations.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(violations))
         print(f"Stored violations in: \t {path}")
 
     if enforced_violations:
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations_enforced.txt")
+        path = os.path.join(experiment_folder, f"{config}_violations_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_violations))
         print(f"Stored enforced violations in: \t {path}")
 
+    path = os.path.join(experiment_folder, f"{config}_training_times.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_times))
+    print(f"Stored training-times in: \t {path}")
+
+    path = os.path.join(experiment_folder, f"{config}_inference_times.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(inference_times))
+    print(f"Stored inference-times in: \t {path}")
+
+    if enforced_inference_times is not None:
+        path = os.path.join(experiment_folder, f"{config}_enforced_inference_times.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_inference_times))
+        print(f"Stored enforced inference-times in: \t {path}")
+
 
 def plot_experiment(config: str):
-    # TODO: use seperate plots for enforcing?
+    # TODO: use seperate plots for enforcing? -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
     repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     optimum = 1
 

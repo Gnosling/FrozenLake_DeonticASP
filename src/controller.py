@@ -1,4 +1,5 @@
 import gym
+import time
 
 from .utils.utils import *
 from .policies.planner_policy import PlannerPolicy
@@ -29,6 +30,8 @@ class Controller:
         total_violations = []
         total_steps = []
         total_slips = []
+        total_training_times = []
+        total_inference_times = []
         final_target_policies = []
         for rep in range(repetitions):
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
@@ -41,6 +44,8 @@ class Controller:
             violations_of_target_per_episode = []
             steps_of_target_per_episode = []
             slips_of_target_per_episode = []
+            training_time_of_behavior_per_episode = []
+            inference_time_of_target_per_episode = []
             print(f"Performing repetition {rep+1} ...", end='\r')
             for episode in range(episodes):
                 debug_print("_____________________________________________")
@@ -52,6 +57,7 @@ class Controller:
                 last_performed_action = None
                 action_name = None
                 previous_state = None
+                start_time = time.time()
 
                 for step in range(max_steps):
                     debug_print(env.render())
@@ -83,7 +89,9 @@ class Controller:
                 if type(behavior) == PlannerPolicy:
                     behavior.reset_after_episode()
 
-                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config, False)
+                end_time = time.time()
+                training_time = end_time-start_time
+                trail_of_target, violations_of_target, slips_of_target, inference_time = test_target(target, env, config, False)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode}: {expected_return}")
                 debug_print(f"Violations of ep {episode}: {violations_of_target}")
@@ -92,6 +100,8 @@ class Controller:
                 violations_of_target_per_episode.append(violations_of_target)
                 steps_of_target_per_episode.append(len(trail_of_target))
                 slips_of_target_per_episode.append(slips_of_target)
+                training_time_of_behavior_per_episode.append(training_time)
+                inference_time_of_target_per_episode.append(inference_time)
 
             debug_print(f"Finished repetition {rep + 1}")
             debug_print("\n_____________________________________________")
@@ -99,6 +109,8 @@ class Controller:
             total_violations.append(violations_of_target_per_episode)
             total_steps.append(steps_of_target_per_episode)
             total_slips.append(slips_of_target_per_episode)
+            total_training_times.append(training_time_of_behavior_per_episode)
+            total_inference_times.append(inference_time_of_target_per_episode)
             final_target_policies.append(target)
             env.close()
 
@@ -111,8 +123,10 @@ class Controller:
         avg_steps = get_average_numbers(total_steps)
         debug_print(f"Steps:\n{avg_steps}")
         avg_slips = get_average_numbers(total_slips)
+        avg_training_times = get_average_numbers(total_training_times)
+        avg_inference_times = get_average_numbers(total_inference_times)
         avg_violations = None
-        if deontic.get("norm_set"):
+        if deontic:
             avg_violations = get_average_violations(total_violations, deontic.get("norm_set"))
             debug_print(f"Violations:\n{avg_violations}")
 
@@ -120,29 +134,33 @@ class Controller:
         avg_enforced_violations = None
         avg_enforced_steps = None
         avg_enforced_slips = None
+        avg_enforced_inference_times = None
         if enforcing and enforcing.get("phase") == "after_training":
             return_of_targets = []
             violations_of_targets = []
             steps_of_targets = []
             slips_of_targets = []
+            enforced_inference_time_of_target = []
             for target in final_target_policies:
-                trail_of_target, violations_of_target, slips_of_target = test_target(target, env, config, True)
+                trail_of_target, violations_of_target, slips_of_target, inference_time = test_target(target, env, config, True)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 return_of_targets.append(expected_return)
                 violations_of_targets.append(violations_of_target)
                 steps_of_targets.append(len(trail_of_target))
                 slips_of_targets.append(slips_of_target)
+                enforced_inference_time_of_target.append(inference_time)
             avg_enforced_returns = sum(return_of_targets) / len(return_of_targets)
             avg_enforced_violations = {norm: sum(violation[norm] for violation in violations_of_targets) / len(violations_of_targets) for norm in violations_of_targets[0]}
             avg_enforced_steps = sum(steps_of_targets) / len(steps_of_targets)
             avg_enforced_slips = sum(slips_of_targets) / len(slips_of_targets)
+            avg_enforced_inference_times = enforced_inference_time_of_target
 
 
         # -----------------------------------------------------------------------------
         # Storing of results
         # -----------------------------------------------------------------------------
-        store_results(config, avg_returns, avg_steps, avg_slips, avg_violations,
-                      avg_enforced_returns, avg_enforced_steps, avg_enforced_slips, avg_enforced_violations)
+        store_results(config, avg_returns, avg_steps, avg_slips, avg_violations, avg_training_times, avg_inference_times,
+                      avg_enforced_returns, avg_enforced_steps, avg_enforced_slips, avg_enforced_violations, avg_enforced_inference_times)
 
 
         # -----------------------------------------------------------------------------
