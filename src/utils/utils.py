@@ -7,6 +7,7 @@ import time
 import matplotlib.pyplot as plt
 import ast
 import itertools
+import seaborn as sns
 
 from src.configs import configs
 from src.policies.q_table import QTable
@@ -42,6 +43,24 @@ def action_name_to_number(name: str) -> int:
     else:
         return None
 
+def get_level_data(level_name):
+    path = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level_name}.lp")
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+
+    width = None
+    height = None
+    goal = None
+    for line in content.split("\n"):
+        line = line.strip()
+        if line.startswith("#const width"):
+            width = int(line.split(" = ")[1][:-1])
+        elif line.startswith("#const height"):
+            height = int(line.split(" = ")[1][:-1])
+        elif line.startswith("goal("):
+            goal = int(line.split("goal(")[1][:-2])
+
+    return width, height, goal
 
 def extract_performed_action(current_position: int, new_position : int, width):
     diff = new_position - current_position
@@ -227,6 +246,17 @@ def compute_expected_return(discount_rate: float, rewards: List[float]) -> float
 
     return G[-1]
 
+
+def update_state_visits(collection, results_from_one_iteration):
+    if not collection:
+        collection = {state: {action: 0 for action in actions} for state, actions in results_from_one_iteration.items()}
+
+    for state, actions in results_from_one_iteration.items():
+        for action, visit in actions.items():
+            collection[state][action] += visit
+    return collection
+
+
 def get_average_numbers(results):
     average_returns = []
     episodes = len(results[0])
@@ -244,7 +274,7 @@ def get_average_violations(results, norm_set):
     episodes = len(results[0])
     repetitions = len(results)
     for episode in range(episodes):
-        total_per_episode = extract_norm_keys(norm_set)
+        total_per_episode = extract_norm_keys(norm_set) # TODO: why read keys again? they are in results
         avg_per_episode = dict()
         for rep in range(repetitions):
             for norm in total_per_episode.keys():
@@ -254,6 +284,14 @@ def get_average_violations(results, norm_set):
         average_violations.append(avg_per_episode)
 
     return average_violations
+
+
+def get_average_state_visits(results, reps):
+    average_state_visits = {state: {action: 0 for action in actions} for state, actions in results.items()}
+    for state, actions in results.items():
+        for action, value in actions.items():
+            average_state_visits[state][action] = value / reps
+    return average_state_visits
 
 
 def test_target(target, env, config, after_training):
@@ -270,7 +308,11 @@ def test_target(target, env, config, after_training):
     if deontic:
         norm_violations = extract_norm_keys(deontic.get("norm_set"))
     trail_of_target = []
+    state_visits = {state: {action: 0 for action in actions} for state, actions in target.q_table.get_all_values().items()}
+    for state in state_visits.keys():
+        state_visits[state]['VISITS'] = 0
     state, info = env.reset()
+    state_visits[state]['VISITS'] += 1
     layout, width, height = env.get_layout()
     slips = 0
     last_performed_action = None
@@ -289,6 +331,10 @@ def test_target(target, env, config, after_training):
         previous_state = state
         last_performed_action = extract_performed_action(state[0], new_state[0], width)
 
+        if last_performed_action:
+            state_visits[state][last_performed_action] += 1
+        state_visits[new_state]['VISITS'] += 1
+
         if info.get("prob") == 0.1:
             slips += 1
 
@@ -301,7 +347,7 @@ def test_target(target, env, config, after_training):
             break
 
     end_time = time.time()
-    return trail_of_target, norm_violations, slips, end_time-start_time
+    return trail_of_target, norm_violations, slips, end_time-start_time, state_visits
 
 def _tile_is_safe(tile: int, env):
     """
@@ -591,7 +637,8 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, returns, steps, slips, violations, training_times, inference_times, enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times):
+def store_results(config: str, returns, steps, slips, violations, training_times, inference_times, state_visits,
+                  enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
     conf = configs.get(config)
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
     if not os.path.exists(experiment_folder):
@@ -601,7 +648,6 @@ def store_results(config: str, returns, steps, slips, violations, training_times
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
-
 
     path = os.path.join(experiment_folder, f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
@@ -614,7 +660,6 @@ def store_results(config: str, returns, steps, slips, violations, training_times
             file.write(str(enforced_returns))
         print(f"Stored enforced return in: \t {path}")
 
-
     path = os.path.join(experiment_folder, f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(steps))
@@ -626,7 +671,6 @@ def store_results(config: str, returns, steps, slips, violations, training_times
             file.write(str(enforced_steps))
         print(f"Stored enforced return in: \t {path}")
 
-
     path = os.path.join(experiment_folder, f"{config}_slips.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(slips))
@@ -637,7 +681,6 @@ def store_results(config: str, returns, steps, slips, violations, training_times
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_slips))
         print(f"Stored enforced slips in: \t {path}")
-
 
     if violations:
         path = os.path.join(experiment_folder, f"{config}_violations.txt")
@@ -662,18 +705,35 @@ def store_results(config: str, returns, steps, slips, violations, training_times
     print(f"Stored inference-times in: \t {path}")
 
     if enforced_inference_times is not None:
-        path = os.path.join(experiment_folder, f"{config}_enforced_inference_times.txt")
+        path = os.path.join(experiment_folder, f"{config}_inference_times_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_inference_times))
         print(f"Stored enforced inference-times in: \t {path}")
 
+    path = os.path.join(experiment_folder, f"{config}_state_visits.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(state_visits))
+    print(f"Stored state-visits in: \t {path}")
+
+    if enforced_state_visits is not None:
+        path = os.path.join(experiment_folder, f"{config}_state_visits_enforced.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(enforced_state_visits))
+        print(f"Stored enforced state-visits in: \t {path}")
+
 
 def plot_experiment(config: str):
     # TODO: use seperate plots for enforcing? -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
+    # TODO: plot the runtimes (value is seconds)
     repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     optimum = 1
+    experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
+    plot_folder = os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}")
+    if not os.path.exists(plot_folder):
+        os.makedirs(plot_folder)
 
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_return.txt")
+    #  ---   ---   ---   plots: returns   ---   ---   ---
+    path = os.path.join(experiment_folder, f"{config}_return.txt")
     returns = []
     with open(path, 'r', newline='') as file:
         content = file.read()
@@ -686,7 +746,7 @@ def plot_experiment(config: str):
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Return of target policy')
-    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
+    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episode')
     plt.ylabel('return')
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -696,18 +756,18 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, 1.02)
 
-    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_return.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_return.png"))
     # plt.show()
     plt.close()
 
-
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_steps.txt")
+    #  ---   ---   ---   plots: steps and slips   ---   ---   ---
+    path = os.path.join(experiment_folder, f"{config}_steps.txt")
     steps = []
     with open(path, 'r', newline='') as file:
         content = file.read()
         steps = ast.literal_eval(content)
 
-    path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_slips.txt")
+    path = os.path.join(experiment_folder, f"{config}_slips.txt")
     slips = []
     with open(path, 'r', newline='') as file:
         content = file.read()
@@ -723,7 +783,7 @@ def plot_experiment(config: str):
 
     plt.title(f'{config} - Average number of steps and of slips of target policy')
     plt.figtext(0.5, 0.01,
-                f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n',
+                f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
                 ha='center', va='center', fontsize=9)
     plt.xlabel('episode')
     plt.ylabel('number')
@@ -732,13 +792,12 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, max(steps)+2)
 
-    plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_steps.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_steps.png"))
     # plt.show()
     plt.close()
 
-
-    if deontic.get("norm_set") is not None:
-        # the notReachedGoal should be the inverse of return, thus update rewards to 0 / 1
+    #  ---   ---   ---   plots: violations   ---   ---   ---
+    if deontic is not None:
         colors_of_norms = {
             'occupiedTraverserTile': 'darkred',
             'turnedOnTraverserTile': 'red',
@@ -748,9 +807,9 @@ def plot_experiment(config: str):
             'didNotReturnToSafeArea': 'darkorange',
             'stolePresent': 'deeppink',
             'missedPresents': 'mediumvioletred'
-        } # see https://matplotlib.org/stable/gallery/color/named_colors.html
+        }  # see https://matplotlib.org/stable/gallery/color/named_colors.html
 
-        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}_violations.txt")
+        path = os.path.join(experiment_folder, f"{config}_violations.txt")
         violations = []
         with open(path, 'r', newline='') as file:
             content = file.read()
@@ -774,12 +833,69 @@ def plot_experiment(config: str):
         plt.ylim(0, 20)
         plt.yticks(range(0, 21, 1))
 
-        plt.savefig(os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}_violations.png"))
+        plt.savefig(os.path.join(plot_folder, f"{config}_violations.png"))
         # plt.show()
         plt.close()
 
 
-    # TODO: plot head-map of visited states -> needs new results
+    #  ---   ---   ---   plots: state-visits & preferred actions   ---   ---   ---
+    path = os.path.join(experiment_folder, f"{config}_state_visits.txt")
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        state_actions_and_visits = ast.literal_eval(content)
+
+    width, height, goal = get_level_data(frozenlake.get("name"))
+    position_visits = {tile: 0 for tile in range(width*height)}
+    sum_of_executed_actions = {tile: {action: 0 for action in actions if action != 'VISITS'} for tile in range(width*height) for actions in state_actions_and_visits.values()}
+    preferred_actions = {tile: 'NONE' for tile in range(width*height)}
+
+    for states, actions in state_actions_and_visits.items():
+        position = states[0]
+        for action, value in actions.items():
+            if action == 'VISITS':
+                position_visits[position] += value # TODO: test the merging of position and filling of these lists more!
+            else:
+                sum_of_executed_actions[position][action] += value
+
+    for tile, actions in sum_of_executed_actions.items():
+        preferred_action = max([action for action in actions if actions[action] != 0], key=actions.get, default=None)
+        if preferred_action:
+            preferred_actions[tile] = preferred_action
+
+    grid = np.zeros((4, 4))
+
+    for cell, total_value in position_visits.items():
+        row = cell // width
+        col = cell % width
+        grid[row, col] = total_value
+
+    formatted_data = np.array([[f'{val:.2f}'.rstrip('0').rstrip('.') if val != 0 else '0' for val in row] for row in grid])
+    plt.figure(figsize=(width+2, height+2))
+    ax = sns.heatmap(grid, cmap="viridis", cbar=True, annot=formatted_data, fmt='')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    for i in range(height):
+        for j in range(width):
+            index = i*width + j
+            ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
+                    color='white' if grid[i, j] < grid.max() / 2 else 'black')
+
+    plt.title(f'{config} - Visits of target policy', fontsize=16, pad=20)
+    plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
+
+    plt.savefig(os.path.join(plot_folder, f"{config}_state_visits.png"))
+    # plt.show()
+    plt.close()
+
+    print(f"Stored plots in: \t {plot_folder}")
+
 
 def debug_print(msg: str) -> Any:
     if DEBUG_MODE:
