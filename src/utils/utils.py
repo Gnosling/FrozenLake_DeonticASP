@@ -726,7 +726,7 @@ def plot_experiment(config: str):
     # TODO: use seperate plots for enforcing? -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
     # TODO: plot the runtimes (value is seconds)
     repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
-    optimum = 1
+    maximum = 1
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
     plot_folder = os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}")
     if not os.path.exists(plot_folder):
@@ -741,14 +741,14 @@ def plot_experiment(config: str):
 
     plt.figure(figsize=(10,6))
     plt.plot(list(range(1,episodes+1)), returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    plt.plot(list(range(1,episodes+1)), [optimum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'optimum = {optimum}')
+    plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Return of target policy')
     plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
-    plt.xlabel('episode')
-    plt.ylabel('return')
+    plt.xlabel('episodes')
+    plt.ylabel('returns')
     handles, labels = plt.gca().get_legend_handles_labels()
     order = [1,0]
     plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
@@ -757,6 +757,42 @@ def plot_experiment(config: str):
     plt.ylim(-0.02, 1.02)
 
     plt.savefig(os.path.join(plot_folder, f"{config}_return.png"))
+    # plt.show()
+    plt.close()
+
+    #  ---   ---   ---   plots: runtimes   ---   ---   ---
+    path = os.path.join(experiment_folder, f"{config}_training_times.txt")
+    training_times = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        training_times = ast.literal_eval(content)
+
+    inference_times = []
+    path = os.path.join(experiment_folder, f"{config}_inference_times.txt")
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        inference_times = ast.literal_eval(content)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(list(range(1, episodes + 1)), training_times, label='training', linewidth=1.7, color='royalblue',
+             marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen',
+             marker='o', markersize=4)
+    plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
+    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+    plt.title(f'{config} - Average time for training and inference of target policy')
+    plt.figtext(0.5, 0.01,
+                f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
+                ha='center', va='center', fontsize=9)
+    plt.xlabel('episodes')
+    plt.ylabel('seconds')
+    plt.legend(loc='upper right', framealpha=1.0)
+
+    plt.xlim(1, episodes)
+    plt.ylim(-0.02, max(training_times) + 1)
+
+    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes.png"))
     # plt.show()
     plt.close()
 
@@ -774,9 +810,9 @@ def plot_experiment(config: str):
         slips = ast.literal_eval(content)
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), steps, label='number of steps', linewidth=1.7, color='royalblue',
+    plt.plot(list(range(1, episodes + 1)), steps, label='steps', linewidth=1.7, color='royalblue',
              marker='o', markersize=4)
-    plt.plot(list(range(1, episodes + 1)), slips, label='number of slips', linewidth=1.7, color='yellow',
+    plt.plot(list(range(1, episodes + 1)), slips, label='slips', linewidth=1.7, color='seagreen',
              marker='o', markersize=4)
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
@@ -785,8 +821,8 @@ def plot_experiment(config: str):
     plt.figtext(0.5, 0.01,
                 f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
                 ha='center', va='center', fontsize=9)
-    plt.xlabel('episode')
-    plt.ylabel('number')
+    plt.xlabel('episodes')
+    plt.ylabel('counts')
     plt.legend(loc='upper right', framealpha=1.0)
 
     plt.xlim(1, episodes)
@@ -825,7 +861,7 @@ def plot_experiment(config: str):
 
         plt.title(f'{config} - Violations of target policy')
         plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
-        plt.xlabel('episode')
+        plt.xlabel('episodes')
         plt.ylabel('violations')
         plt.legend(loc='upper right', framealpha=1.0)
 
