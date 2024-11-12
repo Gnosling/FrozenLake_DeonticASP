@@ -258,32 +258,41 @@ def update_state_visits(collection, results_from_one_iteration):
 
 
 def get_average_numbers(results):
-    average_returns = []
+    average_numbers = []
+    standard_deviations = []
     episodes = len(results[0])
     repetitions = len(results)
     for episode in range(episodes):
-        total_per_episode = 0
+        values_per_episode = []
         for rep in range(repetitions):
-            total_per_episode += results[rep][episode]
-        average_returns.append(total_per_episode / repetitions)
+            values_per_episode.append(results[rep][episode])
+        average_numbers.append(sum(values_per_episode) / repetitions)
+        standard_deviations.append(np.std(values_per_episode))
 
-    return average_returns
+    return average_numbers, standard_deviations
 
 def get_average_violations(results, norm_set):
     average_violations = []
+    standard_deviations = []
     episodes = len(results[0])
     repetitions = len(results)
     for episode in range(episodes):
-        total_per_episode = extract_norm_keys(norm_set) # TODO: why read keys again? they are in results
+        values_per_episode = dict()
+        norms = extract_norm_keys(norm_set)
+        for norm in norms.keys():
+            values_per_episode[norm] = list()
         avg_per_episode = dict()
+        std_per_episode = dict()
         for rep in range(repetitions):
-            for norm in total_per_episode.keys():
-                total_per_episode[norm] += results[rep][episode][norm]
-        for norm in total_per_episode.keys():
-            avg_per_episode[norm] = total_per_episode[norm] / repetitions
+            for norm in values_per_episode.keys():
+                values_per_episode[norm].append(results[rep][episode][norm])
+        for norm in values_per_episode.keys():
+            avg_per_episode[norm] = sum(values_per_episode[norm]) / repetitions
+            std_per_episode[norm] = np.std(values_per_episode[norm])
         average_violations.append(avg_per_episode)
+        standard_deviations.append(std_per_episode)
 
-    return average_violations
+    return average_violations, standard_deviations
 
 
 def get_average_state_visits(results, reps):
@@ -391,7 +400,8 @@ def _check_violations(norm_violations, trail, terminated, env):
     second_last_performed_action = None
     if len(trail) > 1:
         second_last_state, second_last_action_name, _, _ = trail[-2]
-        second_last_performed_action = extract_performed_action(second_last_state[0], state[0], width)
+        if second_last_state:
+            second_last_performed_action = extract_performed_action(second_last_state[0], state[0], width)
     old_position = state[0]
     new_position = new_state[0]
     old_traverser_position = state[1]
@@ -637,7 +647,7 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, returns, steps, slips, violations, training_times, inference_times, state_visits,
+def store_results(config: str, avg_returns, std_returns, avg_steps, std_steps, avg_slips, std_slips, avg_violations, std_violations, avg_training_times, std_training_times, avg_inference_times, std_inference_times, state_visits,
                   enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
     conf = configs.get(config)
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
@@ -651,7 +661,8 @@ def store_results(config: str, returns, steps, slips, violations, training_times
 
     path = os.path.join(experiment_folder, f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(returns))
+        file.write(str(avg_returns) + "\n")
+        file.write(str(std_returns))
     print(f"Stored return in: \t {path}")
 
     if enforced_returns is not None:
@@ -662,7 +673,8 @@ def store_results(config: str, returns, steps, slips, violations, training_times
 
     path = os.path.join(experiment_folder, f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(steps))
+        file.write(str(avg_steps) + "\n")
+        file.write(str(std_steps))
     print(f"Stored steps in: \t {path}")
 
     if enforced_steps is not None:
@@ -673,7 +685,8 @@ def store_results(config: str, returns, steps, slips, violations, training_times
 
     path = os.path.join(experiment_folder, f"{config}_slips.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(slips))
+        file.write(str(avg_slips) + "\n")
+        file.write(str(std_slips))
     print(f"Stored slips in: \t {path}")
 
     if enforced_slips is not None:
@@ -682,10 +695,11 @@ def store_results(config: str, returns, steps, slips, violations, training_times
             file.write(str(enforced_slips))
         print(f"Stored enforced slips in: \t {path}")
 
-    if violations:
+    if avg_violations:
         path = os.path.join(experiment_folder, f"{config}_violations.txt")
         with open(path, 'w', newline='') as file:
-            file.write(str(violations))
+            file.write(str(avg_violations) + "\n")
+            file.write(str(std_violations))
         print(f"Stored violations in: \t {path}")
 
     if enforced_violations:
@@ -696,12 +710,14 @@ def store_results(config: str, returns, steps, slips, violations, training_times
 
     path = os.path.join(experiment_folder, f"{config}_training_times.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(training_times))
+        file.write(str(avg_training_times) + "\n")
+        file.write(str(std_training_times))
     print(f"Stored training-times in: \t {path}")
 
     path = os.path.join(experiment_folder, f"{config}_inference_times.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(inference_times))
+        file.write(str(avg_inference_times) + "\n")
+        file.write(str(std_inference_times))
     print(f"Stored inference-times in: \t {path}")
 
     if enforced_inference_times is not None:
@@ -723,8 +739,10 @@ def store_results(config: str, returns, steps, slips, violations, training_times
 
 
 def plot_experiment(config: str):
-    # TODO: use seperate plots for enforcing? -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
-    # TODO: plot the runtimes (value is seconds)
+    # TODO: use seperate plots for enforcing?
+    #  -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
+    #  -> for return done, do the same for inference-times, steps+slips, and violations (state-visits is just the same chart type again)!
+    # TODO: add std_deviations also in the normal plots!
     repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     maximum = 1
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
@@ -734,13 +752,16 @@ def plot_experiment(config: str):
 
     #  ---   ---   ---   plots: returns   ---   ---   ---
     path = os.path.join(experiment_folder, f"{config}_return.txt")
-    returns = []
+    avg_returns = []
+    std_returns = []
     with open(path, 'r', newline='') as file:
         content = file.read()
-        returns = ast.literal_eval(content)
+        avg_returns = np.array(ast.literal_eval(content.split("\n")[0]))
+        std_returns = np.array(ast.literal_eval(content.split("\n")[1]))
 
     plt.figure(figsize=(10,6))
-    plt.plot(list(range(1,episodes+1)), returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
+    plt.plot(list(range(1,episodes+1)), avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
+    plt.fill_between(list(range(1,episodes+1)), avg_returns - std_returns, avg_returns + std_returns, color='blue', alpha=0.2, label='standard deviation')
     plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
@@ -759,6 +780,43 @@ def plot_experiment(config: str):
     plt.savefig(os.path.join(plot_folder, f"{config}_return.png"))
     # plt.show()
     plt.close()
+
+    # ---   ---   ---   plots: enforced returns   ---   ---   ---
+    path = os.path.join(experiment_folder, f"{config}_return_enforced.txt")
+    if os.path.exists(path):
+        avg_enforced_return = None
+        std_enforced_return = None
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            avg_enforced_return = np.array(ast.literal_eval(content.split("\n")[0]))
+            std_enforced_return = np.array(ast.literal_eval(content.split("\n")[1]))
+
+        plt.figure(figsize=(6, 6))
+        y = np.array([avg_returns[-1], avg_enforced_return])
+        std = np.array([std_returns[-1], std_enforced_return])
+        # TODO: change type from lines to an 'error bar'
+        plt.plot(list(range(0, 2)), y, label='expected return', linewidth=1.7, color='royalblue',marker='o', markersize=4)
+        plt.fill_between(list(range(0, 2)), y-std, y+std, color='blue', alpha=0.2, label='standard deviation')
+        plt.plot(list(range(0, 2)), [maximum] * 2, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
+        plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
+        plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+        plt.title(f'{config} - Enforced return of target policy')
+        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center',
+                    fontsize=9)
+        plt.xlabel('enforced')
+        plt.ylabel('returns')
+        handles, labels = plt.gca().get_legend_handles_labels()
+        order = [1, 0]
+        plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
+
+        plt.xticks([])
+        plt.ylim(-0.02, 1.02)
+
+        plt.savefig(os.path.join(plot_folder, f"{config}_return_enforced.png"))
+        # plt.show()
+        plt.close()
+
 
     #  ---   ---   ---   plots: runtimes   ---   ---   ---
     path = os.path.join(experiment_folder, f"{config}_training_times.txt")
