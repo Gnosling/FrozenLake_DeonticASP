@@ -1,6 +1,7 @@
 import os.path
 from typing import Tuple, List, Any
 import numpy as np
+import pandas as pd
 import random
 import copy
 import time
@@ -295,6 +296,14 @@ def get_average_violations(results, norm_set):
     return average_violations, standard_deviations
 
 
+def append_violations(final_results, violations):
+    if not final_results:
+        final_results = {key: [] for key in violations.keys()}
+
+    for norm, value in violations.items():
+        final_results[norm].append(value)
+    return final_results
+
 def get_average_state_visits(results, reps):
     average_state_visits = {state: {action: 0 for action in actions} for state, actions in results.items()}
     for state, actions in results.items():
@@ -305,14 +314,6 @@ def get_average_state_visits(results, reps):
 
 def test_target(target, env, config, after_training):
     _, _, max_steps, _, frozenlake, _, deontic, enforcing = read_config_param(config)
-    if enforcing:
-        # enables / disables enforcing in the right phase
-        if after_training and enforcing.get("phase") == "after_training":
-            target.set_enforcing(enforcing)
-        # elif not after_training and enforcing.get("phase") == "during_training":
-        #     target.set_enforcing(enforcing)
-        else:
-            target.set_enforcing(None)
     norm_violations = None
     if deontic:
         norm_violations = extract_norm_keys(deontic.get("norm_set"))
@@ -334,9 +335,9 @@ def test_target(target, env, config, after_training):
         action_name = target.suggest_action(state, env)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
-        if after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
+        if False and after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
             target.update_after_step(state, action_name, new_state, reward, trail_of_target, env, after_training)
-            # TODO: i guess reversed learning is not useful here
+            # TODO: i guess reversed learning is not useful here also change with new enforcing control!
         previous_state = state
         last_performed_action = extract_performed_action(state[0], new_state[0], width)
 
@@ -647,95 +648,118 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, avg_returns, std_returns, avg_steps, std_steps, avg_slips, std_slips, avg_violations, std_violations, avg_training_times, std_training_times, avg_inference_times, std_inference_times, state_visits,
+def store_results(config: str, training_returns_avg, training_returns_stddev, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+                  final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                   enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
     conf = configs.get(config)
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
+    training_folder = os.path.join(experiment_folder, "training")
+    final_folder = os.path.join(experiment_folder, "final")
     if not os.path.exists(experiment_folder):
         os.makedirs(experiment_folder)
+    if not os.path.exists(training_folder):
+        os.makedirs(training_folder)
+    if not os.path.exists(final_folder):
+        os.makedirs(final_folder)
 
     path = os.path.join(experiment_folder, f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(conf))
     print(f"Stored configuration in: \t {path}")
 
-    path = os.path.join(experiment_folder, f"{config}_return.txt")
+    # Training results
+    path = os.path.join(training_folder, f"{config}_return.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(avg_returns) + "\n")
-        file.write(str(std_returns))
-    print(f"Stored return in: \t {path}")
+        file.write(str(training_returns_avg) + "\n")
+        file.write(str(training_returns_stddev))
 
+    path = os.path.join(training_folder, f"{config}_steps.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_steps_avg) + "\n")
+        file.write(str(training_steps_stddev))
+
+    path = os.path.join(training_folder, f"{config}_slips.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_slips_avg) + "\n")
+        file.write(str(training_slips_stddev))
+
+    if training_violations_avg:
+        path = os.path.join(training_folder, f"{config}_violations.txt")
+        with open(path, 'w', newline='') as file:
+            file.write(str(training_violations_avg) + "\n")
+            file.write(str(training_violations_stddev))
+
+    path = os.path.join(training_folder, f"{config}_training_times.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_fitting_times_avg) + "\n")
+        file.write(str(training_fitting_times_stddev))
+
+    path = os.path.join(training_folder, f"{config}_inference_times.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_inference_times_avg) + "\n")
+        file.write(str(training_inference_times_stddev))
+
+    path = os.path.join(training_folder, f"{config}_state_visits.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_state_visits))
+
+
+    # Final results
+    path = os.path.join(final_folder, f"{config}_return.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_returns))
+
+    path = os.path.join(final_folder, f"{config}_steps.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_steps))
+
+    path = os.path.join(final_folder, f"{config}_slips.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_slips))
+
+    path = os.path.join(final_folder, f"{config}_violations.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_violations))
+
+    path = os.path.join(final_folder, f"{config}_inference_times.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_inference_times))
+
+    path = os.path.join(final_folder, f"{config}_state_visits.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(final_state_visits))
+
+
+    # Enforced results
     if enforced_returns is not None:
-        path = os.path.join(experiment_folder, f"{config}_return_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_return_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_returns))
-        print(f"Stored enforced return in: \t {path}")
-
-    path = os.path.join(experiment_folder, f"{config}_steps.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(avg_steps) + "\n")
-        file.write(str(std_steps))
-    print(f"Stored steps in: \t {path}")
 
     if enforced_steps is not None:
-        path = os.path.join(experiment_folder, f"{config}_steps_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_steps_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_steps))
-        print(f"Stored enforced return in: \t {path}")
-
-    path = os.path.join(experiment_folder, f"{config}_slips.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(avg_slips) + "\n")
-        file.write(str(std_slips))
-    print(f"Stored slips in: \t {path}")
 
     if enforced_slips is not None:
-        path = os.path.join(experiment_folder, f"{config}_slips_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_slips_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_slips))
-        print(f"Stored enforced slips in: \t {path}")
-
-    if avg_violations:
-        path = os.path.join(experiment_folder, f"{config}_violations.txt")
-        with open(path, 'w', newline='') as file:
-            file.write(str(avg_violations) + "\n")
-            file.write(str(std_violations))
-        print(f"Stored violations in: \t {path}")
 
     if enforced_violations:
-        path = os.path.join(experiment_folder, f"{config}_violations_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_violations_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_violations))
-        print(f"Stored enforced violations in: \t {path}")
-
-    path = os.path.join(experiment_folder, f"{config}_training_times.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(avg_training_times) + "\n")
-        file.write(str(std_training_times))
-    print(f"Stored training-times in: \t {path}")
-
-    path = os.path.join(experiment_folder, f"{config}_inference_times.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(avg_inference_times) + "\n")
-        file.write(str(std_inference_times))
-    print(f"Stored inference-times in: \t {path}")
 
     if enforced_inference_times is not None:
-        path = os.path.join(experiment_folder, f"{config}_inference_times_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_inference_times_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_inference_times))
-        print(f"Stored enforced inference-times in: \t {path}")
-
-    path = os.path.join(experiment_folder, f"{config}_state_visits.txt")
-    with open(path, 'w', newline='') as file:
-        file.write(str(state_visits))
-    print(f"Stored state-visits in: \t {path}")
 
     if enforced_state_visits is not None:
-        path = os.path.join(experiment_folder, f"{config}_state_visits_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_state_visits_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_state_visits))
-        print(f"Stored enforced state-visits in: \t {path}")
 
 
 def plot_experiment(config: str):
