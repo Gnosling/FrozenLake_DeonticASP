@@ -668,7 +668,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
     print(f"Stored configuration in: \t {path}")
 
     # Training results
-    path = os.path.join(training_folder, f"{config}_return.txt")
+    path = os.path.join(training_folder, f"{config}_returns.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(training_returns_avg) + "\n")
         file.write(str(training_returns_stddev))
@@ -689,7 +689,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
             file.write(str(training_violations_avg) + "\n")
             file.write(str(training_violations_stddev))
 
-    path = os.path.join(training_folder, f"{config}_training_times.txt")
+    path = os.path.join(training_folder, f"{config}_fitting_times.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(training_fitting_times_avg) + "\n")
         file.write(str(training_fitting_times_stddev))
@@ -705,7 +705,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
 
 
     # Final results
-    path = os.path.join(final_folder, f"{config}_return.txt")
+    path = os.path.join(final_folder, f"{config}_returns.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(final_returns))
 
@@ -732,7 +732,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
 
     # Enforced results
     if enforced_returns is not None:
-        path = os.path.join(final_folder, f"{config}_return_enforced.txt")
+        path = os.path.join(final_folder, f"{config}_returns_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_returns))
 
@@ -763,19 +763,22 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
 
 
 def plot_experiment(config: str):
-    # TODO: use seperate plots for enforcing?
-    #  -> yeah, because avg_enforced is value from last targets, ie to be compared to the last value from the normal values (there is no over_episodes axis)!
-    #  -> for return done, do the same for inference-times, steps+slips, and violations (state-visits is just the same chart type again)!
-    # TODO: add std_deviations also in the normal plots!
+
+    # TODO: add std_deviations also in the plots?
+    #  -> not for violations, state_visits, runtimes, step+slips
+    #  -> for steps+slips (final->done), returns (training->done) (final->done),
     repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     maximum = 1
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
+    training_folder = os.path.join(experiment_folder, "training")
+    final_folder = os.path.join(experiment_folder, "final")
     plot_folder = os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}")
     if not os.path.exists(plot_folder):
         os.makedirs(plot_folder)
 
-    #  ---   ---   ---   plots: returns   ---   ---   ---
-    path = os.path.join(experiment_folder, f"{config}_return.txt")
+
+    #  ---   ---   ---   plots: training_returns   ---   ---   ---
+    path = os.path.join(training_folder, f"{config}_returns.txt")
     avg_returns = []
     std_returns = []
     with open(path, 'r', newline='') as file:
@@ -790,7 +793,7 @@ def plot_experiment(config: str):
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'{config} - Return of target policy')
+    plt.title(f'{config} - Training returns')
     plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('returns')
@@ -801,62 +804,86 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, 1.02)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_return.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_returns_training.png"))
     # plt.show()
     plt.close()
 
-    # ---   ---   ---   plots: enforced returns   ---   ---   ---
-    path = os.path.join(experiment_folder, f"{config}_return_enforced.txt")
+
+    # ---   ---   ---   plots: final+enforced returns   ---   ---   ---
+    path = os.path.join(final_folder, f"{config}_returns.txt")
+    final_returns = None
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        final_returns = ast.literal_eval(content)
+
+    final_percentage = final_returns.count(1) / len(final_returns)
+    final_std_dev = np.sqrt(final_percentage * (1 - final_percentage) / len(final_returns))
+    final_bar_size = final_percentage
+
+    path = os.path.join(final_folder, f"{config}_returns_enforced")
+    enforced_returns = None
     if os.path.exists(path):
-        avg_enforced_return = None
-        std_enforced_return = None
         with open(path, 'r', newline='') as file:
             content = file.read()
-            avg_enforced_return = np.array(ast.literal_eval(content.split("\n")[0]))
-            std_enforced_return = np.array(ast.literal_eval(content.split("\n")[1]))
+            enforced_returns = ast.literal_eval(content)
 
-        plt.figure(figsize=(6, 6))
-        y = np.array([avg_returns[-1], avg_enforced_return])
-        std = np.array([std_returns[-1], std_enforced_return])
-        # TODO: change type from lines to an 'error bar'
-        plt.plot(list(range(0, 2)), y, label='expected return', linewidth=1.7, color='royalblue',marker='o', markersize=4)
-        plt.fill_between(list(range(0, 2)), y-std, y+std, color='blue', alpha=0.2, label='standard deviation')
-        plt.plot(list(range(0, 2)), [maximum] * 2, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
-        plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
-        plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+    if enforced_returns:
+        enforced_percentage = enforced_returns.count(1) / len(enforced_returns)
+        enforced_std_dev = np.sqrt(enforced_percentage * (1 - enforced_percentage) / len(enforced_returns))
+        enforced_bar_size = enforced_percentage
+        plt.figure(figsize=(10, 8))
+        plt.bar(['final returns', 'enforced returns'], [final_bar_size, enforced_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=[final_std_dev, enforced_std_dev], capsize=15)
+    else:
+        plt.figure(figsize=(4.1, 8))
+        plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_dev, capsize=30)
 
-        plt.title(f'{config} - Enforced return of target policy')
-        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center',
-                    fontsize=9)
-        plt.xlabel('enforced')
-        plt.ylabel('returns')
-        handles, labels = plt.gca().get_legend_handles_labels()
-        order = [1, 0]
-        plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
+    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+    plt.ylabel('Percentage')
+    plt.title('Stacked Bar Plot of Binary Datasets (Relative Split)')
+    plt.ylim(0, 1)
+    plt.yticks([i/10 for i in range(11)])
+    plt.legend()
 
-        plt.xticks([])
-        plt.ylim(-0.02, 1.02)
+    # data = pd.DataFrame({
+    #     'Type': ['Returns'] * len(final_returns),
+    #     'Value': final_returns
+    # })
+    #
+    # if enforced_returns:
+    #     data = pd.DataFrame({
+    #         'Type': ['Returns'] * len(final_returns) + ['Enforced returns'] * len(enforced_returns),
+    #         'Value': np.concatenate([final_returns, enforced_returns])
+    #     })
+    #
+    # plt.figure(figsize=(14, 8))
+    # # TODO: this does not really work for simple return!
+    # sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.4)
+    # sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
+    # plt.title('Box Plot with Jittered Points for Return Distribution by Group')
+    # plt.xlabel('Target Groups')
+    # plt.ylabel('Return')
+    # plt.grid(axis='y', linestyle='--', alpha=0.5)
 
-        plt.savefig(os.path.join(plot_folder, f"{config}_return_enforced.png"))
-        # plt.show()
-        plt.close()
+    plt.savefig(os.path.join(plot_folder, f"{config}_returns_final.png"))
+    # plt.show()
+    plt.close()
 
 
-    #  ---   ---   ---   plots: runtimes   ---   ---   ---
-    path = os.path.join(experiment_folder, f"{config}_training_times.txt")
-    training_times = []
+    #  ---   ---   ---   plots: training_runtimes   ---   ---   ---
+    path = os.path.join(training_folder, f"{config}_fitting_times.txt")
+    fitting_times = []
     with open(path, 'r', newline='') as file:
         content = file.read()
-        training_times = ast.literal_eval(content)
+        fitting_times = ast.literal_eval(content.split("\n")[0])
 
     inference_times = []
-    path = os.path.join(experiment_folder, f"{config}_inference_times.txt")
+    path = os.path.join(training_folder, f"{config}_inference_times.txt")
     with open(path, 'r', newline='') as file:
         content = file.read()
-        inference_times = ast.literal_eval(content)
+        inference_times = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), training_times, label='training', linewidth=1.7, color='royalblue',
+    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue',
              marker='o', markersize=4)
     plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen',
              marker='o', markersize=4)
@@ -872,24 +899,64 @@ def plot_experiment(config: str):
     plt.legend(loc='upper right', framealpha=1.0)
 
     plt.xlim(1, episodes)
-    plt.ylim(-0.02, max(training_times) + 1)
+    plt.ylim(-0.02, max(fitting_times) + 1)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes_training.png"))
     # plt.show()
     plt.close()
 
-    #  ---   ---   ---   plots: steps and slips   ---   ---   ---
-    path = os.path.join(experiment_folder, f"{config}_steps.txt")
+
+    #  ---   ---   ---   plots: final+enforced runtimes   ---   ---   ---
+    path = os.path.join(final_folder, f"{config}_inference_times.txt")
+    final_inference_times = None
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        final_inference_times = ast.literal_eval(content)
+
+    path = os.path.join(final_folder, f"{config}_inference_times_enforced")
+    enforced_inference_times = None
+    if os.path.exists(path):
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            enforced_inference_times = ast.literal_eval(content)
+
+    data = pd.DataFrame({
+        'Type': ['Runtimes'] * len(final_inference_times),
+        'Value': final_inference_times
+    })
+    plt.figure(figsize=(7, 8))
+
+    if enforced_inference_times:
+        data = pd.DataFrame({
+            'Type': ['Runtimes'] * len(final_inference_times) + ['Enforced runtimes'] * len(enforced_inference_times),
+            'Value': np.concatenate([final_inference_times, enforced_inference_times])
+        })
+        plt.figure(figsize=(14, 8))
+
+    sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
+    sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
+    plt.title('Box Plot with Jittered Points for Return Distribution by Group')
+    plt.xlabel('Target Groups')
+    plt.ylabel('Runtimes (s)')
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+
+    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes_final.png"))
+    # plt.show()
+    plt.close()
+
+
+    #  ---   ---   ---   plots: training steps and slips   ---   ---   ---
+    path = os.path.join(training_folder, f"{config}_steps.txt")
     steps = []
     with open(path, 'r', newline='') as file:
         content = file.read()
-        steps = ast.literal_eval(content)
+        steps = ast.literal_eval(content.split("\n")[0])
 
-    path = os.path.join(experiment_folder, f"{config}_slips.txt")
+    path = os.path.join(training_folder, f"{config}_slips.txt")
     slips = []
     with open(path, 'r', newline='') as file:
         content = file.read()
-        slips = ast.literal_eval(content)
+        slips = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
     plt.plot(list(range(1, episodes + 1)), steps, label='steps', linewidth=1.7, color='royalblue',
@@ -899,7 +966,7 @@ def plot_experiment(config: str):
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'{config} - Average number of steps and of slips of target policy')
+    plt.title(f'{config} - Average number of steps and of slips')
     plt.figtext(0.5, 0.01,
                 f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
                 ha='center', va='center', fontsize=9)
@@ -910,11 +977,63 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, max(steps)+2)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_steps.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_steps_training.png"))
     # plt.show()
     plt.close()
 
-    #  ---   ---   ---   plots: violations   ---   ---   ---
+
+    #  ---   ---   ---   plots: final steps and slips   ---   ---   ---
+    path = os.path.join(final_folder, f"{config}_steps.txt")
+    final_steps = None
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        final_steps = ast.literal_eval(content)
+
+    path = os.path.join(final_folder, f"{config}_slips.txt")
+    final_slips = None
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        final_slips = ast.literal_eval(content)
+
+    path = os.path.join(final_folder, f"{config}_steps_enforced")
+    enforced_steps = None
+    if os.path.exists(path):
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            enforced_steps = ast.literal_eval(content)
+
+    path = os.path.join(final_folder, f"{config}_slips_enforced")
+    enforced_slips = None
+    if os.path.exists(path):
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            enforced_slips = ast.literal_eval(content)
+
+    data = pd.DataFrame({
+        'Type': ['Steps'] * len(final_steps) + ['Slips'] * len(final_slips),
+        'Value': final_steps + final_slips
+    })
+    plt.figure(figsize=(7, 8))
+
+    if enforced_steps and enforced_slips:
+        data = pd.DataFrame({
+            'Type': ['Steps'] * len(final_steps) + ['Enforced steps'] * len(enforced_steps) + ['Slips'] * len(final_slips) + ['Enforced slips'] * len(enforced_slips),
+            'Value': final_steps + enforced_steps + final_slips + enforced_slips
+        })
+        plt.figure(figsize=(14, 8))
+
+    sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
+    sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
+    plt.title('Box Plot with Jittered Points for Return Distribution by Group')
+    plt.ylabel('Counts')
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+
+    plt.savefig(os.path.join(plot_folder, f"{config}_steps_final.png"))
+    # plt.show()
+    plt.close()
+
+
+    #  ---   ---   ---   plots: training violations   ---   ---   ---
     if deontic is not None:
         colors_of_norms = {
             'occupiedTraverserTile': 'darkred',
@@ -927,11 +1046,11 @@ def plot_experiment(config: str):
             'missedPresents': 'mediumvioletred'
         }  # see https://matplotlib.org/stable/gallery/color/named_colors.html
 
-        path = os.path.join(experiment_folder, f"{config}_violations.txt")
+        path = os.path.join(training_folder, f"{config}_violations.txt")
         violations = []
         with open(path, 'r', newline='') as file:
             content = file.read()
-            violations = ast.literal_eval(content)
+            violations = ast.literal_eval(content.split("\n")[0])
 
         plt.figure(figsize=(10, 6))
 
@@ -941,7 +1060,7 @@ def plot_experiment(config: str):
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-        plt.title(f'{config} - Violations of target policy')
+        plt.title(f'{config} - Violations')
         plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episodes')
         plt.ylabel('violations')
@@ -951,13 +1070,89 @@ def plot_experiment(config: str):
         plt.ylim(0, 20)
         plt.yticks(range(0, 21, 1))
 
-        plt.savefig(os.path.join(plot_folder, f"{config}_violations.png"))
+        plt.savefig(os.path.join(plot_folder, f"{config}_violations_training.png"))
         # plt.show()
         plt.close()
 
 
-    #  ---   ---   ---   plots: state-visits & preferred actions   ---   ---   ---
-    path = os.path.join(experiment_folder, f"{config}_state_visits.txt")
+    #  ---   ---   ---   plots: final+enforced violations   ---   ---   ---
+    if deontic is not None:
+        path = os.path.join(final_folder, f"{config}_violations.txt")
+        final_violations = dict()
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            final_violations = ast.literal_eval(content)
+
+        enforced_violations = None
+        path = os.path.join(final_folder, f"{config}_violations_enforced.txt")
+        if os.path.exists(path):
+            with open(path, 'r', newline='') as file:
+                content = file.read()
+                enforced_violations = ast.literal_eval(content)
+
+        group_labels = ['notReachedGoal', 'movedAwayFromGoal', 'occupiedTraverserTile', 'turnedOnTraverserTile', 'leftSafeArea', 'didNotReturnToSafeArea', 'stolePresent', 'missedPresents']
+
+        if not enforced_violations: # TODO: either enable the enforced_half or simple set the sns.split later to false -> what looks better?
+            enforced_violations = dict()
+            enforced_violations['notReachedGoal'] = [-100]  # Note: this 'enables' it the chart
+            enforced_violations['movedAwayFromGoal'] = [-100]  # Note: this 'enables' it the chart
+
+        for norm in group_labels:
+            final_violations.setdefault(norm, [])
+            enforced_violations.setdefault(norm, [])
+
+        data_list = []
+        type_column = []
+        group_column = []
+        for norm in group_labels:
+            data_list.append(final_violations[norm])
+            type_column.extend(['violations'] * len(final_violations[norm]))
+            group_column.extend([norm] * len(final_violations[norm]))
+
+            if any(enforced_violations[norm]):
+                data_list.append(enforced_violations[norm])
+                type_column.extend(['violation after enforcing'] * len(enforced_violations[norm]))
+                group_column.extend([norm] * len(enforced_violations[norm]))
+
+        flattened_data_list = [item for sublist in data_list for item in sublist]
+
+        data = pd.DataFrame({
+            'Type': type_column,
+            'Value': flattened_data_list,
+            'Group': group_column
+        })
+
+        plt.figure(figsize=(10, 6))
+        sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
+
+        plt.title('Violations')
+        plt.xlabel('Group')
+        plt.ylabel('Violations')
+        plt.ylim(-0.5, 10)
+        plt.grid(axis='y', linestyle='--', alpha=0.5)
+
+        plt.savefig(os.path.join(plot_folder, f"{config}_violations_final.png"))
+        # plt.show()
+        plt.close()
+
+        for key, value_list in final_violations.items():
+            if value_list:
+                avg = sum(value_list) / len(value_list)
+            else:
+                avg = 0
+            print(f"Finale average of {key}: {avg}")
+
+        if os.path.exists(path):
+            for key, value_list in enforced_violations.items():
+                if value_list:
+                    avg = sum(value_list) / len(value_list)
+                else:
+                    avg = 0
+                print(f"Enforcing average of {key}: {avg}")
+
+
+    #  ---   ---   ---   plots: state-visits & preferred actions (training)  ---   ---   ---
+    path = os.path.join(training_folder, f"{config}_state_visits.txt")
     with open(path, 'r', newline='') as file:
         content = file.read()
         state_actions_and_visits = ast.literal_eval(content)
@@ -1008,9 +1203,131 @@ def plot_experiment(config: str):
     plt.title(f'{config} - Visits of target policy', fontsize=16, pad=20)
     plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_state_visits.png"))
+    plt.savefig(os.path.join(plot_folder, f"{config}_states_training.png"))
     # plt.show()
     plt.close()
+
+
+    #  ---   ---   ---   plots: state-visits & preferred actions (final)  ---   ---   ---
+    path = os.path.join(final_folder, f"{config}_state_visits.txt")
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        state_actions_and_visits = ast.literal_eval(content)
+
+    width, height, goal = get_level_data(frozenlake.get("name"))
+    position_visits = {tile: 0 for tile in range(width * height)}
+    sum_of_executed_actions = {tile: {action: 0 for action in actions if action != 'VISITS'} for tile in
+                               range(width * height) for actions in state_actions_and_visits.values()}
+    preferred_actions = {tile: 'NONE' for tile in range(width * height)}
+
+    for states, actions in state_actions_and_visits.items():
+        position = states[0]
+        for action, value in actions.items():
+            if action == 'VISITS':
+                position_visits[
+                    position] += value  # TODO: test the merging of position and filling of these lists more!
+            else:
+                sum_of_executed_actions[position][action] += value
+
+    for tile, actions in sum_of_executed_actions.items():
+        preferred_action = max([action for action in actions if actions[action] != 0], key=actions.get, default=None)
+        if preferred_action:
+            preferred_actions[tile] = preferred_action
+
+    grid = np.zeros((4, 4))
+
+    for cell, total_value in position_visits.items():
+        row = cell // width
+        col = cell % width
+        grid[row, col] = total_value
+
+    formatted_data = np.array(
+        [[f'{val:.2f}'.rstrip('0').rstrip('.') if val != 0 else '0' for val in row] for row in grid])
+    plt.figure(figsize=(width + 2, height + 2))
+    ax = sns.heatmap(grid, cmap="viridis", cbar=True, annot=formatted_data, fmt='')
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_xticklabels([])
+    ax.set_yticklabels([])
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+    ax.spines['bottom'].set_visible(False)
+
+    for i in range(height):
+        for j in range(width):
+            index = i * width + j
+            ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
+                    color='white' if grid[i, j] < grid.max() / 2 else 'black')
+
+    plt.title(f'{config} - Final state visits', fontsize=16, pad=20)
+    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center',
+                fontsize=9)  # TODO: define titles and subtitles for each plot
+
+    plt.savefig(os.path.join(plot_folder, f"{config}_states_final.png"))
+    # plt.show()
+    plt.close()
+
+    #  ---   ---   ---   plots: state-visits & preferred actions (enforced)  ---   ---   ---
+    path = os.path.join(final_folder, f"{config}_state_visits_enforced.txt")
+    if os.path.exists(path):
+        with open(path, 'r', newline='') as file:
+            content = file.read()
+            state_actions_and_visits = ast.literal_eval(content)
+
+        width, height, goal = get_level_data(frozenlake.get("name"))
+        position_visits = {tile: 0 for tile in range(width * height)}
+        sum_of_executed_actions = {tile: {action: 0 for action in actions if action != 'VISITS'} for tile in
+                                   range(width * height) for actions in state_actions_and_visits.values()}
+        preferred_actions = {tile: 'NONE' for tile in range(width * height)}
+
+        for states, actions in state_actions_and_visits.items():
+            position = states[0]
+            for action, value in actions.items():
+                if action == 'VISITS':
+                    position_visits[
+                        position] += value  # TODO: test the merging of position and filling of these lists more!
+                else:
+                    sum_of_executed_actions[position][action] += value
+
+        for tile, actions in sum_of_executed_actions.items():
+            preferred_action = max([action for action in actions if actions[action] != 0], key=actions.get, default=None)
+            if preferred_action:
+                preferred_actions[tile] = preferred_action
+
+        grid = np.zeros((4, 4))
+
+        for cell, total_value in position_visits.items():
+            row = cell // width
+            col = cell % width
+            grid[row, col] = total_value
+
+        formatted_data = np.array(
+            [[f'{val:.2f}'.rstrip('0').rstrip('.') if val != 0 else '0' for val in row] for row in grid])
+        plt.figure(figsize=(width + 2, height + 2))
+        ax = sns.heatmap(grid, cmap="viridis", cbar=True, annot=formatted_data, fmt='')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_xticklabels([])
+        ax.set_yticklabels([])
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+
+        for i in range(height):
+            for j in range(width):
+                index = i * width + j
+                ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
+                        color='white' if grid[i, j] < grid.max() / 2 else 'black')
+
+        plt.title(f'{config} - Enforced state visits', fontsize=16, pad=20)
+        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center',
+                    fontsize=9)  # TODO: define titles and subtitles for each plot
+
+        plt.savefig(os.path.join(plot_folder, f"{config}_states_enforced.png"))
+        # plt.show()
+        plt.close()
 
     print(f"Stored plots in: \t {plot_folder}")
 

@@ -120,7 +120,7 @@ class Controller:
 
 
         # -----------------------------------------------------------------------------
-        # Evaluation
+        # Evaluation: Training + Final + Enforced
         # -----------------------------------------------------------------------------
         training_returns_avg, training_returns_stddev = get_average_numbers(total_returns)
         debug_print(f"Returns:\n{training_returns_avg}")
@@ -135,23 +135,18 @@ class Controller:
             training_violations_avg, training_violations_stddev = get_average_violations(total_violations, deontic.get("norm_set"))
             debug_print(f"Violations:\n{training_violations_avg}")
 
-        final_returns = [] # TODO: these list just store any value, works because each target has the same number of evalutions (10 i guess)
-        final_violations = None  # TODO: this is then a dict with lists as values forech norm
+
+        final_returns = []
+        final_violations = None
         final_steps = []
         final_slips = []
         final_inference_times = []
-        final_state_visits = dict()  # TODO: make another plot for this should be sum as well
-        final_enforced_returns = None
-        final_enforced_steps = None
-        final_enforced_slips = None
-        final_enforced_inference_times = None
-        final_enforced_state_visits = None # TODO: update enforcing values to also have be in std of last episode
-        final_enforced_violations = None
-        # TODO: should enforcements be applied multiple times and then averaged in both dimensions? -> change this to general evaluation!
+        final_state_visits = dict()
 
+        evaluation_repetitions = 10
         for target in final_target_policies:
             target.set_enforcing(None) # TODO: maybe do this in here
-            for i in range(10):
+            for i in range(evaluation_repetitions):
                 trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, True)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 final_returns.append(expected_return)
@@ -160,8 +155,15 @@ class Controller:
                 final_slips.append(slips_of_target)
                 final_inference_times.append(inference_time)
                 final_state_visits = update_state_visits(final_state_visits, state_visits)
+        final_state_visits = get_average_state_visits(final_state_visits, repetitions*evaluation_repetitions)
 
 
+        final_enforced_returns = None
+        final_enforced_steps = None
+        final_enforced_slips = None
+        final_enforced_inference_times = None
+        final_enforced_state_visits = None  # TODO: update enforcing values also with repetitions
+        final_enforced_violations = None
         if enforcing and enforcing.get("phase") == "after_training":
             return_of_targets = []
             violations_of_targets = []
