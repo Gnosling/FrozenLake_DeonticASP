@@ -226,7 +226,7 @@ def build_policy(config: str, env):
                           for t in range(-1, env.get_number_of_tiles())
                           for subset in subsets},
                         constants.ACTION_SET, env)
-    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), enforcing)
+    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     return behavior, target
 
 
@@ -312,8 +312,8 @@ def get_average_state_visits(results, reps):
     return average_state_visits
 
 
-def test_target(target, env, config, after_training):
-    _, _, max_steps, _, frozenlake, _, deontic, enforcing = read_config_param(config)
+def test_target(target, env, config):
+    _, _, max_steps, _, frozenlake, _, deontic, _ = read_config_param(config)
     norm_violations = None
     if deontic:
         norm_violations = extract_norm_keys(deontic.get("norm_set"))
@@ -335,9 +335,9 @@ def test_target(target, env, config, after_training):
         action_name = target.suggest_action(state, env)
         new_state, reward, terminated, truncated, info = env.step(action_name_to_number(action_name))
         trail_of_target.append([state, action_name, new_state, reward])
-        if False and after_training and enforcing and "reward_shaping" in enforcing.get("strategy"):
-            target.update_after_step(state, action_name, new_state, reward, trail_of_target, env, after_training)
-            # TODO: i guess reversed learning is not useful here also change with new enforcing control!
+        if target.get_enforcing() and "reward_shaping" in target.get_enforcing().get("strategy"):
+            # NOTE: this is forward/normal q-learning
+            target.update_after_step(state, action_name, new_state, reward, trail_of_target, env)
         previous_state = state
         last_performed_action = extract_performed_action(state[0], new_state[0], width)
 
@@ -843,26 +843,6 @@ def plot_experiment(config: str):
     plt.ylim(0, 1)
     plt.yticks([i/10 for i in range(11)])
     plt.legend()
-
-    # data = pd.DataFrame({
-    #     'Type': ['Returns'] * len(final_returns),
-    #     'Value': final_returns
-    # })
-    #
-    # if enforced_returns:
-    #     data = pd.DataFrame({
-    #         'Type': ['Returns'] * len(final_returns) + ['Enforced returns'] * len(enforced_returns),
-    #         'Value': np.concatenate([final_returns, enforced_returns])
-    #     })
-    #
-    # plt.figure(figsize=(14, 8))
-    # # TODO: this does not really work for simple return!
-    # sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.4)
-    # sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    # plt.title('Box Plot with Jittered Points for Return Distribution by Group')
-    # plt.xlabel('Target Groups')
-    # plt.ylabel('Return')
-    # plt.grid(axis='y', linestyle='--', alpha=0.5)
 
     plt.savefig(os.path.join(plot_folder, f"{config}_returns_final.png"))
     # plt.show()

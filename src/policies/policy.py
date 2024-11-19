@@ -42,8 +42,8 @@ class Policy:
         self.q_table.initialize_state(states, available_actions, self.norm_set, env)
 
     def update_after_step(self, state, action, new_state, reward, trail, env, after_training=False):
-        self._update_learning_rate() # TODO: test_learning rate updates
-        if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"):
+        self._update_learning_rate()
+        if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"): # TODO: change this below!
             if (self.enforcing.get("phase") == "during_training" and not after_training) or (self.enforcing.get("phase") == "after_training" and after_training):
                 reward = reward + get_shaped_rewards(self.enforcing, self.discount, state, new_state, trail, env)
         delta = (self.learning_rate
@@ -108,10 +108,10 @@ class Policy:
     def _update_learning_rate(self):
         if self.learning_rate_strategy == "constant":
             pass
-        elif self.learning_rate_strategy == "linear_decay":
+        elif self.learning_rate_strategy == "linear_decay": # Note: decay_rate should be <0.01
             self.learning_rate = max(self.learning_rate - self.update_called_count * self.learning_decay_rate, 0.01)
-        elif self.learning_rate_strategy == "exponential_decay":
-            self.learning_rate = math.exp(self.learning_decay_rate * -1 * self.update_called_count)
+        elif self.learning_rate_strategy == "exponential_decay":  # Note: la should be initial 1 and decay_rate should be <0.001
+            self.learning_rate = self.learning_rate * math.exp(self.learning_decay_rate * -1 * self.update_called_count)
         else:
             raise ValueError(f"invalid learning-rate strategy: {self.learning_rate_strategy}")
 
@@ -132,9 +132,11 @@ class Policy:
     def set_enforcing(self, value):
         self.enforcing = value
 
+    def get_enforcing(self):
+        return self.enforcing
+
     def get_printed_policy(self) -> str:
         return str(self.q_table.get_all_values())
 
     def get_q_table(self):
         return self.q_table
-

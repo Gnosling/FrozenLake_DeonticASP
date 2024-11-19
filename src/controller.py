@@ -93,7 +93,7 @@ class Controller:
 
                 end_time = time.time()
                 training_time = end_time-start_time
-                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, False)
+                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode+1}: {expected_return}")
                 debug_print(f"Violations of ep {episode+1}: {violations_of_target}")
@@ -125,7 +125,6 @@ class Controller:
         training_returns_avg, training_returns_stddev = get_average_numbers(total_returns)
         debug_print(f"Returns:\n{training_returns_avg}")
         training_steps_avg, training_steps_stddev = get_average_numbers(total_steps)
-        debug_print(f"Steps:\n{training_steps_avg}")
         training_slips_avg, training_slips_stddev = get_average_numbers(total_slips)
         training_fitting_times_avg, training_fitting_times_stddev = get_average_numbers(total_training_times)
         training_inference_times_avg, training_inference_times_stddev = get_average_numbers(total_inference_times)
@@ -137,17 +136,16 @@ class Controller:
 
 
         final_returns = []
-        final_violations = None
         final_steps = []
         final_slips = []
         final_inference_times = []
         final_state_visits = dict()
-
+        final_violations = None
         evaluation_repetitions = 10
         for target in final_target_policies:
-            target.set_enforcing(None) # TODO: maybe do this in here
+            target.set_enforcing(None)
             for i in range(evaluation_repetitions):
-                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, True)
+                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 final_returns.append(expected_return)
                 final_violations = append_violations(final_violations, violations_of_target)
@@ -157,35 +155,25 @@ class Controller:
                 final_state_visits = update_state_visits(final_state_visits, state_visits)
         final_state_visits = get_average_state_visits(final_state_visits, repetitions*evaluation_repetitions)
 
-
-        final_enforced_returns = None
-        final_enforced_steps = None
-        final_enforced_slips = None
-        final_enforced_inference_times = None
-        final_enforced_state_visits = None  # TODO: update enforcing values also with repetitions
+        final_enforced_returns = []
+        final_enforced_steps = []
+        final_enforced_slips = []
+        final_enforced_inference_times = []
+        final_enforced_state_visits = dict()
         final_enforced_violations = None
         if enforcing and enforcing.get("phase") == "after_training":
-            return_of_targets = []
-            violations_of_targets = []
-            steps_of_targets = []
-            slips_of_targets = []
-            enforced_inference_time_of_target = []
-            total_enforced_state_visits = dict()
             for target in final_target_policies:
-                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, True)
-                expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
-                return_of_targets.append(expected_return)
-                violations_of_targets.append(violations_of_target)
-                steps_of_targets.append(len(trail_of_target))
-                slips_of_targets.append(slips_of_target)
-                enforced_inference_time_of_target.append(inference_time)
-                total_enforced_state_visits = update_state_visits(total_enforced_state_visits, state_visits)
-            final_enforced_returns = sum(return_of_targets) / len(return_of_targets)
-            final_enforced_violations = {norm: sum(violation[norm] for violation in violations_of_targets) / len(violations_of_targets) for norm in violations_of_targets[0]}
-            final_enforced_steps = sum(steps_of_targets) / len(steps_of_targets)
-            final_enforced_slips = sum(slips_of_targets) / len(slips_of_targets)
-            final_enforced_inference_times = sum(enforced_inference_time_of_target) / len(enforced_inference_time_of_target)
-            final_enforced_state_visits = get_average_state_visits(total_enforced_state_visits, repetitions)
+                target.set_enforcing(enforcing)
+                for i in range(evaluation_repetitions):
+                    trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
+                    expected_return = compute_expected_return(learning.get("discount"),[r for [_, _, _, r] in trail_of_target])
+                    final_enforced_returns.append(expected_return)
+                    final_enforced_violations = append_violations(final_enforced_violations, violations_of_target)
+                    final_enforced_steps.append(len(trail_of_target))
+                    final_enforced_slips.append(slips_of_target)
+                    final_enforced_inference_times.append(inference_time)
+                    final_enforced_state_visits = update_state_visits(final_enforced_state_visits, state_visits)
+            final_enforced_state_visits = get_average_state_visits(final_enforced_state_visits, repetitions * evaluation_repetitions)
 
 
         # -----------------------------------------------------------------------------
