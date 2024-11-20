@@ -17,6 +17,6 @@ benefits(E) :- rewards(R), E = 1 * R.
 :- currentViolation(obligatory(X)), superior(obligatory(X),obligatory(Y)), obligatory(Y), not currentViolation(obligatory(Y)), conflict(X,Y), X != Y.
 
 #program final.
-#maximize {E@1 : eval(E)}.
+#maximize {E@1 : benefits(E)}.
 #minimize {V@L : violationsOfLevel(V,L)}.
 

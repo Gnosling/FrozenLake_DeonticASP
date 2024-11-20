@@ -60,7 +60,7 @@ class PlannerPolicy(Policy):
                 action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_decaying_planning":
-            # exponential decay
+            # exponential decay TODO should also have an inital value
             chance = math.exp(self.delta * -1 * self.suggestion_called_count)
             if random.random() < chance:
                 debug_print("planning was triggered")

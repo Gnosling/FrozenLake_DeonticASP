@@ -41,11 +41,11 @@ class Policy:
     def initialize(self, states, available_actions, env):
         self.q_table.initialize_state(states, available_actions, self.norm_set, env)
 
-    def update_after_step(self, state, action, new_state, reward, trail, env, after_training=False):
+    def update_after_step(self, state, action, new_state, reward, trail, env):
         self._update_learning_rate()
-        if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"): # TODO: change this below!
-            if (self.enforcing.get("phase") == "during_training" and not after_training) or (self.enforcing.get("phase") == "after_training" and after_training):
-                reward = reward + get_shaped_rewards(self.enforcing, self.discount, state, new_state, trail, env)
+        if self.enforcing and "reward_shaping" in self.enforcing.get("strategy"):
+            reward = reward + get_shaped_rewards(self.enforcing, self.discount, state, new_state, trail, env)
+
         delta = (self.learning_rate
                  * (reward + self.discount * self.value_of_state(new_state) - self.q_table.value_of(state, action)))
         self.q_table.update(state, action, delta)

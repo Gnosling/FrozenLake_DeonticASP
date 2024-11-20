@@ -215,9 +215,12 @@ def build_policy(config: str, env):
     _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
     if planning is None:
-        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), enforcing)
+        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), deontic.get("norm_set"), deontic.get("evaluation_function"), enforcing)
+        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), deontic.get("evaluation_function"), None)
+
+    if enforcing and enforcing.get("phase") == "during_training":
+        behavior.set_enforcing(enforcing)
 
     presents = tuple(env.get_tiles_with_presents())
     subsets = [tuple(comb) for i in range(len(presents) + 1) for comb in itertools.combinations(presents, i)]
@@ -480,7 +483,6 @@ def extract_norm_keys(norm_set):
                 break
             key = line.strip().split(" ")[-1]
             norms[key] = 0
-    # TODO: define order of norms to be put in the dict here! such that plots always have same order
     return dict(sorted(norms.items()))
 
 def extract_norm_levels(norm_set):
@@ -609,13 +611,25 @@ def get_state_value(state, norms, level_of_norms, env):
     return value
 
 
-def get_state_action_penalty(trail, terminated, norms, level_of_norms, env):
+def get_state_action_penalty(trail, norms, level_of_norms, env):
     """
     Computes the state-action-penalty under the given norms.
     Violations are scaled with scaling_factor**(level_of_norms[norm]-1).
     """
     if not trail:
         return 0
+
+
+    goal = env.get_goal()
+    holes = env.get_holes()
+    cracks = env.get_cracks()
+
+    terminated = False
+    # trail = [state, proposed_action_name, new_state, rewards]
+    new_position = trail[-1][2][0]
+    traverser_position = trail[-1][2][1]
+    if (new_position == goal or new_position in holes or (new_position == traverser_position and new_position in cracks)):
+        terminated = True # TODO: test this!
 
     scaling_factor = 2
     # Note: trail[i] = [state, action, new_state, reward], but rewards don't matter for violations
@@ -633,18 +647,21 @@ def get_state_action_penalty(trail, terminated, norms, level_of_norms, env):
 def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     norms = extract_norm_keys(enforcing.get("norm_set"))
     level_of_norms = extract_norm_levels(enforcing.get("norm_set"))
-    terminated = env.is_terminated()
     shaped_rewards = 0
     if "optimal_reward_shaping" in enforcing.get("strategy"):
         shaped_rewards = discount * get_state_value(new_state, norms, level_of_norms, env) - get_state_value(state, norms, level_of_norms, env)
     elif "full_reward_shaping" in enforcing.get("strategy"):
         # NOTE: the full shaping uses _check_violations(..) for state_actions penalties, hence both need separate norms-dicts
+
+        # terminated = env.is_terminated()
+        # TODO: get_state_action_penalty does not work with reversed q-learning for during training, since the history is corrupted and terminated is wrongly handled
+        #  --> compute termination inside the shaped rewards?
         if len(trail) <= 1:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              - (get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty([[trail[0][0], trail[0][0], 0]], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
         else:
-            shaped_rewards = ((discount * (get_state_action_penalty(trail, terminated, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              - (get_state_action_penalty(trail[:-1], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+            shaped_rewards = ((discount * (get_state_action_penalty(trail, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty(trail[:-1], extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
     return shaped_rewards
 
 
@@ -1081,6 +1098,25 @@ def plot_experiment(config: str):
             final_violations.setdefault(norm, [])
             enforced_violations.setdefault(norm, [])
 
+        for key, value_list in final_violations.items():
+            if value_list:
+                avg = sum(value_list) / len(value_list)
+            else:
+                avg = 0
+            print(f"Finale average of {key}: {avg}")
+
+        if os.path.exists(path):
+            for key, value_list in enforced_violations.items():
+                if value_list:
+                    avg = sum(value_list) / len(value_list)
+                else:
+                    avg = 0
+                print(f"Enforcing average of {key}: {avg}")
+
+        # removes 0's from the violation-plots TODO: does this look better?
+        # final_violations = {key: [value for value in values if value != 0] for key, values in final_violations.items()}
+        # enforced_violations = {key: [value for value in values if value != 0] for key, values in enforced_violations.items()}
+
         data_list = []
         type_column = []
         group_column = []
@@ -1102,8 +1138,9 @@ def plot_experiment(config: str):
             'Group': group_column
         })
 
-        plt.figure(figsize=(10, 6))
+        plt.figure(figsize=(16, 6))
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
+        plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
         plt.title('Violations')
         plt.xlabel('Group')
@@ -1114,21 +1151,6 @@ def plot_experiment(config: str):
         plt.savefig(os.path.join(plot_folder, f"{config}_violations_final.png"))
         # plt.show()
         plt.close()
-
-        for key, value_list in final_violations.items():
-            if value_list:
-                avg = sum(value_list) / len(value_list)
-            else:
-                avg = 0
-            print(f"Finale average of {key}: {avg}")
-
-        if os.path.exists(path):
-            for key, value_list in enforced_violations.items():
-                if value_list:
-                    avg = sum(value_list) / len(value_list)
-                else:
-                    avg = 0
-                print(f"Enforcing average of {key}: {avg}")
 
 
     #  ---   ---   ---   plots: state-visits & preferred actions (training)  ---   ---   ---

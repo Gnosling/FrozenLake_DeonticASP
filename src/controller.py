@@ -88,7 +88,7 @@ class Controller:
                 if learning.get("reversed_q_learning"):
                     behavior.update_after_end_of_episode(trail_of_behavior, env)
 
-                if type(behavior) == PlannerPolicy:
+                if isinstance(behavior, PlannerPolicy):
                     behavior.reset_after_episode()
 
                 end_time = time.time()
@@ -148,7 +148,7 @@ class Controller:
                 trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 final_returns.append(expected_return)
-                final_violations = append_violations(final_violations, violations_of_target)
+                final_violations = append_violations(final_violations, violations_of_target) # TODO: should also other norms be evaluated? like an evalution norm-set or for planner a planning norm set?
                 final_steps.append(len(trail_of_target))
                 final_slips.append(slips_of_target)
                 final_inference_times.append(inference_time)
@@ -164,6 +164,11 @@ class Controller:
         if enforcing and enforcing.get("phase") == "after_training":
             for target in final_target_policies:
                 target.set_enforcing(enforcing)
+                if enforcing.get("enforcing_horizon") and "reward_shaping" in enforcing.get("strategy"):
+                    # Note: if rewards shaping is used, then the targets are 'shaped' before the actual evaluation
+                    for i in range(enforcing.get("enforcing_horizon")):
+                        test_target(target, env, config)
+
                 for i in range(evaluation_repetitions):
                     trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
                     expected_return = compute_expected_return(learning.get("discount"),[r for [_, _, _, r] in trail_of_target])
