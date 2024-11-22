@@ -70,16 +70,10 @@ During training if exploration is triggered no enforce-ment is applied.
 - --> use at most 3 presents, maybe less then it's fine
 - non-deterministic policy --> not needed / beneficial
 
-<br/>
-<br/>
+- Discount < 1 distords rewards shaping a bit, since equal violations after discounting still give a benefit
 
-### Implement plotting and output data:
-  - both target and behavior use same q_table, plot only avg target-return over steps instead of episodes ?? -> don't see the benefit of this, return is enough
-  - have run-times plotted
-  - extend plotting for state-visits as heat map
-  - policy map showing the favorite action in each state (traverser-movement will be made hard outside (ie. level-structure))
-  - simply the entire q-table as well (not for plotting, but why if we have state-visits ??)
-  - something about exploration (or use that in the heatmap to indicate areas that were not explored?)
+<br/>
+<br/>
 
 ---------------
 ### Paradoxes:

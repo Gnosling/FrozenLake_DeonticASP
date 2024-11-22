@@ -215,14 +215,14 @@ def build_policy(config: str, env):
     _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
     if planning is None:
-        behavior = Policy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
+        behavior = Policy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), deontic.get("evaluation_function"), None)
+        behavior = PlannerPolicy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), deontic.get("evaluation_function"), None)
 
     if enforcing and enforcing.get("phase") == "during_training":
         behavior.set_enforcing(enforcing)
 
-    presents = tuple(env.get_tiles_with_presents())
+    presents = tuple(env.get_presents())
     subsets = [tuple(comb) for i in range(len(presents) + 1) for comb in itertools.combinations(presents, i)]
     behavior.initialize({ (s,t,subset) # a state is a tuple (current_position, traverser_position, presents_positions
                           for s in range(env.get_number_of_tiles())
@@ -352,7 +352,7 @@ def test_target(target, env, config):
             slips += 1
 
         if norm_violations is not None:
-            _check_violations(norm_violations, trail_of_target, terminated or step == max_steps - 1, env)
+            norm_violations = _check_violations(norm_violations, trail_of_target, terminated or step == max_steps - 1, env)
 
         state = new_state
 
@@ -397,7 +397,7 @@ def _check_violations(norm_violations, trail, terminated, env):
     checks violations of norms in the current step and fills up norm_violations dictionary with the counter of the respective violation
     """
     layout, width, height = env.get_layout()
-    goal = env.get_goal_tile()
+    goal = env.get_goal()
 
     state, action_name, new_state, _ = trail[-1]
     last_performed_action = extract_performed_action(state[0], new_state[0], width)
@@ -534,8 +534,8 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
         return allowed_actions
 
     layout, width, height = env.get_layout()
-    goal = env.get_goal_tile()
-    holes = env.get_tiles_with_holes()
+    goal = env.get_goal()
+    holes = env.get_holes()
     sum_of_violations = dict()
 
     # Note: foreach action all non-deterministic successors are added to the trail and checked
@@ -547,7 +547,7 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
         terminated = successor == goal or successor in holes
 
         trail.append([state, action, (successor, state[1], state[2]), 0])
-        _check_violations(norm_violations, trail, terminated, env)
+        norm_violations = _check_violations(norm_violations, trail, terminated, env)
         if any(value > 0 for value in norm_violations.values()):
             allowed_actions.remove(action)
             sum_of_violations[action] = sum(norm_violations.values())
@@ -568,11 +568,11 @@ def get_state_value(state, norms, level_of_norms, env):
     value = 0
     scaling_factor = 2
     layout, width, height = env.get_layout()
-    goal = env.get_goal_tile()
-    holes = env.get_tiles_with_holes()
-    cracks = env.get_tiles_with_cracks()
+    goal = env.get_goal()
+    holes = env.get_holes()
+    cracks = env.get_cracks()
     terminated = False
-    if state[0] == goal or state[0] in holes or (state[0] == state[1] and state[0] in cracks): # TODO: test this
+    if state[0] == goal or state[0] in holes or (state[0] == state[1] and state[0] in cracks):
         terminated = True
     for norm in norms.keys():
         if norm == "notReachedGoal":
@@ -619,7 +619,6 @@ def get_state_action_penalty(trail, norms, level_of_norms, env):
     if not trail:
         return 0
 
-
     goal = env.get_goal()
     holes = env.get_holes()
     cracks = env.get_cracks()
@@ -629,11 +628,11 @@ def get_state_action_penalty(trail, norms, level_of_norms, env):
     new_position = trail[-1][2][0]
     traverser_position = trail[-1][2][1]
     if (new_position == goal or new_position in holes or (new_position == traverser_position and new_position in cracks)):
-        terminated = True # TODO: test this!
+        terminated = True
 
     scaling_factor = 2
     # Note: trail[i] = [state, action, new_state, reward], but rewards don't matter for violations
-    _check_violations(norms, trail, terminated, env)
+    norms = _check_violations(norms, trail, terminated, env)
 
     penalty = 0
     for norm, violations in norms.items():
@@ -652,17 +651,13 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
         shaped_rewards = discount * get_state_value(new_state, norms, level_of_norms, env) - get_state_value(state, norms, level_of_norms, env)
     elif "full_reward_shaping" in enforcing.get("strategy"):
         # NOTE: the full shaping uses _check_violations(..) for state_actions penalties, hence both need separate norms-dicts
-
-        # terminated = env.is_terminated()
-        # TODO: get_state_action_penalty does not work with reversed q-learning for during training, since the history is corrupted and terminated is wrongly handled
-        #  --> compute termination inside the shaped rewards?
         if len(trail) <= 1:
             shaped_rewards = ((discount * (get_state_action_penalty(trail, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-                              - (get_state_action_penalty([[trail[0][0], trail[0][0], 0]], False, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
+                              - (get_state_action_penalty([[trail[0][0], None, trail[0][0], 0]], extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
         else:
             shaped_rewards = ((discount * (get_state_action_penalty(trail, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
                               - (get_state_action_penalty(trail[:-1], extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-    return shaped_rewards
+    return shaped_rewards # TODO: if both state_actions are equal shaped_rewards is still positive, due to discount!
 
 
 def store_results(config: str, training_returns_avg, training_returns_stddev, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,

@@ -319,7 +319,7 @@ class FrozenLakeEnv(Env):
         col = state % self.ncol
         return self.desc[row][col]
 
-    def get_goal_tile(self):
+    def get_goal(self):
         counter = 0
         for row in range(len(self.desc)):
             for col in range(len(self.desc[row])):
@@ -330,9 +330,9 @@ class FrozenLakeEnv(Env):
     def get_current_traverser_position(self) -> int:
         if self.traverser_path:
             return self.traverser_path[self.traverser_tracker]
-        return -1 # TODO: could this be None?
+        return -1
 
-    def get_tiles_with_holes(self):
+    def get_holes(self):
         counter = 0
         ret = []
         for row in range(len(self.desc)):
@@ -343,7 +343,7 @@ class FrozenLakeEnv(Env):
         ret.sort()
         return ret
 
-    def get_tiles_with_cracks(self):
+    def get_cracks(self):
         counter = 0
         ret = []
         for row in range(len(self.desc)):
@@ -354,7 +354,7 @@ class FrozenLakeEnv(Env):
         ret.sort()
         return ret
 
-    def get_tiles_with_presents(self):
+    def get_presents(self):
         self.remove_present_from_tile(self.get_current_traverser_position())
         counter = 0
         ret = []
@@ -392,7 +392,7 @@ class FrozenLakeEnv(Env):
 
         self.s = current_position
         self.lastaction = a
-        presents = tuple(self.get_tiles_with_presents())
+        presents = tuple(self.get_presents())
         ret_values = ( (int(current_position), -1, presents), reward, terminated, False, {"prob": prob})
 
         if tile in b"P":
@@ -406,7 +406,7 @@ class FrozenLakeEnv(Env):
 
             if self.get_tile_symbol_of_state_number(traverser_position) in b"P":
                 self.remove_present_from_tile(traverser_position)
-                presents = tuple(self.get_tiles_with_presents())
+                presents = tuple(self.get_presents())
 
             ret_values = ((int(current_position), traverser_position, presents), reward, terminated, False, {"prob": prob})
 
@@ -445,7 +445,7 @@ class FrozenLakeEnv(Env):
         else:
             traverser_position = -1
 
-        presents = tuple(self.get_tiles_with_presents())
+        presents = tuple(self.get_presents())
         return (int(self.s), traverser_position, presents), {"prob": 1}
 
     def render(self):

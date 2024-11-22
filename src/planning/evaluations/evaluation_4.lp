@@ -18,4 +18,4 @@ benefits(E) :- rewards(R), E = 1 * R.
 
 #program final.
 #maximize {E@1 : benefits(E)}.
-#minimize {V@L : violationsOfLevel(V,L)}. % TODO: change to overall minimizations to differ from 5?
+#minimize {V@L : violationsOfLevel(V,L)}. % TODO: change to overall minimizations to differ from 5? or remove this fill completely?

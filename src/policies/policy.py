@@ -39,7 +39,7 @@ class Policy:
         self.previous_state = None
 
     def initialize(self, states, available_actions, env):
-        self.q_table.initialize_state(states, available_actions, self.norm_set, env)
+        self.q_table.initialize_state(states, available_actions, env)
 
     def update_after_step(self, state, action, new_state, reward, trail, env):
         self._update_learning_rate()

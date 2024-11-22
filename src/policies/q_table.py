@@ -8,9 +8,10 @@ class QTable:
     actions are always {"LEFT", "DOWN", "RIGHT", "UP"}.
     """
 
-    def __init__(self, initialization: bool = False):
+    def __init__(self, initialization: bool = False, norm_set: dict() = None):
         self.table = dict()
         self.initialization = initialization
+        self.norm_set = norm_set
 
     def _init_table_by_safe_states_and_action(self, states, available_actions, env):
         layout, width, height = env.get_layout()
@@ -96,7 +97,7 @@ class QTable:
     def _init_table_by_distance(self, states, available_actions, env):
         from src.utils.utils import compute_expected_successor, distance_to_goal
         layout, width, height = env.get_layout()
-        goal = env.get_goal_tile()
+        goal = env.get_goal()
         for state in states:
             for action in available_actions:
                 successor = compute_expected_successor(state[0], action, width, height)
@@ -117,7 +118,7 @@ class QTable:
                 penalty = get_state_action_penalty([[state, action, (successor, state[1], state[2]), 0]], extract_norm_keys(norm_set), level_of_norms, env)
                 self.table[state][action] += penalty
 
-    def initialize_state(self, states, available_actions: Set, norm_set, env):
+    def initialize_state(self, states, available_actions: Set, env):
         if self.initialization == "random":
             for state in states:
                 self.table[state] = {a: round(random.uniform(0, 0.2), 2) for a in available_actions}
@@ -132,11 +133,11 @@ class QTable:
         elif self.initialization == "state_function":
             for state in states:
                 self.table[state] = {a: 0.1 for a in available_actions}
-            self._init_table_by_state_function(states, available_actions, norm_set, env)
+            self._init_table_by_state_function(states, available_actions, self.norm_set, env)
         elif self.initialization == "state_action_penalty":
             for state in states:
                 self.table[state] = {a: 0.5 for a in available_actions}
-            self._init_table_by_state_action_penalty(states, available_actions, norm_set, env)
+            self._init_table_by_state_action_penalty(states, available_actions, self.norm_set, env)
         else:
             for state in states:
                 self.table[state] = {a: 0 for a in available_actions}
