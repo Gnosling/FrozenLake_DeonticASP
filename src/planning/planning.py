@@ -43,7 +43,7 @@ def _extract_first_action_from_telingo_output(output: str):
     best_action = ""
     best_section = ""
     max_opt_levels = 20
-    opt = [10000000 for _ in range(max_opt_levels)]     # TODO: OPT of section does not have all values necessary -> if omitted is higher prio than it's ok
+    opt = [10000000 for _ in range(max_opt_levels)]
     for section in output.split("State 0"):
         action = ""
         value = [10000000 for _ in range(max_opt_levels)]
@@ -98,7 +98,6 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     # Note: planning_horizon is needed to force telingo to explore that many states, ie. imin lowerbounds the states telingo unfolds
     #   if the optimum lies within these steps, then the optimal action will be found (otw its the optimal with these limited steps)
     # Note: Weak constraints must add positive penalties, such that telingo handles the return value correctly
-    # TODO: if the planning horizon is too low (or also the enforcing one), agent might prefer to not move away from start -> is avoided with moving_to_goal norm
 
     # Note: starts already in the active python environment
     command = [

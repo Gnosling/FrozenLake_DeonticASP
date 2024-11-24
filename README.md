@@ -31,9 +31,10 @@ pip install -r requirements.txt
 
 - Evaluation:
   - sum of rewards
-  - scaled eval of rewards and violations
-  - rewards and violations of level (because the weak constraints work differently in Telingo this simulates that)
-  - additionally a 'hard' conflict resolution can be applied to those
+  - scaled eval of rewards and violations -> favors rewards
+  - level-grouping of violations
+  - rewards and violations of level (because the weak constraints work differently in Telingo this simulates that) -> favors violations
+  - same as before plus a 'hard' conflict resolution per level (this might also worsen higher levels, but interesting to see what happens if all have same level)
 
 ---------------
 
@@ -63,14 +64,21 @@ During training if exploration is triggered no enforce-ment is applied.
 <br/>
 <br/>
 
+###### movedAwayFromGoal vs didNotMoveTowardsGoal
+maybe we can experiment with both of these norms? in planning the first one allows stalling as well
+also have separate files for each norm to make copying into sets easier
+
+
 ###### Some other notes
-- should the traverser be part of the state-info? --> yes --> define state representation in overleaf (maybe use both?)
-- --> this is pair of states (also include presents?-> yes)
+- State-Representation:
+- --> this is tuple (agent, traverser, (presents))
 - --> state space should be fine since it's: Tiles×Tiles×(Possible Configurations of Presents), at worst T^2 x 2^T x actions, but there aren't that many presents there
 - --> use at most 3 presents, maybe less then it's fine
-- non-deterministic policy --> not needed / beneficial
-
+- If the planning horizon is too low (or also the enforcing one), planning might prefer to not move away from start -> min-steps count also start tile
+- If highest norm is preventing reaching the goal then the planning might stall (If reachedGoal is strictly best, then this works)
 - Discount < 1 distords rewards shaping a bit, since equal violations after discounting still give a benefit
+- Norms with level 1 are on the same group as internal rewards
+
 
 <br/>
 <br/>

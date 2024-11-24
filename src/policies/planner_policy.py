@@ -19,6 +19,7 @@ class PlannerPolicy(Policy):
         super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing, norm_set)
         self.epsilon = epsilon
         self.delta = delta
+        self.decay_value = 1
         self.strategy = strategy
         self.planning_horizon = planning_horizon
         self.suggestion_called_count = 0
@@ -60,9 +61,9 @@ class PlannerPolicy(Policy):
                 action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_decaying_planning":
-            # exponential decay TODO should also have an inital value
-            chance = math.exp(self.delta * -1 * self.suggestion_called_count)
-            if random.random() < chance:
+            # Note: decay_value should be initial 1 and delta should be <0.0005
+            self.decay_value = self.decay_value * math.exp(self.delta * -1 * self.suggestion_called_count)
+            if random.random() < self.decay_value:
                 debug_print("planning was triggered")
                 action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.evaluation_function, allowed_actions)
             else:
