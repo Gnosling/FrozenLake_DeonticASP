@@ -23,6 +23,8 @@ pip install -r requirements.txt
     - shaped_rewards: f(state) = -number_of_left_presents
   - L: movedAwayFromGoal (the distance to the goal tile has increased)
     - shaped_rewards: f(s) = -distance_to_goal(s)/0.8
+  - L: didNotMoveTowardsGoal (the distance to the goal tile has not decreased)
+    - shaped_rewards: f(s) = -distance_to_goal(s)/0.8
   - L: leftSafeArea ('safe' iff not near a hole, only triggers on exit)
     - shaped_rewards: f(safe) = 1
   - M: didNotReturnToSafeArea (CTD of above)
@@ -47,8 +49,8 @@ During training if exploration is triggered no enforce-ment is applied.
   - might restrict optimal solutions and exploration, but simple and hopefully effective
 - --> fixing (sebastians approach):
   - the next enforcing-horizon actions proposed by policy are analysed by ASP-planner for norm violations, no policy changed though
-  - -> the horizon must be high enough to compute a path to the end of the level, if reachedGoal-norm is used
-  - the current act(move(X)) of the path must be inserted dynamically and checked for violations (also non-deterministic ones?), if any occured then activate normal planning
+  - -> the horizon must be high enough to compute a path to the end of the level (so this value defines checking and fixing length)
+  - the current act(move(X)) of the path must be inserted dynamically and checked for violations, if any occurred then activate normal planning with special evaluation (no rewards)
   - compared to others high computational effort, but most flexible and best monitoring 
 - --> reward_shaping (paper-one):
   - as long as function is potential-based, there is no drop in optimal policy and in fact learning can be speed up by this
@@ -78,6 +80,7 @@ also have separate files for each norm to make copying into sets easier
 - If highest norm is preventing reaching the goal then the planning might stall (If reachedGoal is strictly best, then this works)
 - Discount < 1 distords rewards shaping a bit, since equal violations after discounting still give a benefit
 - Norms with level 1 are on the same group as internal rewards
+- Using state-function and state-action penalty on the initialisation of qTable will also improve results hopefully
 
 
 <br/>
@@ -98,18 +101,18 @@ also have separate files for each norm to make copying into sets easier
 
 ---------------
 ### Experiments:
-  - First on 'crude' frozenlake with better splippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
-  - A* for testing RL-params:
-    - discount should be high to make the agent use long-term rewards and it's okay because there are mostly rewards negative rewards for any step
-    - mention that only value of 1.0 and 0.0 have bad results
+  - First on 'crude' frozenlake with better slippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
+  - A* for testing RL-params (choose three default levels):
+    - discount should be high to make the agent use long-term rewards and it's okay because there are mostly negative rewards for any step
+    - mention that only value of 1.0 and 0.0 have bad results?
     - reverse-q should be better since rewards are only at goal tile
-    - random initialisation?? safe initialisation??
-  - B* to test policy strategies / classes:
+    - try-out no deontic init-strats
+  - B* to test policy strategies / classes (choose three default levels):
     - test out epsilon -> no signifant value, due to all values lacking at the start
     - test out different starting tiles on same level? with same policy?
-  - Now make extensions to frozenlake
-  - C* to test norms simple with CTDs and all evaluations
+  - C* to test norms simple with CTDs and all evaluations (choose three default levels, with some changes affecting norms)
   - D* to test alternative implementations of norms (ie. forbid neg / oblig pos; deontic vs. factual)
-  - E* to test norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
+  - E* to test enforcing strategies
+  - F* to test norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
 
 

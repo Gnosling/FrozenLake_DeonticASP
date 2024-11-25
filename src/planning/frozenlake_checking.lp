@@ -48,6 +48,7 @@ failedStateReached :- currentState(S), hole(S).
 failedStateReached :- currentState(S), currentStateOfTraverser(S), cracked(S).
 terminalStateReached :- goalStateReached.
 terminalStateReached :- failedStateReached.
+:- failedStateReached.
 
 % handle presents (agent always picks up first)
 takePresent(S) :- currentState(S), present(S), not presentTaken(S).
@@ -76,7 +77,6 @@ distanceFromCurrentStateToGoal(DIS) :- DIS = X + Y, X = |(S\width) - (G\width)|,
 
 #program dynamic.
 lastPerformedAction(move(X)) :- 'act(move(X)). % this is needed since the first last action comes from the environment
-
 
 #program final.
 :- sumOfViolations(S), S > 0.

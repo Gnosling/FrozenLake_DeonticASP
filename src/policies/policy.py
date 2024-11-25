@@ -86,23 +86,25 @@ class Policy:
         If violations are detected, then the planning component is triggered to 'fix' the first action
         """
         layout, width, height = env.get_layout()
+        goal = env.get_goal()
         enforcing_horizon = self.enforcing.get("enforcing_horizon")
         enforcing_norm_set = self.enforcing.get("norm_set")
         action_sequence = []
         original_state = state
-        for i in range(enforcing_horizon):
+        for i in range(enforcing_horizon-1):
             action = self.q_table.get_best_action_for_state(state)
             action_sequence.append(action)
             successor = compute_expected_successor(state[0], action, width, height)
             state = (successor, state[1], state[2])
+            if successor == goal:
+                enforcing_horizon = i+2
+                break
 
         if validate_path(action_sequence, self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set):
             return action_sequence[0]
         else:
-            # Note: evaluation_set 3 is used per default
-            # TODO: maybe implement an evaluation set that does not care about rewards and use it here
-            # TODO: use planning_horizon here?
-            return plan_action(self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set, 3, ACTION_SET)
+            # Note: evaluation_set 4 is used per default with reward_set 3 to uphold norms and to optimize with distance to avoid stalling
+            return plan_action(self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set, 3, 4, ACTION_SET)
 
 
     def _update_learning_rate(self):

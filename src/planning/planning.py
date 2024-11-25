@@ -44,7 +44,12 @@ def _extract_first_action_from_telingo_output(output: str):
     best_section = ""
     max_opt_levels = 20
     opt = [10000000 for _ in range(max_opt_levels)]
-    for section in output.split("State 0"):
+    sections = output.split("Solving...")
+    skipped_first_section = False
+    for section in sections[1:]:
+        if not skipped_first_section and len(sections) >= 2:
+            skipped_first_section = True
+            continue
         action = ""
         value = [10000000 for _ in range(max_opt_levels)]
         for line in section.split("\n"):
@@ -79,7 +84,7 @@ def _extract_validation_result_from_telingo_output(output: str):
         raise ValueError('Checking threw an unexpected error!')
 
 
-def plan_action(level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, evaluation_function: int = 1, allowed_actions=None):
+def plan_action(level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, reward_set: int = 1, evaluation_function: int = 1, allowed_actions=None):
     """
     calls potassco's telingo to perform ASP-solving.
     uses general_reasoner for RL, frozenlake_reasoner for frozenlake, level-data and a helper file to handle dynamic properties (eg. to parse the currrent-state in the solver)
@@ -92,7 +97,8 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
     file4 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
     file5 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp")
-    file6 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")
+    file6 = os.path.join(os.getcwd(), "src", "planning", "rewards", f"rewards_{reward_set}.lp")
+    file7 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")
 
     # Note: Clingo maximizes by minimization of negated max, which means the reported optimization value is always negated
     # Note: planning_horizon is needed to force telingo to explore that many states, ie. imin lowerbounds the states telingo unfolds
@@ -106,7 +112,7 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
         f'--quiet=1,1,1',
         f'--imin={planning_horizon}', f'--imax={planning_horizon}',
         f'--time-limit=30',
-        f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"', f'"{file5}"', f'"{file6}"'
+        f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"', f'"{file5}"', f'"{file6}"', f'"{file7}"'
     ]
 
     bat_content = f"""

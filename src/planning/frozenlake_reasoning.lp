@@ -74,13 +74,6 @@ safe(S) :- tile(S), not hole(S), not hole(S-1), not hole(S-width), lowerEdge(S),
 distanceFromCurrentStateToGoal(DIS) :- DIS = X + Y, X = |(S\width) - (G\width)|, Y = |(S/height) - (G/height)|, currentState(S), goal(G).
 
 
-% define rewards
-nextReward(-1) :- not goalStateReached.
-nextReward(100) :- goalStateReached.
-nextReward(-100) :- failedStateReached.
-nextReward(30) :- takePresent(S), currentState(S).
-
-
 #program dynamic.
 lastPerformedAction(move(X)) :- 'act(move(X)). % this is needed since the first last action comes from the environment
 % since only the first moves might be guardrailed, every succeeding move is allowed

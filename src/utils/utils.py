@@ -217,7 +217,7 @@ def build_policy(config: str, env):
     if planning is None:
         behavior = Policy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), deontic.get("evaluation_function"), None)
+        behavior = PlannerPolicy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), planning.get("reward_set"), deontic.get("evaluation_function"), None)
 
     if enforcing and enforcing.get("phase") == "during_training":
         behavior.set_enforcing(enforcing)
