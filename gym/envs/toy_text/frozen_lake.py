@@ -45,7 +45,13 @@ MAPS = {
         "FPFP",
         "FFPG"
     ],
-    "8x8": [
+    "6x4_A": [
+        "SFFFCF",
+        "FHHHCH",
+        "FHFFFH",
+        "FFFHFG"
+    ],
+    "8x8_A": [
         "SFFFFFFF",
         "FFFFFFFF",
         "FFFHFFFF",
@@ -59,10 +65,11 @@ MAPS = {
 
 TRAVERSER_PATHS = {
     "3x3_Aa": [8,5,2,1,0],
-    "3x3_A": [6,1],
-    "4x4_A": [13,9] * int(100/2),
+    "3x3_A": [2],
+    "4x4_A": None,
     "4x4_B": [13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9,13,9],
     "4x4_T": [6,2,6,2,6,2,6,2,6,2,6],
+    "6x4_A": [16,10,4,10] * int(150/4)
 }
 
 
@@ -315,7 +322,7 @@ class FrozenLakeEnv(Env):
         return self.nrow * self.ncol
 
     def get_tile_symbol_of_state_number(self, state: int):
-        row = int(state / self.nrow)
+        row = int(state / self.ncol)
         col = state % self.ncol
         return self.desc[row][col]
 
@@ -370,7 +377,7 @@ class FrozenLakeEnv(Env):
         if tile is None or tile < 0:
             pass
 
-        row = int(tile / self.nrow)
+        row = int(tile / self.ncol)
         col = tile % self.ncol
         if self.desc[row][col] == b'P':
             self.desc[row][col] = b'F'

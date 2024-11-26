@@ -107,7 +107,6 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
 
     # Note: starts already in the active python environment
     command = [
-        # f'call',  f'{ANACONDA_PATH}', f'{CONDA_ENV_NAME}', f'&&',
         f'python', f'-m', f'telingo',
         f'--quiet=1,1,1',
         f'--imin={planning_horizon}', f'--imax={planning_horizon}',
@@ -130,7 +129,7 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     output = result.stdout
     errors_and_warnings = result.stderr
 
-    if 'traceback' in errors_and_warnings or 'error' in errors_and_warnings:
+    if 'traceback' in errors_and_warnings.lower() or 'error' in errors_and_warnings.lower():
         print("Telingo Errors and Warnings:")
         print(errors_and_warnings)
 

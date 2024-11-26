@@ -1,10 +1,11 @@
-% Full
+% Full set of norms
 
 % Norms:
 % notReachedGoal
 % occupiedTraverserTile
 % turnedOnTraverserTile
 % movedAwayFromGoal
+% didNotMoveTowardsGoal
 % leftSafeArea
 % didNotReturnToSafeArea
 % stolePresent
@@ -17,6 +18,16 @@ forbidden(movedAwayFromGoal).
 movedAwayFromGoal :- Y > X, 'distanceFromCurrentStateToGoal(X), distanceFromCurrentStateToGoal(Y).
 currentViolation(forbidden(movedAwayFromGoal)) :- forbidden(movedAwayFromGoal), movedAwayFromGoal.
 level(movedAwayFromGoal,1).
+
+% The agent must not move away from the goal
+forbidden(didNotMoveTowardsGoal).
+didNotMoveTowardsGoal :- Y >= X, 'distanceFromCurrentStateToGoal(X), distanceFromCurrentStateToGoal(Y).
+didNotMoveTowardsGoal :- act(move(left)), currentState(L), leftEdge(L).
+didNotMoveTowardsGoal :- act(move(right)), currentState(L), rightEdge(L).
+didNotMoveTowardsGoal :- act(move(up)), currentState(L), upperEdge(L).
+didNotMoveTowardsGoal :- act(move(down)), currentState(L), lowerEdge(L).
+currentViolation(forbidden(didNotMoveTowardsGoal)) :- forbidden(didNotMoveTowardsGoal), didNotMoveTowardsGoal.
+level(didNotMoveTowardsGoal,2).
 
 % The agent must not be on the same tile as the traverser
 forbidden(occupiedTraverserTile).
@@ -40,22 +51,22 @@ level(leftSafeArea,2).
 forbidden(didNotReturnToSafeArea).
 didNotReturnToSafeArea :- currentState(X), not safe(Y), tile(Y), X=Y, 'currentState(U), not safe(V), tile(V), U=V.
 currentViolation(forbidden(didNotReturnToSafeArea)) :- forbidden(didNotReturnToSafeArea), didNotReturnToSafeArea.
-level(didNotReturnToSafeArea,3).
+level(didNotReturnToSafeArea,2).
 
 % The agent must not take any present
 forbidden(stolePresent).
 stolePresent :- takePresent(S).
 currentViolation(forbidden(stolePresent)) :- forbidden(stolePresent), stolePresent.
-level(stolePresent,2).
+level(stolePresent,3).
 
 % The agent must take all available presents
 forbidden(missedPresents).
-level(missedPresents,2).
+level(missedPresents,3).
 
 % The agent must reach the goal tile
 obligatory(reachedGoal).
 reachedGoal :- goalStateReached.
-level(reachedGoal,3).
+level(reachedGoal,4).
 
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not reachedGoal.

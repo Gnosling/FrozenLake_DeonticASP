@@ -78,7 +78,7 @@ also have separate files for each norm to make copying into sets easier
 - --> use at most 3 presents, maybe less then it's fine
 - If the planning horizon is too low (or also the enforcing one), planning might prefer to not move away from start -> min-steps count also start tile
 - If highest norm is preventing reaching the goal then the planning might stall (If reachedGoal is strictly best, then this works)
-- Discount < 1 distords rewards shaping a bit, since equal violations after discounting still give a benefit
+- Discount < 1 distorts rewards shaping a bit, since equal violations after discounting still give a benefit
 - Norms with level 1 are on the same group as internal rewards
 - Using state-function and state-action penalty on the initialisation of qTable will also improve results hopefully
 
@@ -102,7 +102,7 @@ also have separate files for each norm to make copying into sets easier
 ---------------
 ### Experiments:
   - First on 'crude' frozenlake with better slippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
-  - A* for testing RL-params (choose three default levels):
+  - A* for testing RL-params (choose three default levels: 3x3_A, 4x4_A, 6x4_A):
     - discount should be high to make the agent use long-term rewards and it's okay because there are mostly negative rewards for any step
     - mention that only value of 1.0 and 0.0 have bad results?
     - reverse-q should be better since rewards are only at goal tile

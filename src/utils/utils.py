@@ -450,6 +450,12 @@ def _check_violations(norm_violations, trail, terminated, env):
             if new_distance > previous_distance:
                 norm_violations[norm] += 1
 
+        elif norm == "didNotMoveTowardsGoal":
+            previous_distance = distance_to_goal(old_position, goal, width, height)
+            new_distance = distance_to_goal(new_position, goal, width, height)
+            if new_distance >= previous_distance:
+                norm_violations[norm] += 1
+
         elif norm == "leftSafeArea":
             # old was, new is not
             if _tile_is_safe(old_position, env) and not _tile_is_safe(new_position, env):
@@ -594,7 +600,7 @@ def get_state_value(state, norms, level_of_norms, env):
             if terminated and len(state[2]) > 0:
                 value += -len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
-        elif norm == "movedAwayFromGoal":
+        elif norm == "movedAwayFromGoal" or norm == "didNotMoveTowardsGoal":
             value += (-distance_to_goal(state[0], goal, width, height) / 0.8) * (scaling_factor ** (level_of_norms[norm] - 1))
 
         elif norm == "leftSafeArea":
@@ -657,7 +663,7 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
         else:
             shaped_rewards = ((discount * (get_state_action_penalty(trail, extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
                               - (get_state_action_penalty(trail[:-1], extract_norm_keys(enforcing.get("norm_set")), level_of_norms, env)))
-    return shaped_rewards # TODO: if both state_actions are equal shaped_rewards is still positive, due to discount!
+    return shaped_rewards
 
 
 def store_results(config: str, training_returns_avg, training_returns_stddev, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
@@ -1032,6 +1038,7 @@ def plot_experiment(config: str):
             'turnedOnTraverserTile': 'red',
             'notReachedGoal': 'royalblue',
             'movedAwayFromGoal': 'mediumseagreen',
+            'didNotMoveTowardsGoal': 'seagreen',
             'leftSafeArea': 'gold',
             'didNotReturnToSafeArea': 'darkorange',
             'stolePresent': 'deeppink',
@@ -1082,12 +1089,13 @@ def plot_experiment(config: str):
                 content = file.read()
                 enforced_violations = ast.literal_eval(content)
 
-        group_labels = ['notReachedGoal', 'movedAwayFromGoal', 'occupiedTraverserTile', 'turnedOnTraverserTile', 'leftSafeArea', 'didNotReturnToSafeArea', 'stolePresent', 'missedPresents']
+        group_labels = ['notReachedGoal', 'movedAwayFromGoal', 'didNotMoveTowardsGoal', 'occupiedTraverserTile', 'turnedOnTraverserTile', 'leftSafeArea', 'didNotReturnToSafeArea', 'stolePresent', 'missedPresents']
 
         if not enforced_violations: # TODO: either enable the enforced_half or simple set the sns.split later to false -> what looks better?
             enforced_violations = dict()
             enforced_violations['notReachedGoal'] = [-100]  # Note: this 'enables' it the chart
             enforced_violations['movedAwayFromGoal'] = [-100]  # Note: this 'enables' it the chart
+            enforced_violations['didNotMoveTowardsGoal'] = [-100]  # Note: this 'enables' it the chart
 
         for norm in group_labels:
             final_violations.setdefault(norm, [])
@@ -1098,7 +1106,7 @@ def plot_experiment(config: str):
                 avg = sum(value_list) / len(value_list)
             else:
                 avg = 0
-            print(f"Finale average of {key}: {avg}")
+            debug_print(f"Final average of {key}: {avg}")
 
         if os.path.exists(path):
             for key, value_list in enforced_violations.items():
@@ -1106,7 +1114,7 @@ def plot_experiment(config: str):
                     avg = sum(value_list) / len(value_list)
                 else:
                     avg = 0
-                print(f"Enforcing average of {key}: {avg}")
+                debug_print(f"Enforcing average of {key}: {avg}")
 
         # removes 0's from the violation-plots TODO: does this look better?
         # final_violations = {key: [value for value in values if value != 0] for key, values in final_violations.items()}
@@ -1133,7 +1141,7 @@ def plot_experiment(config: str):
             'Group': group_column
         })
 
-        plt.figure(figsize=(16, 6))
+        plt.figure(figsize=(18, 6))
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
@@ -1172,7 +1180,7 @@ def plot_experiment(config: str):
         if preferred_action:
             preferred_actions[tile] = preferred_action
 
-    grid = np.zeros((4, 4))
+    grid = np.zeros((height, width))
 
     for cell, total_value in position_visits.items():
         row = cell // width
@@ -1231,7 +1239,7 @@ def plot_experiment(config: str):
         if preferred_action:
             preferred_actions[tile] = preferred_action
 
-    grid = np.zeros((4, 4))
+    grid = np.zeros((height, width))
 
     for cell, total_value in position_visits.items():
         row = cell // width
@@ -1292,7 +1300,7 @@ def plot_experiment(config: str):
             if preferred_action:
                 preferred_actions[tile] = preferred_action
 
-        grid = np.zeros((4, 4))
+        grid = np.zeros((height, width))
 
         for cell, total_value in position_visits.items():
             row = cell // width
