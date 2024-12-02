@@ -7,4 +7,4 @@
 forbidden(occupiedTraverserTile).
 occupiedTraverserTile :- currentState(X), currentStateOfTraverser(Y), X=Y.
 currentViolation(forbidden(occupiedTraverserTile)) :- forbidden(occupiedTraverserTile), occupiedTraverserTile.
-level(occupiedTraverserTile,3).
+level(occupiedTraverserTile,2).

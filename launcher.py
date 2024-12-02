@@ -3,8 +3,11 @@ from src.configs import configs
 
 controller = Controller()
 
-experiment = "T1"
+experiment = "U4"
 
 for config in configs.keys():
     if config.startswith(experiment):
-        controller.plot_experiment(config)
+        try:
+            controller.run_experiment(config)
+        except Exception as exception:
+            print(f"ERROR: {exception}")

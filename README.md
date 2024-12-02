@@ -52,6 +52,8 @@ During training if exploration is triggered no enforce-ment is applied.
   - -> the horizon must be high enough to compute a path to the end of the level (so this value defines checking and fixing length)
   - the current act(move(X)) of the path must be inserted dynamically and checked for violations, if any occurred then activate normal planning with special evaluation (no rewards)
   - compared to others high computational effort, but most flexible and best monitoring 
+  - uses two horizons one for checking and one for fixing
+  - as an outlook validation by table checking might be faster
 - --> reward_shaping (paper-one):
   - as long as function is potential-based, there is no drop in optimal policy and in fact learning can be speed up by this
   - What is potential-based for FrozenLake?
@@ -62,6 +64,7 @@ During training if exploration is triggered no enforce-ment is applied.
     - instead of actions, states are evaluated: discounted_F(successor) - F(prev_state)
     - these plus-rewards can be scaled by the level of the norm and the sum can be downsized
     - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs which is no longer optimal
+    - in full rewards shping the update can never be positive because the trail can only gain more violations
 
 <br/>
 <br/>
@@ -81,7 +84,7 @@ also have separate files for each norm to make copying into sets easier
 - Discount < 1 distorts rewards shaping a bit, since equal violations after discounting still give a benefit
 - Norms with level 1 are on the same group as internal rewards
 - Using state-function and state-action penalty on the initialisation of qTable will also improve results hopefully
-
+- Mixing rewards with low prio norms seems counterintuitive (at least don't do this in enforcing -> also stated in Sebastions paper) ?
 
 <br/>
 <br/>
@@ -115,4 +118,8 @@ also have separate files for each norm to make copying into sets easier
   - E* to test enforcing strategies
   - F* to test norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
 
-
+---------------
+##### Meeting notes:
+- Issues:
+  - TODO: what to do with rewards? -> use eval that does not care for rewards!
+  

@@ -806,13 +806,14 @@ def plot_experiment(config: str):
 
     plt.figure(figsize=(10,6))
     plt.plot(list(range(1,episodes+1)), avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    plt.fill_between(list(range(1,episodes+1)), avg_returns - std_returns, avg_returns + std_returns, color='blue', alpha=0.2, label='standard deviation')
+    # TODO: decide about std_dev
+    # plt.fill_between(list(range(1,episodes+1)), avg_returns - std_returns, avg_returns + std_returns, color='blue', alpha=0.2, label='standard deviation')
     plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Training returns')
-    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
+    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('returns')
     handles, labels = plt.gca().get_legend_handles_labels()
@@ -838,7 +839,7 @@ def plot_experiment(config: str):
     final_std_dev = np.sqrt(final_percentage * (1 - final_percentage) / len(final_returns))
     final_bar_size = final_percentage
 
-    path = os.path.join(final_folder, f"{config}_returns_enforced")
+    path = os.path.join(final_folder, f"{config}_returns_enforced.txt")
     enforced_returns = None
     if os.path.exists(path):
         with open(path, 'r', newline='') as file:
@@ -849,15 +850,17 @@ def plot_experiment(config: str):
         enforced_percentage = enforced_returns.count(1) / len(enforced_returns)
         enforced_std_dev = np.sqrt(enforced_percentage * (1 - enforced_percentage) / len(enforced_returns))
         enforced_bar_size = enforced_percentage
-        plt.figure(figsize=(10, 8))
-        plt.bar(['final returns', 'enforced returns'], [final_bar_size, enforced_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=[final_std_dev, enforced_std_dev], capsize=15)
+        plt.figure(figsize=(5, 8))
+        x_positions = [0, 0.75]
+        plt.bar(x_positions, [final_bar_size, enforced_bar_size], label='Percentage of successes', color=['deepskyblue', 'darkcyan'], width=0.5, yerr=[final_std_dev, enforced_std_dev], capsize=15)
+        plt.xticks(x_positions, ['final returns', 'enforced returns'])
     else:
-        plt.figure(figsize=(4.1, 8))
+        plt.figure(figsize=(4.5, 8))
         plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_dev, capsize=30)
 
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
     plt.ylabel('Percentage')
-    plt.title('Stacked Bar Plot of Binary Datasets (Relative Split)')
+    plt.title(f'{config} - Final returns')
     plt.ylim(0, 1)
     plt.yticks([i/10 for i in range(11)])
     plt.legend()
@@ -881,17 +884,13 @@ def plot_experiment(config: str):
         inference_times = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue',
-             marker='o', markersize=4)
-    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen',
-             marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue', marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen', marker='o', markersize=4)
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Average time for training and inference of target policy')
-    plt.figtext(0.5, 0.01,
-                f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
-                ha='center', va='center', fontsize=9)
+    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('seconds')
     plt.legend(loc='upper right', framealpha=1.0)
@@ -933,7 +932,7 @@ def plot_experiment(config: str):
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title('Box Plot with Jittered Points for Return Distribution by Group')
+    plt.title(f'{config} - Final inference times of target policy')
     plt.xlabel('Target Groups')
     plt.ylabel('Runtimes (s)')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
@@ -965,9 +964,7 @@ def plot_experiment(config: str):
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
     plt.title(f'{config} - Average number of steps and of slips')
-    plt.figtext(0.5, 0.01,
-                f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n',
-                ha='center', va='center', fontsize=9)
+    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('counts')
     plt.legend(loc='upper right', framealpha=1.0)
@@ -981,6 +978,7 @@ def plot_experiment(config: str):
 
 
     #  ---   ---   ---   plots: final steps and slips   ---   ---   ---
+    # TODO: also include enforced steps + slips here!
     path = os.path.join(final_folder, f"{config}_steps.txt")
     final_steps = None
     with open(path, 'r', newline='') as file:
@@ -1022,7 +1020,7 @@ def plot_experiment(config: str):
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title('Box Plot with Jittered Points for Return Distribution by Group')
+    plt.title(f'{config} - Final number of steps and of slips')
     plt.ylabel('Counts')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
@@ -1053,21 +1051,22 @@ def plot_experiment(config: str):
 
         plt.figure(figsize=(10, 6))
 
-        norms = violations[0].keys()
+        norms = violations[0].keys() # TODO: maybe only show here the violations of the planned norms?
         for index, norm in enumerate(norms):
             plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-        plt.title(f'{config} - Violations')
-        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
+        plt.title(f'{config} - Violations during training')
+        # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episodes')
         plt.ylabel('violations')
         plt.legend(loc='upper right', framealpha=1.0)
 
+        max_violation = max(value for d in violations for value in d.values())+2
         plt.xlim(1, episodes)
-        plt.ylim(0, 20)
-        plt.yticks(range(0, 21, 1))
+        plt.ylim(0, int(min(max_violation, 20)))
+        plt.yticks(range(0, int(min(max_violation, 21)), 1))
 
         plt.savefig(os.path.join(plot_folder, f"{config}_violations_training.png"))
         # plt.show()
@@ -1141,11 +1140,11 @@ def plot_experiment(config: str):
             'Group': group_column
         })
 
-        plt.figure(figsize=(18, 6))
+        plt.figure(figsize=(20, 6))
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
-        plt.title('Violations')
+        plt.title(f'{config} - Final violations')
         plt.xlabel('Group')
         plt.ylabel('Violations')
         plt.ylim(-0.5, 10)
@@ -1206,7 +1205,7 @@ def plot_experiment(config: str):
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
     plt.title(f'{config} - Visits of target policy', fontsize=16, pad=20)
-    plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
+    # plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
 
     plt.savefig(os.path.join(plot_folder, f"{config}_states_training.png"))
     # plt.show()
@@ -1266,8 +1265,7 @@ def plot_experiment(config: str):
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
     plt.title(f'{config} - Final state visits', fontsize=16, pad=20)
-    plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center',
-                fontsize=9)  # TODO: define titles and subtitles for each plot
+    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
 
     plt.savefig(os.path.join(plot_folder, f"{config}_states_final.png"))
     # plt.show()
@@ -1327,8 +1325,7 @@ def plot_experiment(config: str):
                         color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
         plt.title(f'{config} - Enforced state visits', fontsize=16, pad=20)
-        plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center',
-                    fontsize=9)  # TODO: define titles and subtitles for each plot
+        # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
 
         plt.savefig(os.path.join(plot_folder, f"{config}_states_enforced.png"))
         # plt.show()
@@ -1340,3 +1337,6 @@ def plot_experiment(config: str):
 def debug_print(msg: str) -> Any:
     if DEBUG_MODE:
         print(msg)
+
+def is_debug_mode() -> bool:
+    return DEBUG_MODE

@@ -71,8 +71,7 @@ class Policy:
         allowed_actions = ACTION_SET
         if self.enforcing:
             if "guardrail" in self.enforcing.get("strategy"):
-                allowed_actions = guardrail(self.enforcing, state, self.previous_state, self.last_performed_action,
-                                            self.last_proposed_action, env)
+                allowed_actions = guardrail(self.enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
 
             if "fixing" in self.enforcing.get("strategy"):
                 return self._check_and_fix_path(state, env)
@@ -87,24 +86,26 @@ class Policy:
         """
         layout, width, height = env.get_layout()
         goal = env.get_goal()
-        enforcing_horizon = self.enforcing.get("enforcing_horizon")
+        validating_horizon = self.enforcing.get("enforcing_horizon")[0]
+        planning_horizon = self.enforcing.get("enforcing_horizon")[1]
         enforcing_norm_set = self.enforcing.get("norm_set")
         action_sequence = []
         original_state = state
-        for i in range(enforcing_horizon-1):
+        for i in range(validating_horizon-1):
             action = self.q_table.get_best_action_for_state(state)
             action_sequence.append(action)
             successor = compute_expected_successor(state[0], action, width, height)
             state = (successor, state[1], state[2])
             if successor == goal:
-                enforcing_horizon = i+2
+                validating_horizon = i+2
                 break
 
-        if validate_path(action_sequence, self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set):
+        if validate_path(action_sequence, self.level, validating_horizon, self.last_performed_action, original_state, enforcing_norm_set):
             return action_sequence[0]
         else:
             # Note: evaluation_set 4 is used per default with reward_set 3 to uphold norms and to optimize with distance to avoid stalling
-            return plan_action(self.level, enforcing_horizon, self.last_performed_action, original_state, enforcing_norm_set, 3, 4, ACTION_SET)
+            # TODO: use eval set 3 and reward set 1 ie the original rewards
+            return plan_action(self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 3, ACTION_SET)
 
 
     def _update_learning_rate(self):

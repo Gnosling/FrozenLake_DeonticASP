@@ -124,7 +124,7 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
         bat_file.write(bat_content)
 
 
-    result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True)
+    result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
 
     output = result.stdout
     errors_and_warnings = result.stderr

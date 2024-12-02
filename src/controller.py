@@ -1,5 +1,6 @@
 import gym
 import time
+from tqdm import tqdm
 
 from .utils.utils import *
 from .policies.planner_policy import PlannerPolicy
@@ -34,7 +35,7 @@ class Controller:
         total_inference_times = []
         total_state_visits = dict()
         final_target_policies = []
-        for rep in range(repetitions):
+        for rep in range(1, repetitions+1):
             env = gym.make(id=frozenlake.get("name"), traverser_path=frozenlake.get("traverser_path"),
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
@@ -48,10 +49,13 @@ class Controller:
             training_time_of_behavior_per_episode = []
             inference_time_of_target_per_episode = []
             state_visits_of_target = dict()
-            print(f"Performing repetition {rep+1} ...", end='\r')
-            for episode in range(episodes):
+            for episode in range(1, episodes+1):
+                if not is_debug_mode():
+                    pbar = tqdm(total=max_steps, desc=f"Performing repetition {rep}:   {episode}/{episodes}", leave=False)
+
+                debug_print(f"Performing repetition {rep}: \t {episode}/{episodes}")
                 debug_print("_____________________________________________")
-                debug_print(f"    ----    ----    Episode {episode+1}    ----    ----    ")
+                debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
                 layout, width, height = env.get_layout()
                 trail_of_behavior = []  # list of [state, proposed_action_name, new_state, rewards]
@@ -81,9 +85,16 @@ class Controller:
                     last_performed_action = extract_performed_action(state[0], new_state[0], width)
                     state = new_state
 
+                    if not is_debug_mode():
+                        pbar.update(1)  # updates progress bar
+
                     if terminated:
                         debug_print(env.render())
                         break
+
+                if not is_debug_mode():
+                    if pbar.n < pbar.total:
+                        pbar.update(pbar.total - pbar.n -1)
 
                 if learning.get("reversed_q_learning"):
                     behavior.update_after_end_of_episode(trail_of_behavior, env)
@@ -95,8 +106,8 @@ class Controller:
                 training_time = end_time-start_time
                 trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
-                debug_print(f"Expected return of ep {episode+1}: {expected_return}")
-                debug_print(f"Violations of ep {episode+1}: {violations_of_target}")
+                debug_print(f"Expected return of ep {episode}: {expected_return}")
+                debug_print(f"Violations of ep {episode}: {violations_of_target}")
                 debug_print("_____________________________________________")
                 return_of_target_per_episode.append(expected_return)
                 violations_of_target_per_episode.append(violations_of_target)
@@ -105,8 +116,10 @@ class Controller:
                 training_time_of_behavior_per_episode.append(training_time)
                 inference_time_of_target_per_episode.append(inference_time)
                 state_visits_of_target = state_visits
+                if not is_debug_mode():
+                    pbar.close()
 
-            debug_print(f"Finished repetition {rep + 1}")
+            debug_print(f"Finished repetition {rep}")
             debug_print("\n_____________________________________________")
             total_returns.append(return_of_target_per_episode)
             total_violations.append(violations_of_target_per_episode)
@@ -141,7 +154,7 @@ class Controller:
         final_inference_times = []
         final_state_visits = dict()
         final_violations = None
-        evaluation_repetitions = 10
+        evaluation_repetitions = 20
         for target in final_target_policies:
             target.set_enforcing(None)
             for i in range(evaluation_repetitions):
@@ -166,7 +179,7 @@ class Controller:
                 target.set_enforcing(enforcing)
                 if enforcing.get("enforcing_horizon") and "reward_shaping" in enforcing.get("strategy"):
                     # Note: if rewards shaping is used, then the targets are 'shaped' before the actual evaluation
-                    for i in range(enforcing.get("enforcing_horizon")):
+                    for i in range(enforcing.get("enforcing_horizon")[0]):
                         test_target(target, env, config)
 
                 for i in range(evaluation_repetitions):
