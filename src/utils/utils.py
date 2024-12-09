@@ -723,6 +723,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
 
 
     # Final results
+    # TODO: for final result store the avg value of each thing / norm in the txt in a new line!
     path = os.path.join(final_folder, f"{config}_returns.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(final_returns))

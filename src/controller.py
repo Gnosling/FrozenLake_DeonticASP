@@ -51,7 +51,7 @@ class Controller:
             state_visits_of_target = dict()
             for episode in range(1, episodes+1):
                 if not is_debug_mode():
-                    pbar = tqdm(total=max_steps, desc=f"Performing repetition {rep}:   {episode}/{episodes}", leave=False)
+                    pbar = tqdm(total=max_steps, desc=f"Performing repetition {rep}/{repetitions}:   {episode}/{episodes}", leave=False)
 
                 debug_print(f"Performing repetition {rep}: \t {episode}/{episodes}")
                 debug_print("_____________________________________________")
