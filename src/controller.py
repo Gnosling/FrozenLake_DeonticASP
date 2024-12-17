@@ -53,7 +53,7 @@ class Controller:
                 if not is_debug_mode():
                     pbar = tqdm(total=max_steps, desc=f"Performing repetition {rep}:   {episode}/{episodes}", leave=False)
 
-                debug_print(f"Performing repetition {rep}: \t {episode}/{episodes}")
+                debug_print(f"Performing repetition {rep}/{repetitions}: \t {episode}/{episodes}")
                 debug_print("_____________________________________________")
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
