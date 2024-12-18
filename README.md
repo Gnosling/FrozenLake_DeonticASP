@@ -6,9 +6,13 @@ conda install -c potassco telingo
 pip install -r requirements.txt
 % pip install gym[toy_text] %
 
+---------------
+
 ## ToDo / Status:
 - Paper: https://www.overleaf.com/project/666d2ecdd9d2e0c3e9a800ac
+- Maybe rename title
 
+---------------
 
 - Norms:
   - H: notReachedGoal
@@ -90,6 +94,21 @@ also have separate files for each norm to make copying into sets easier
 <br/>
 
 ---------------
+### Plots-ToDos:
+  - Stat-tests:
+    - Violations are stored as list of len reps * eval_reps
+    - T-Test for few entry points:
+      - Assuming normal distribution, if similar variance then 'two-Sample t-Test' otw Welch t-test
+      - Levene’s test to check if the variances of the two groups are statistically similar
+      - in violin plot compare each group and highlight is there is significant difference
+      - have extra-functions to do it for different enforcements
+    - Z-Test for many data-points:
+      - but needs population-variance (unknown only sample variance can be computed)
+      - --> cannot be used
+  - use automated table-pics to display avg and std_dev of certain exps, for return and violations per group
+    - but what are the values for violations, total number? percentage?
+
+---------------
 ### Paradoxes:
   - Ross's paradox
   - Prior's paradox (Paradox of derived obligation)
@@ -119,7 +138,4 @@ also have separate files for each norm to make copying into sets easier
   - F* to test norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
 
 ---------------
-##### Meeting notes:
-- Issues:
-  - TODO: what to do with rewards? -> use eval that does not care for rewards!
   

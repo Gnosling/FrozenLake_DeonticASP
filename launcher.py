@@ -1,5 +1,6 @@
 from src import *
 from src.configs import configs
+import traceback
 
 controller = Controller()
 
@@ -11,3 +12,4 @@ for config in configs.keys():
             controller.run_experiment(config)
         except Exception as exception:
             print(f"ERROR: {exception}")
+            traceback.print_exc()

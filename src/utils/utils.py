@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import ast
 import itertools
 import seaborn as sns
+from scipy import stats
 
 from src.configs import configs
 from src.policies.q_table import QTable
@@ -781,6 +782,21 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
             file.write(str(enforced_state_visits))
 
 
+def levene_test(group1, group2, alpha = 0.05) -> bool:
+    """ performs Levene's Test for variance similarity. Returns true is variances pass the test, ie. are similar"""
+    stat, p_value = stats.levene(group1, group2)
+    return p_value >= alpha
+
+def t_test(group1, group2, equal_variance=True, alpha=0.05) -> bool:
+    """
+    Performs t-test to test if the means of two groups are significantly different.
+    If equal_variance, then two-sampled t-test is performed, otw. Welch's t-test.
+    Returns true iff the means are significantly different
+    """
+    stat, p_value = stats.ttest_ind(group1, group2, equal_var=equal_variance)
+    return p_value < alpha
+
+
 def plot_experiment(config: str):
 
     # TODO: add std_deviations also in the plots?
@@ -1075,6 +1091,7 @@ def plot_experiment(config: str):
 
 
     #  ---   ---   ---   plots: final+enforced violations   ---   ---   ---
+    # TODO: perform t-test on the violations sets per norm and mark it in the chart
     if deontic is not None:
         path = os.path.join(final_folder, f"{config}_violations.txt")
         final_violations = dict()
@@ -1102,6 +1119,7 @@ def plot_experiment(config: str):
             enforced_violations.setdefault(norm, [])
 
         for key, value_list in final_violations.items():
+            # TODO: move into print for the text files
             if value_list:
                 avg = sum(value_list) / len(value_list)
             else:
@@ -1150,6 +1168,18 @@ def plot_experiment(config: str):
         plt.ylabel('Violations')
         plt.ylim(-0.5, 10)
         plt.grid(axis='y', linestyle='--', alpha=0.5)
+        plt.tight_layout()
+
+        if enforced_violations:
+            significantly_different_groups = [group_labels[0], group_labels[4]] # TODO: compute those with the functions, consider the not existent violations of enforced like list(0)
+            ax = plt.gca()
+            xticks = ax.get_xticklabels()
+            for group in significantly_different_groups:
+                for label in xticks:
+                    if group in label.get_text():
+                        label.set_fontsize(12)
+                        label.set_color('orangered')
+                        label.set_fontweight('bold')
 
         plt.savefig(os.path.join(plot_folder, f"{config}_violations_final.png"))
         # plt.show()
