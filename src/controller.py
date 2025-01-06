@@ -14,6 +14,9 @@ class Controller:
     def plot_experiment(self, config: str):
         plot_experiment(config)
 
+    def plot_compare_of_experiments(self, configs: List, show_returns: bool = True, norm_set: int = 0):
+        plot_compare_of_experiments(configs, show_returns, norm_set)
+
     def run_experiment(self, config: str):
 
         print(f"Starting experiment {config} ...")
@@ -21,7 +24,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+        repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
 
         # -----------------------------------------------------------------------------
@@ -135,7 +138,8 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Evaluation: Training + Final + Enforced
         # -----------------------------------------------------------------------------
-        training_returns_avg, training_returns_stddev = get_average_numbers(total_returns)
+        training_returns_avg, _ = get_average_numbers(total_returns)
+        training_returns_stderr = get_standard_error(total_returns)
         debug_print(f"Returns:\n{training_returns_avg}")
         training_steps_avg, training_steps_stddev = get_average_numbers(total_steps)
         training_slips_avg, training_slips_stddev = get_average_numbers(total_slips)
@@ -154,7 +158,6 @@ class Controller:
         final_inference_times = []
         final_state_visits = dict()
         final_violations = None
-        evaluation_repetitions = 20
         for target in final_target_policies:
             target.set_enforcing(None)
             for i in range(evaluation_repetitions):
@@ -198,7 +201,7 @@ class Controller:
         # Storing of results
         # -----------------------------------------------------------------------------
         store_results(config,
-                      training_returns_avg, training_returns_stddev, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+                      training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                       final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                       final_enforced_returns, final_enforced_steps, final_enforced_slips, final_enforced_violations, final_enforced_inference_times, final_enforced_state_visits)
 

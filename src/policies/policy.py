@@ -103,9 +103,8 @@ class Policy:
         if validate_path(action_sequence, self.level, validating_horizon, self.last_performed_action, original_state, enforcing_norm_set):
             return action_sequence[0]
         else:
-            # Note: evaluation_set 4 is used per default with reward_set 3 to uphold norms and to optimize with distance to avoid stalling
-            # TODO: use eval set 3 and reward set 1 ie the original rewards
-            return plan_action(self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 3, ACTION_SET)
+            # Note: evaluation_set 4 (weak constraints) is used per default with reward_set 1 (original rewards)
+            return plan_action(self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 4, ACTION_SET)
 
 
     def _update_learning_rate(self):

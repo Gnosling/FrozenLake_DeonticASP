@@ -5,6 +5,7 @@ import pandas as pd
 import random
 import copy
 import time
+import statistics
 import matplotlib.pyplot as plt
 import ast
 import itertools
@@ -190,18 +191,19 @@ def compute_expected_predecessor(current_position: int, last_action, width, heig
 
     return previous_position
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, dict, dict, dict, dict, dict]:
+def read_config_param(config_name: str) -> Tuple[int, int, int, int, dict, dict, dict, dict, dict]:
     if config_name in configs.keys():
         values = configs.get(config_name)
         repetitions = values.get("repetitions")
         episodes = values.get("episodes")
         max_steps = values.get("max_steps")
+        evaluation_repetitions = values.get("evaluation_repetitions")
         learning = values.get("learning")
         frozenlake = values.get("frozenlake")
         planning = values.get("planning")
         deontic = values.get("deontic")
         enforcing = values.get("enforcing")
-        return repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing
+        return repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing
     else:
         raise ValueError("Configuration was not found!")
 
@@ -213,7 +215,7 @@ def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
 def build_policy(config: str, env):
     from src.policies.policy import Policy
     from src.policies.planner_policy import PlannerPolicy
-    _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+    _, _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
     if planning is None:
         behavior = Policy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
@@ -276,6 +278,14 @@ def get_average_numbers(results):
 
     return average_numbers, standard_deviations
 
+def get_standard_error(results):
+    if len(results) == 0:
+        return 0
+    # Computes standard error of 1's in binary list
+    percentage = results.count(1) / len(results)
+    std_err = np.sqrt(percentage * (1 - percentage) / len(results))
+    return std_err
+
 def get_average_violations(results, norm_set):
     average_violations = []
     standard_deviations = []
@@ -317,7 +327,7 @@ def get_average_state_visits(results, reps):
 
 
 def test_target(target, env, config):
-    _, _, max_steps, _, frozenlake, _, deontic, _ = read_config_param(config)
+    _, _, max_steps, _, _, frozenlake, _, deontic, _ = read_config_param(config)
     norm_violations = None
     if deontic:
         norm_violations = extract_norm_keys(deontic.get("norm_set"))
@@ -667,7 +677,7 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, training_returns_avg, training_returns_stddev, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+def store_results(config: str, training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                   final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                   enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
     conf = configs.get(config)
@@ -690,7 +700,7 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
     path = os.path.join(training_folder, f"{config}_returns.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(training_returns_avg) + "\n")
-        file.write(str(training_returns_stddev))
+        file.write(str(training_returns_stderr))
 
     path = os.path.join(training_folder, f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
@@ -724,59 +734,97 @@ def store_results(config: str, training_returns_avg, training_returns_stddev, tr
 
 
     # Final results
-    # TODO: for final result store the avg value of each thing / norm in the txt in a new line!
     path = os.path.join(final_folder, f"{config}_returns.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(final_returns))
+        file.write(str(final_returns) + '\n')
+        file.write(str(statistics.mean(final_returns)) + '\n')
+        file.write(str(get_standard_error(final_returns)))
 
     path = os.path.join(final_folder, f"{config}_steps.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(final_steps))
+        file.write(str(final_steps) + '\n')
+        file.write(str(statistics.mean(final_steps)) + '\n')
+        file.write(str(statistics.stdev(final_steps)))
 
     path = os.path.join(final_folder, f"{config}_slips.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(final_slips))
+        file.write(str(final_slips) + '\n')
+        file.write(str(statistics.mean(final_slips)) + '\n')
+        file.write(str(statistics.stdev(final_slips)))
 
     path = os.path.join(final_folder, f"{config}_violations.txt")
+    final_violations_avg = {}
+    final_violations_stddev = {}
+    for key, value in final_violations.items():
+        final_violations_avg[key] = statistics.mean(value)
+        if key == 'notReachedGoal':
+            final_violations_stddev[key] = get_standard_error(value)
+        else:
+            final_violations_stddev[key] = statistics.stdev(value)
+
     with open(path, 'w', newline='') as file:
-        file.write(str(final_violations))
+        file.write(str(final_violations) + '\n')
+        file.write(str(final_violations_avg) + '\n')
+        file.write(str(final_violations_stddev))
 
     path = os.path.join(final_folder, f"{config}_inference_times.txt")
     with open(path, 'w', newline='') as file:
-        file.write(str(final_inference_times))
+        file.write(str(final_inference_times) + '\n')
+        file.write(str(statistics.mean(final_inference_times)) + '\n')
+        file.write(str(statistics.stdev(final_inference_times)))
 
+    # Note: these are already the average state visits
     path = os.path.join(final_folder, f"{config}_state_visits.txt")
     with open(path, 'w', newline='') as file:
         file.write(str(final_state_visits))
 
 
     # Enforced results
-    if enforced_returns is not None:
+    if enforced_returns:
         path = os.path.join(final_folder, f"{config}_returns_enforced.txt")
         with open(path, 'w', newline='') as file:
-            file.write(str(enforced_returns))
+            file.write(str(enforced_returns) + '\n')
+            file.write(str(statistics.mean(enforced_returns)) + '\n')
+            file.write(str(get_standard_error(enforced_returns)))
 
-    if enforced_steps is not None:
+    if enforced_steps:
         path = os.path.join(final_folder, f"{config}_steps_enforced.txt")
         with open(path, 'w', newline='') as file:
-            file.write(str(enforced_steps))
+            file.write(str(enforced_steps) + '\n')
+            file.write(str(statistics.mean(enforced_steps)) + '\n')
+            file.write(str(statistics.stdev(enforced_steps)))
 
-    if enforced_slips is not None:
+    if enforced_slips:
         path = os.path.join(final_folder, f"{config}_slips_enforced.txt")
         with open(path, 'w', newline='') as file:
-            file.write(str(enforced_slips))
+            file.write(str(enforced_slips) + '\n')
+            file.write(str(statistics.mean(enforced_slips)) + '\n')
+            file.write(str(statistics.stdev(enforced_slips)))
 
     if enforced_violations:
         path = os.path.join(final_folder, f"{config}_violations_enforced.txt")
+        enforced_violations_avg = {}
+        enforced_violations_stddev = {}
+        for key, value in enforced_violations.items():
+            enforced_violations_avg[key] = statistics.mean(value)
+            if key == 'notReachedGoal':
+                enforced_violations_stddev[key] = get_standard_error(value)
+            else:
+                enforced_violations_stddev[key] = statistics.stdev(value)
         with open(path, 'w', newline='') as file:
-            file.write(str(enforced_violations))
+            file.write(str(enforced_violations) + '\n')
+            file.write(str(enforced_violations_avg) + '\n')
+            file.write(str(enforced_violations_stddev))
 
-    if enforced_inference_times is not None:
+    if enforced_inference_times:
         path = os.path.join(final_folder, f"{config}_inference_times_enforced.txt")
         with open(path, 'w', newline='') as file:
-            file.write(str(enforced_inference_times))
+            file.write(str(enforced_inference_times) + '\n')
+            file.write(str(statistics.mean(enforced_inference_times)) + '\n')
+            file.write(str(statistics.stdev(enforced_inference_times)))
 
-    if enforced_state_visits is not None:
+    if enforced_state_visits:
+        # Note: these are already the average
         path = os.path.join(final_folder, f"{config}_state_visits_enforced.txt")
         with open(path, 'w', newline='') as file:
             file.write(str(enforced_state_visits))
@@ -799,10 +847,7 @@ def t_test(group1, group2, equal_variance=True, alpha=0.05) -> bool:
 
 def plot_experiment(config: str):
 
-    # TODO: add std_deviations also in the plots?
-    #  -> not for violations, state_visits, runtimes, step+slips
-    #  -> for steps+slips (final->done), returns (training->done) (final->done),
-    repetitions, episodes, max_steps, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+    repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
     maximum = 1
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
     training_folder = os.path.join(experiment_folder, "training")
@@ -823,7 +868,7 @@ def plot_experiment(config: str):
 
     plt.figure(figsize=(10,6))
     plt.plot(list(range(1,episodes+1)), avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    # TODO: decide about std_dev
+    # TODO: decide about std_err
     # plt.fill_between(list(range(1,episodes+1)), avg_returns - std_returns, avg_returns + std_returns, color='blue', alpha=0.2, label='standard deviation')
     plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
@@ -840,7 +885,10 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, 1.02)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_returns_training.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_returns_training.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -848,32 +896,32 @@ def plot_experiment(config: str):
     # ---   ---   ---   plots: final+enforced returns   ---   ---   ---
     path = os.path.join(final_folder, f"{config}_returns.txt")
     final_returns = None
+    final_std_err = None
     with open(path, 'r', newline='') as file:
         content = file.read()
-        final_returns = ast.literal_eval(content)
+        final_returns = ast.literal_eval(content.split("\n")[0])
+        final_std_err = ast.literal_eval(content.split("\n")[2])
 
-    final_percentage = final_returns.count(1) / len(final_returns)
-    final_std_dev = np.sqrt(final_percentage * (1 - final_percentage) / len(final_returns))
-    final_bar_size = final_percentage
+    final_bar_size = final_returns.count(1) / len(final_returns)
 
     path = os.path.join(final_folder, f"{config}_returns_enforced.txt")
     enforced_returns = None
+    enforced_std_err = None
     if os.path.exists(path):
         with open(path, 'r', newline='') as file:
             content = file.read()
-            enforced_returns = ast.literal_eval(content)
+            enforced_returns = ast.literal_eval(content.split("\n")[0])
+            enforced_std_err = ast.literal_eval(content.split("\n")[2])
 
     if enforced_returns:
-        enforced_percentage = enforced_returns.count(1) / len(enforced_returns)
-        enforced_std_dev = np.sqrt(enforced_percentage * (1 - enforced_percentage) / len(enforced_returns))
-        enforced_bar_size = enforced_percentage
+        enforced_bar_size = enforced_returns.count(1) / len(enforced_returns)
         plt.figure(figsize=(5, 8))
         x_positions = [0, 0.75]
-        plt.bar(x_positions, [final_bar_size, enforced_bar_size], label='Percentage of successes', color=['deepskyblue', 'darkcyan'], width=0.5, yerr=[final_std_dev, enforced_std_dev], capsize=15)
+        plt.bar(x_positions, [final_bar_size, enforced_bar_size], label='Percentage of successes', color=['deepskyblue', 'darkcyan'], width=0.5, yerr=[final_std_err, enforced_std_err], capsize=15)
         plt.xticks(x_positions, ['final returns', 'enforced returns'])
     else:
         plt.figure(figsize=(4.5, 8))
-        plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_dev, capsize=30)
+        plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_err, capsize=30)
 
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
     plt.ylabel('Percentage')
@@ -882,7 +930,10 @@ def plot_experiment(config: str):
     plt.yticks([i/10 for i in range(11)])
     plt.legend()
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_returns_final.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_returns_final.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -915,7 +966,10 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, max(fitting_times) + 1)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes_training.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_runtimes_training.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -925,14 +979,14 @@ def plot_experiment(config: str):
     final_inference_times = None
     with open(path, 'r', newline='') as file:
         content = file.read()
-        final_inference_times = ast.literal_eval(content)
+        final_inference_times = ast.literal_eval(content.split("\n")[0])
 
     path = os.path.join(final_folder, f"{config}_inference_times_enforced")
     enforced_inference_times = None
     if os.path.exists(path):
         with open(path, 'r', newline='') as file:
             content = file.read()
-            enforced_inference_times = ast.literal_eval(content)
+            enforced_inference_times = ast.literal_eval(content.split("\n")[0])
 
     data = pd.DataFrame({
         'Type': ['Runtimes'] * len(final_inference_times),
@@ -954,7 +1008,10 @@ def plot_experiment(config: str):
     plt.ylabel('Runtimes (s)')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_runtimes_final.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_runtimes_final.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -989,7 +1046,10 @@ def plot_experiment(config: str):
     plt.xlim(1, episodes)
     plt.ylim(-0.02, max(steps)+2)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_steps_training.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_steps_training.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -1000,13 +1060,13 @@ def plot_experiment(config: str):
     final_steps = None
     with open(path, 'r', newline='') as file:
         content = file.read()
-        final_steps = ast.literal_eval(content)
+        final_steps = ast.literal_eval(content.split("\n")[0])
 
     path = os.path.join(final_folder, f"{config}_slips.txt")
     final_slips = None
     with open(path, 'r', newline='') as file:
         content = file.read()
-        final_slips = ast.literal_eval(content)
+        final_slips = ast.literal_eval(content.split("\n")[0])
 
     path = os.path.join(final_folder, f"{config}_steps_enforced")
     enforced_steps = None
@@ -1041,7 +1101,10 @@ def plot_experiment(config: str):
     plt.ylabel('Counts')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_steps_final.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_steps_final.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -1085,30 +1148,32 @@ def plot_experiment(config: str):
         plt.ylim(0, int(min(max_violation, 20)))
         plt.yticks(range(0, int(min(max_violation, 21)), 1))
 
-        plt.savefig(os.path.join(plot_folder, f"{config}_violations_training.png"))
+        plot_path = os.path.join(plot_folder, f"{config}_violations_training.png")
+        if os.path.exists(plot_path):
+            os.remove(plot_path)
+        plt.savefig(plot_path)
         # plt.show()
         plt.close()
 
 
     #  ---   ---   ---   plots: final+enforced violations   ---   ---   ---
-    # TODO: perform t-test on the violations sets per norm and mark it in the chart
     if deontic is not None:
         path = os.path.join(final_folder, f"{config}_violations.txt")
         final_violations = dict()
         with open(path, 'r', newline='') as file:
             content = file.read()
-            final_violations = ast.literal_eval(content)
+            final_violations = ast.literal_eval(content.split("\n")[0])
 
         enforced_violations = None
         path = os.path.join(final_folder, f"{config}_violations_enforced.txt")
         if os.path.exists(path):
             with open(path, 'r', newline='') as file:
                 content = file.read()
-                enforced_violations = ast.literal_eval(content)
+                enforced_violations = ast.literal_eval(content.split("\n")[0])
 
         group_labels = ['notReachedGoal', 'movedAwayFromGoal', 'didNotMoveTowardsGoal', 'occupiedTraverserTile', 'turnedOnTraverserTile', 'leftSafeArea', 'didNotReturnToSafeArea', 'stolePresent', 'missedPresents']
 
-        if not enforced_violations: # TODO: either enable the enforced_half or simple set the sns.split later to false -> what looks better?
+        if not enforced_violations:
             enforced_violations = dict()
             enforced_violations['notReachedGoal'] = [-100]  # Note: this 'enables' it the chart
             enforced_violations['movedAwayFromGoal'] = [-100]  # Note: this 'enables' it the chart
@@ -1117,26 +1182,6 @@ def plot_experiment(config: str):
         for norm in group_labels:
             final_violations.setdefault(norm, [])
             enforced_violations.setdefault(norm, [])
-
-        for key, value_list in final_violations.items():
-            # TODO: move into print for the text files
-            if value_list:
-                avg = sum(value_list) / len(value_list)
-            else:
-                avg = 0
-            debug_print(f"Final average of {key}: {avg}")
-
-        if os.path.exists(path):
-            for key, value_list in enforced_violations.items():
-                if value_list:
-                    avg = sum(value_list) / len(value_list)
-                else:
-                    avg = 0
-                debug_print(f"Enforcing average of {key}: {avg}")
-
-        # removes 0's from the violation-plots TODO: does this look better?
-        # final_violations = {key: [value for value in values if value != 0] for key, values in final_violations.items()}
-        # enforced_violations = {key: [value for value in values if value != 0] for key, values in enforced_violations.items()}
 
         data_list = []
         type_column = []
@@ -1159,7 +1204,7 @@ def plot_experiment(config: str):
             'Group': group_column
         })
 
-        plt.figure(figsize=(20, 6))
+        plt.figure(figsize=(22, 6))
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
@@ -1171,7 +1216,14 @@ def plot_experiment(config: str):
         plt.tight_layout()
 
         if enforced_violations:
-            significantly_different_groups = [group_labels[0], group_labels[4]] # TODO: compute those with the functions, consider the not existent violations of enforced like list(0)
+            significantly_different_groups = []
+            # t_test(group1, group2, equal_variance=levene_test(group1, group2))
+            for norm in group_labels:
+                if sum(final_violations[norm]) > 0 and sum(enforced_violations[norm]) > 0:
+                    if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
+                        significantly_different_groups.append(norm)
+                        # TODO: test the t-test a bit more
+
             ax = plt.gca()
             xticks = ax.get_xticklabels()
             for group in significantly_different_groups:
@@ -1181,7 +1233,10 @@ def plot_experiment(config: str):
                         label.set_color('orangered')
                         label.set_fontweight('bold')
 
-        plt.savefig(os.path.join(plot_folder, f"{config}_violations_final.png"))
+        plot_path = os.path.join(plot_folder, f"{config}_violations_final.png")
+        if os.path.exists(plot_path):
+            os.remove(plot_path)
+        plt.savefig(plot_path)
         # plt.show()
         plt.close()
 
@@ -1238,7 +1293,10 @@ def plot_experiment(config: str):
     plt.title(f'{config} - Visits of target policy', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_states_training.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_states_training.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -1298,7 +1356,10 @@ def plot_experiment(config: str):
     plt.title(f'{config} - Final state visits', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
 
-    plt.savefig(os.path.join(plot_folder, f"{config}_states_final.png"))
+    plot_path = os.path.join(plot_folder, f"{config}_states_final.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    plt.savefig(plot_path)
     # plt.show()
     plt.close()
 
@@ -1358,11 +1419,211 @@ def plot_experiment(config: str):
         plt.title(f'{config} - Enforced state visits', fontsize=16, pad=20)
         # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
 
-        plt.savefig(os.path.join(plot_folder, f"{config}_states_enforced.png"))
+        plot_path = os.path.join(plot_folder, f"{config}_states_enforced.png")
+        if os.path.exists(plot_path):
+            os.remove(plot_path)
+        plt.savefig(plot_path)
         # plt.show()
         plt.close()
 
     print(f"Stored plots in: \t {plot_folder}")
+
+
+def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int):
+    """
+    plots a table comparing results from different experiments listed by configs
+    """
+
+    table_data = []
+    dash = "\u2014"
+    plusminus = "\u00B1"
+    plot_folder = os.path.join(os.getcwd(), "plots", "Tables")
+    if not os.path.exists(plot_folder):
+        os.makedirs(plot_folder)
+
+    norms = extract_norm_keys(norm_set)
+    configs.sort()
+    for config in configs:
+        returns = None
+        enforced_returns = None
+        notReachedGoal = dash
+        movedAwayFromGoal = dash
+        didNotMoveTowardsGoal = dash
+        occupiedTraverserTile = dash
+        turnedOnTraverserTile = dash
+        leftSafeArea = dash
+        didNotReturnToSafeArea = dash
+        stolePresent = dash
+        missedPresents = dash
+        notReachedGoal_enforced = dash
+        movedAwayFromGoal_enforced = dash
+        didNotMoveTowardsGoal_enforced = dash
+        occupiedTraverserTile_enforced = dash
+        turnedOnTraverserTile_enforced = dash
+        leftSafeArea_enforced = dash
+        didNotReturnToSafeArea_enforced = dash
+        stolePresent_enforced = dash
+        missedPresents_enforced = dash
+
+        if show_returns:
+            path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}", "final", f"{config}_returns.txt")
+            with open(path, 'r', newline='') as file:
+                content = file.read()
+                final_returns = ast.literal_eval(content.split("\n")[0])
+                final_returns_avg = ast.literal_eval(content.split("\n")[1])
+                final_returns_stddev = ast.literal_eval(content.split("\n")[2])
+            returns = f"{round(final_returns_avg,2)} {plusminus} {round(final_returns_stddev,2)}"
+
+            path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}", "final", f"{config}_returns_enforced.txt")
+            enforced_returns = []
+            enforced_returns_avg = 0
+            enforced_returns_stddev = 0
+            if os.path.exists(path):
+                with open(path, 'r', newline='') as file:
+                    content = file.read()
+                    enforced_returns = ast.literal_eval(content.split("\n")[0])
+                    enforced_returns_avg = ast.literal_eval(content.split("\n")[1])
+                    enforced_returns_stddev = ast.literal_eval(content.split("\n")[2])
+            if enforced_returns_avg == 0 and enforced_returns_stddev == 0:
+                enforced_returns = dash
+            else:
+                enforced_returns = f"{round(enforced_returns_avg,2)} {plusminus} {round(enforced_returns_stddev,2)}"
+
+
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}", "final", f"{config}_violations.txt")
+        if os.path.exists(path):
+            with open(path, 'r', newline='') as file:
+                content = file.read()
+                final_violations = ast.literal_eval(content.split("\n")[0])
+                final_violations_avg = ast.literal_eval(content.split("\n")[1])
+                final_violations_stddev = ast.literal_eval(content.split("\n")[2])
+            for norm in norms.keys():
+                if norm == "notReachedGoal":
+                    notReachedGoal = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "movedAwayFromGoal":
+                    movedAwayFromGoal = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "didNotMoveTowardsGoal":
+                    didNotMoveTowardsGoal = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "occupiedTraverserTile":
+                    occupiedTraverserTile = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "turnedOnTraverserTile":
+                    turnedOnTraverserTile = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "leftSafeArea":
+                    leftSafeArea = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "didNotReturnToSafeArea":
+                    didNotReturnToSafeArea = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "stolePresent":
+                    stolePresent = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+                elif norm == "missedPresents":
+                    missedPresents = f"{round(final_violations_avg.get(norm),2)} {plusminus} {round(final_violations_stddev.get(norm),2)}"
+
+        path = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}", "final", f"{config}_violations_enforced.txt")
+        if os.path.exists(path):
+            with open(path, 'r', newline='') as file:
+                content = file.read()
+                enforced_violations = ast.literal_eval(content.split("\n")[0])
+                enforced_violations_avg = ast.literal_eval(content.split("\n")[1])
+                enforced_violations_stddev = ast.literal_eval(content.split("\n")[2])
+            for norm in norms.keys():
+                if norm == "notReachedGoal":
+                    notReachedGoal_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "movedAwayFromGoal":
+                    movedAwayFromGoal_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "didNotMoveTowardsGoal":
+                    didNotMoveTowardsGoal_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "occupiedTraverserTile":
+                    occupiedTraverserTile_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "turnedOnTraverserTile":
+                    turnedOnTraverserTile_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "leftSafeArea":
+                    leftSafeArea_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "didNotReturnToSafeArea":
+                    didNotReturnToSafeArea_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "stolePresent":
+                    stolePresent_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+                elif norm == "missedPresents":
+                    missedPresents_enforced = f"{round(enforced_violations_avg.get(norm), 2)} {plusminus} {round(enforced_violations_stddev.get(norm), 2)}"
+
+        row = {
+            "Experiment": config,
+            "  Returns  \n": returns,
+            "  Returns  \nenforced": enforced_returns,
+            "notReachedGoal\n": notReachedGoal,
+            "notReachedGoal\nenforced": notReachedGoal_enforced,
+            "movedAwayFromGoal\n": movedAwayFromGoal,
+            "movedAwayFromGoal\nenforced": movedAwayFromGoal_enforced,
+            "didNotMoveTowardsGoal\n": didNotMoveTowardsGoal,
+            "didNotMoveTowardsGoal\nenforced": didNotMoveTowardsGoal_enforced,
+            "occupiedTraverserTile\n": occupiedTraverserTile,
+            "occupiedTraverserTile\nenforced": occupiedTraverserTile_enforced,
+            "turnedOnTraverserTile\n": turnedOnTraverserTile,
+            "turnedOnTraverserTile\nenforced": turnedOnTraverserTile_enforced,
+            "leftSafeArea\n": leftSafeArea,
+            "leftSafeArea\nenforced": leftSafeArea_enforced,
+            "didNotReturnToSafeArea\n": didNotReturnToSafeArea,
+            "didNotReturnToSafeArea\nenforced": didNotReturnToSafeArea_enforced,
+            "stolePresent\n": stolePresent,
+            "stolePresent\nenforced": stolePresent_enforced,
+            "missedPresents\n": missedPresents,
+            "missedPresents\nenforced": missedPresents_enforced,
+        }
+
+        filtered_row = {key: value for key, value in row.items() if key == "Experiment" or any(norm in key for norm in norms.keys()) or (show_returns and "Returns" in key)}
+        table_data.append(filtered_row)
+
+    df = pd.DataFrame(table_data)
+
+    n_rows, n_cols = df.shape
+    fig_width = n_cols * 2.4
+    fig_height = n_rows * 1.6
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    ax.axis("off")
+    table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
+    table.auto_set_column_width([row for row in range(len(df.columns))])
+    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    for (row, col), cell in table.get_celld().items():
+        if row == 0:
+            cell.set_fontsize(12)
+            cell.set_text_props(weight='bold')
+            cell.set_facecolor('lightgray')
+            cell.set_edgecolor('black')
+        elif col == 0:
+            cell.set_fontsize(12)
+            cell.set_text_props(weight='bold')
+            cell.set_facecolor('whitesmoke')
+            cell.set_edgecolor('black')
+        else:
+            cell.set_fontsize(10)
+            cell.set_facecolor('white')
+        cell.set_height(0.1)
+        cell.set_width(0.2)
+
+    for col_idx in range(1, len(df.columns)):
+        column_values = [val for val in df.iloc[:, col_idx] if val != dash]
+        numeric_values = [float(str(val).split(plusminus)[0]) for val in column_values]
+        min_val = min(numeric_values)
+        max_val = max(numeric_values)
+
+        if sum(numeric_values) != 0:
+            for row_idx, value in enumerate(df.iloc[:, col_idx]):
+                cell = table[row_idx + 1, col_idx]
+                if value == dash:
+                    continue
+
+                numeric_value = float(str(value).split(plusminus)[0])
+                if numeric_value == min_val:
+                    cell.set_facecolor("lightyellow")
+                if numeric_value == max_val:
+                    cell.set_facecolor("azure")
+
+    # plt.show()
+    configs_title = "_".join(configs)
+    plot_path = os.path.join(plot_folder, f"Comparison_of_{configs_title}.png")
+    if os.path.exists(plot_path):
+        os.remove(plot_path)
+    # plt.tight_layout()
+    plt.savefig(plot_path)
+    plt.close()
 
 
 def debug_print(msg: str) -> Any:
