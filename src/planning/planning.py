@@ -7,8 +7,8 @@ import subprocess
 #from src.utils.utils import debug_print
 
 
-def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_traverser: int, last_performed_action: str, presents: list, allowed_actions: list = None, action_path: list = None):
-    with open(os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp"), "w") as file:
+def _fill_file_for_dynamic_parameters(exp_name, current_state: int, current_state_of_traverser: int, last_performed_action: str, presents: list, allowed_actions: list = None, action_path: list = None):
+    with open(os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp"), "w") as file:
         file.write("#program initial.\n")
         file.write(f"currentState({current_state}).\n")
         if current_state_of_traverser is not None:
@@ -26,6 +26,10 @@ def _fill_file_for_dynamic_parameters(current_state: int, current_state_of_trave
             for index, action in enumerate(action_path):
                 file.write(f"givenAction({action.lower()},{index}).\n")
 
+def _remove_file_with_dynamic_parameters(exp_name):
+    path = os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp")
+    if os.path.exists(path):
+        os.remove(path)
 
 def _value_better_than_optimization(value, opt):
     # first levels have highest prio
@@ -84,7 +88,7 @@ def _extract_validation_result_from_telingo_output(output: str):
         raise ValueError('Checking threw an unexpected error!')
 
 
-def plan_action(level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, reward_set: int = 1, evaluation_function: int = 1, allowed_actions=None):
+def plan_action(exp_name, level: str, planning_horizon: int, last_performed_action: str, state: tuple, norm_set: int = 1, reward_set: int = 1, evaluation_function: int = 1, allowed_actions=None):
     """
     calls potassco's telingo to perform ASP-solving.
     uses general_reasoner for RL, frozenlake_reasoner for frozenlake, level-data and a helper file to handle dynamic properties (eg. to parse the currrent-state in the solver)
@@ -94,8 +98,8 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     file1 = os.path.join(os.getcwd(), "src", "planning", "general_reasoning.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_reasoning.lp")
     file3 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
-    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
-    file4 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
+    _fill_file_for_dynamic_parameters(exp_name, state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
+    file4 = os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp")
     file5 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp")
     file6 = os.path.join(os.getcwd(), "src", "planning", "rewards", f"rewards_{reward_set}.lp")
     file7 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")
@@ -119,7 +123,7 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
     {' '.join(command)}
     """
 
-    bat_file_path = os.path.join(os.getcwd(), 'run_telingo.bat')
+    bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
     with open(bat_file_path, 'w') as bat_file:
         bat_file.write(bat_content)
 
@@ -134,10 +138,11 @@ def plan_action(level: str, planning_horizon: int, last_performed_action: str, s
         print(errors_and_warnings)
 
     os.remove(bat_file_path)
+    _remove_file_with_dynamic_parameters(exp_name)
 
     return _extract_first_action_from_telingo_output(output)
 
-def validate_path(actions: list, level: str, enforcing_horizon: int, last_performed_action: str, state: tuple, enforcing_norm_set: int):
+def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, last_performed_action: str, state: tuple, enforcing_norm_set: int):
     """
     calls potassco's telingo to perform ASP-checking.
     uses frozenlake_checking, level-data and a helper file to handle dynamic properties
@@ -146,8 +151,8 @@ def validate_path(actions: list, level: str, enforcing_horizon: int, last_perfor
 
     file1 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_checking.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
-    _fill_file_for_dynamic_parameters(state[0], state[1], last_performed_action, list(state[2]), None, actions)
-    file3 = os.path.join(os.getcwd(), "src", "planning", "dynamic_parameters.lp")
+    _fill_file_for_dynamic_parameters(exp_name, state[0], state[1], last_performed_action, list(state[2]), None, actions)
+    file3 = os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp")
     file4 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{enforcing_norm_set}.lp")
 
     # Note: starts already in the active python environment
@@ -165,7 +170,7 @@ def validate_path(actions: list, level: str, enforcing_horizon: int, last_perfor
         {' '.join(command)}
         """
 
-    bat_file_path = os.path.join(os.getcwd(), 'run_telingo.bat')
+    bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
     with open(bat_file_path, 'w') as bat_file:
         bat_file.write(bat_content)
 
@@ -179,6 +184,7 @@ def validate_path(actions: list, level: str, enforcing_horizon: int, last_perfor
         print(errors_and_warnings)
 
     os.remove(bat_file_path)
+    _remove_file_with_dynamic_parameters(exp_name)
 
     return _extract_validation_result_from_telingo_output(output)
 

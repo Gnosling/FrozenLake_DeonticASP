@@ -16,7 +16,7 @@ class Policy:
     This is the most general policy, suggesting without enforcing only the best known action (greedy)
     """
 
-    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, level: str, enforcing=None, norm_set=None):
+    def __init__(self, exp_name, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, level: str, enforcing=None, norm_set=None):
         """
         Args:
         q_table                             the Q-Table to store learned values for state-action pairs
@@ -25,6 +25,7 @@ class Policy:
         0 <= learning_decay_rate            values used for decay strategies
         0 <= discount (float) <= 1          defines importance of next-state value in the update
         """
+        self.exp_name = exp_name
         self.q_table = q_table
         self.learning_rate = learning_rate
         self.learning_rate_strategy = learning_rate_strategy
@@ -100,11 +101,11 @@ class Policy:
                 validating_horizon = i+2
                 break
 
-        if validate_path(action_sequence, self.level, validating_horizon, self.last_performed_action, original_state, enforcing_norm_set):
+        if validate_path(self.exp_name, action_sequence, self.level, validating_horizon, self.last_performed_action, original_state, enforcing_norm_set):
             return action_sequence[0]
         else:
             # Note: evaluation_set 4 (weak constraints) is used per default with reward_set 1 (original rewards)
-            return plan_action(self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 4, ACTION_SET)
+            return plan_action(self.exp_name, self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 4, ACTION_SET)
 
 
     def _update_learning_rate(self):

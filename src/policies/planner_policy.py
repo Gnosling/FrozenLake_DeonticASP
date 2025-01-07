@@ -15,8 +15,8 @@ class PlannerPolicy(Policy):
     This policy uses ASP as planning and epsilon greedy exploration, there are different strategies when the planning should be triggered
     """
 
-    def __init__(self, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, epsilon: float, strategy: str, planning_horizon: int, delta: int, level: str, norm_set: int, reward_set: int, evaluation_function: int, enforcing = None):
-        super().__init__(q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing, norm_set)
+    def __init__(self, exp_name, q_table: QTable, learning_rate: float, learning_rate_strategy: str, learning_decay_rate: float, discount: float, epsilon: float, strategy: str, planning_horizon: int, delta: int, level: str, norm_set: int, reward_set: int, evaluation_function: int, enforcing = None):
+        super().__init__(exp_name, q_table, learning_rate, learning_rate_strategy, learning_decay_rate, discount, level, enforcing, norm_set)
         self.epsilon = epsilon
         self.delta = delta
         self.decay_value = 1
@@ -45,19 +45,19 @@ class PlannerPolicy(Policy):
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
-            action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+            action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
 
         elif self.strategy == "plan_for_new_states":
             if state not in self.visited_states:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
             else:
                 action = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_greedy_planning":
             if random.random() < self.delta:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
             else:
                 action = self._retrieve_action_from_table(state, allowed_actions)
 
@@ -66,7 +66,7 @@ class PlannerPolicy(Policy):
             self.decay_value = self.decay_value * math.exp(self.delta * -1 * self.suggestion_called_count)
             if random.random() < self.decay_value:
                 debug_print("planning was triggered")
-                action = plan_action(self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
             else:
                 action = self._retrieve_action_from_table(state, allowed_actions)
 

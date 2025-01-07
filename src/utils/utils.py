@@ -218,9 +218,9 @@ def build_policy(config: str, env):
     _, _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
 
     if planning is None:
-        behavior = Policy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
+        behavior = Policy(config, QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     else:
-        behavior = PlannerPolicy(QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), planning.get("reward_set"), deontic.get("evaluation_function"), None)
+        behavior = PlannerPolicy(config, QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), planning.get("reward_set"), deontic.get("evaluation_function"), None)
 
     if enforcing and enforcing.get("phase") == "during_training":
         behavior.set_enforcing(enforcing)
@@ -232,7 +232,7 @@ def build_policy(config: str, env):
                           for t in range(-1, env.get_number_of_tiles())
                           for subset in subsets},
                         constants.ACTION_SET, env)
-    target = Policy(behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
+    target = Policy(config, behavior.get_q_table(), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     return behavior, target
 
 
@@ -1131,7 +1131,7 @@ def plot_experiment(config: str):
 
         plt.figure(figsize=(10, 6))
 
-        norms = violations[0].keys() # TODO: maybe only show here the violations of the planned norms?
+        norms = violations[0].keys()
         for index, norm in enumerate(norms):
             plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
 
