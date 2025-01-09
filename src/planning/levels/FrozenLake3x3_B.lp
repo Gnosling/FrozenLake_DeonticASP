@@ -5,9 +5,9 @@
 
 tile(0..tiles-1).
 
-frozen(0). frozen(1). cracked(2).
-frozen(3). hole(4). cracked(5).
-cracked(6). cracked(7). frozen(8).
+frozen(0..3).
+hole(4).
+frozen(5..8).
 
 goal(8).
 

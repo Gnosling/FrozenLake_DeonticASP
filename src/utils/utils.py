@@ -191,7 +191,20 @@ def compute_expected_predecessor(current_position: int, last_action, width, heig
 
     return previous_position
 
-def read_config_param(config_name: str) -> Tuple[int, int, int, int, dict, dict, dict, dict, dict]:
+def read_config_params(config_name: str, config_dict: dict) -> Tuple[int, int, int, int, dict, dict, dict, dict, dict]:
+
+    if config_dict:
+        repetitions = config_dict.get("repetitions")
+        episodes = config_dict.get("episodes")
+        max_steps = config_dict.get("max_steps")
+        evaluation_repetitions = config_dict.get("evaluation_repetitions")
+        learning = config_dict.get("learning")
+        frozenlake = config_dict.get("frozenlake")
+        planning = config_dict.get("planning")
+        deontic = config_dict.get("deontic")
+        enforcing = config_dict.get("enforcing")
+        return repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing
+
     if config_name in configs.keys():
         values = configs.get(config_name)
         repetitions = values.get("repetitions")
@@ -212,10 +225,10 @@ def transform_to_state(current_tile: int, traverser_tile: int, presents: List):
     return (current_tile, traverser_tile, presents)
 
 
-def build_policy(config: str, env):
+def build_policy(config: str, config_dict, env):
     from src.policies.policy import Policy
     from src.policies.planner_policy import PlannerPolicy
-    _, _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+    _, _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_params(config, config_dict)
 
     if planning is None:
         behavior = Policy(config, QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
@@ -326,8 +339,8 @@ def get_average_state_visits(results, reps):
     return average_state_visits
 
 
-def test_target(target, env, config):
-    _, _, max_steps, _, _, frozenlake, _, deontic, _ = read_config_param(config)
+def test_target(target, env, config, config_dict):
+    _, _, max_steps, _, _, frozenlake, _, deontic, _ = read_config_params(config, config_dict)
     norm_violations = None
     if deontic:
         norm_violations = extract_norm_keys(deontic.get("norm_set"))
@@ -677,10 +690,13 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+def store_results(config: str, config_dict: dict, training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                   final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                   enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
-    conf = configs.get(config)
+    if config_dict:
+        conf = config_dict
+    else:
+        conf = configs.get(config)
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
     training_folder = os.path.join(experiment_folder, "training")
     final_folder = os.path.join(experiment_folder, "final")
@@ -845,9 +861,9 @@ def t_test(group1, group2, equal_variance=True, alpha=0.05) -> bool:
     return p_value < alpha
 
 
-def plot_experiment(config: str):
+def plot_experiment(config: str, config_dict: dict):
 
-    repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+    repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_params(config, config_dict)
     maximum = 1
     experiment_folder = os.path.join(os.getcwd(), "results", f"{config[0]}", f"{config}")
     training_folder = os.path.join(experiment_folder, "training")

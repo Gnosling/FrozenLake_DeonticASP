@@ -2,6 +2,9 @@ first time setup:
 create create --name FrozenLake python=3.9
 conda activate FrozenLake
 conda install swig
+conda install pandas
+conda install seaborn
+conda install scipy
 conda install -c potassco telingo
 pip install -r requirements.txt
 % pip install gym[toy_text] %
@@ -68,7 +71,7 @@ During training if exploration is triggered no enforce-ment is applied.
     - instead of actions, states are evaluated: discounted_F(successor) - F(prev_state)
     - these plus-rewards can be scaled by the level of the norm and the sum can be downsized
     - However CTDs, can not be expressed by this! -> have two options: optimal_rs and full_rs which is no longer optimal
-    - in full rewards shping the update can never be positive because the trail can only gain more violations
+    - in full rewards shaping the update can never be positive because the trail can only gain more violations
 
 <br/>
 <br/>
@@ -94,7 +97,7 @@ also have separate files for each norm to make copying into sets easier
 <br/>
 
 ---------------
-### Plots-ToDos:
+### Plots-Notes:
   - Stat-tests:
     - Violations are stored as list of len reps * eval_reps
     - T-Test for few entry points:
@@ -105,8 +108,6 @@ also have separate files for each norm to make copying into sets easier
     - Z-Test for many data-points:
       - but needs population-variance (unknown only sample variance can be computed)
       - --> cannot be used
-  - use automated table-pics to display avg and std_dev of certain exps, for return and violations per group
-    - but what are the values for violations, total number? percentage?
 
 ---------------
 ### Paradoxes:
@@ -128,10 +129,10 @@ also have separate files for each norm to make copying into sets easier
     - discount should be high to make the agent use long-term rewards and it's okay because there are mostly negative rewards for any step
     - mention that only value of 1.0 and 0.0 have bad results?
     - reverse-q should be better since rewards are only at goal tile
-    - try-out no deontic init-strats
   - B* to test policy strategies / classes (choose three default levels):
     - test out epsilon -> no signifant value, due to all values lacking at the start
     - test out different starting tiles on same level? with same policy?
+    - try-out no deontic init-strats, ie no planning
   - C* to test norms simple with CTDs and all evaluations (choose three default levels, with some changes affecting norms)
   - D* to test alternative implementations of norms (ie. forbid neg / oblig pos; deontic vs. factual)
   - E* to test enforcing strategies

@@ -1,3 +1,5 @@
+import statistics
+
 import gym
 import time
 from tqdm import tqdm
@@ -11,20 +13,26 @@ warnings.filterwarnings("ignore", message=".*is not within the observation space
 
 class Controller:
 
+    def __init__(self):
+        self.store_experiments = True
+
+    def disable_storing_and_plottings(self):
+        self.store_experiments = False
+
     def plot_experiment(self, config: str):
         plot_experiment(config)
 
     def plot_compare_of_experiments(self, configs: List, show_returns: bool = True, norm_set: int = 0):
         plot_compare_of_experiments(configs, show_returns, norm_set)
 
-    def run_experiment(self, config: str):
+    def run_experiment(self, config: str, config_dict: dict = None):
 
         print(f"Starting experiment {config} ...")
 
         # -----------------------------------------------------------------------------
         # Reading params
         # -----------------------------------------------------------------------------
-        repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_param(config)
+        repetitions, episodes, max_steps, evaluation_repetitions, learning, frozenlake, planning, deontic, enforcing = read_config_params(config, config_dict)
 
 
         # -----------------------------------------------------------------------------
@@ -43,7 +51,7 @@ class Controller:
                            is_slippery=frozenlake.get("slippery"),
                            render_mode='ansi')  # render_mode='human', render_mode='ansi'
             env.reset()  # Note: no seed given to use random one
-            behavior, target = build_policy(config, env)
+            behavior, target = build_policy(config, config_dict, env)
 
             return_of_target_per_episode = []
             violations_of_target_per_episode = []
@@ -107,7 +115,7 @@ class Controller:
 
                 end_time = time.time()
                 training_time = end_time-start_time
-                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
+                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, config_dict)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_,_,_,r] in trail_of_target])
                 debug_print(f"Expected return of ep {episode}: {expected_return}")
                 debug_print(f"Violations of ep {episode}: {violations_of_target}")
@@ -161,7 +169,7 @@ class Controller:
         for target in final_target_policies:
             target.set_enforcing(None)
             for i in range(evaluation_repetitions):
-                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
+                trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, config_dict)
                 expected_return = compute_expected_return(learning.get("discount"), [r for [_, _, _, r] in trail_of_target])
                 final_returns.append(expected_return)
                 final_violations = append_violations(final_violations, violations_of_target)
@@ -186,7 +194,7 @@ class Controller:
                         test_target(target, env, config)
 
                 for i in range(evaluation_repetitions):
-                    trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config)
+                    trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, config_dict)
                     expected_return = compute_expected_return(learning.get("discount"),[r for [_, _, _, r] in trail_of_target])
                     final_enforced_returns.append(expected_return)
                     final_enforced_violations = append_violations(final_enforced_violations, violations_of_target)
@@ -200,16 +208,25 @@ class Controller:
         # -----------------------------------------------------------------------------
         # Storing of results
         # -----------------------------------------------------------------------------
-        store_results(config,
-                      training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
-                      final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
-                      final_enforced_returns, final_enforced_steps, final_enforced_slips, final_enforced_violations, final_enforced_inference_times, final_enforced_state_visits)
+        if self.store_experiments:
+            store_results(config, config_dict,
+                          training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+                          final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
+                          final_enforced_returns, final_enforced_steps, final_enforced_slips, final_enforced_violations, final_enforced_inference_times, final_enforced_state_visits)
 
 
-        # -----------------------------------------------------------------------------
-        # Plotting
-        # -----------------------------------------------------------------------------
-        plot_experiment(config)
+            # -----------------------------------------------------------------------------
+            # Plotting
+            # -----------------------------------------------------------------------------
+            plot_experiment(config, config_dict)
 
         print(f"Completed experiment: {config}")
 
+
+        # -----------------------------------------------------------------------------
+        # Return expected objective
+        # -----------------------------------------------------------------------------
+        expected_objective = statistics.mean(final_returns)
+        if final_enforced_returns:
+            expected_objective = statistics.mean(final_enforced_returns)
+        return expected_objective

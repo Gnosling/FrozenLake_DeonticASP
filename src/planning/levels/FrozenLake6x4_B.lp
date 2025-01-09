@@ -5,10 +5,10 @@
 
 tile(0..tiles-1).
 
-frozen(0). hole(1..2). frozen(3..5).
-frozen(6). hole(7). frozen(8..11).
-frozen(12..15). hole(16). frozen(17).
-frozen(18..20). hole(21..22). frozen(23).
+frozen(0..3). cracked(4). frozen(5).
+frozen(6). hole(7..9). cracked(10). hole(11).
+frozen(12). hole(13). frozen(14..16). hole(17).
+frozen(18..20). hole(21). frozen(22..23).
 
 
 goal(23).

@@ -23,9 +23,9 @@ MAPS = {
         "FFG"
     ],
     "3x3_B": [
-        "SFC",
-        "FHC",
-        "CCG"
+        "SFF",
+        "FHP",
+        "FFG"
     ],
     "4x4_A": [
         "SFFF",
@@ -46,6 +46,12 @@ MAPS = {
         "FFPG"
     ],
     "6x4_A": [
+        "SHHFFF",
+        "FHFFFF",
+        "FFFFHF",
+        "FFFHHG"
+    ],
+    "6x4_B": [
         "SFFFCF",
         "FHHHCH",
         "FHFFFH",
@@ -64,12 +70,13 @@ MAPS = {
 }
 
 TRAVERSER_PATHS = {
-    "3x3_Aa": [8,5,2,1,0],
-    "3x3_A": [2],
+    "3x3_A": None,
+    "3x3_B": [2],
     "4x4_A": None,
     "4x4_B": [13,9] * int(150/2),
     "4x4_T": [6,2,6,2,6,2,6,2,6,2,6],
-    "6x4_A": [16,10,4,10] * int(150/4)
+    "6x4_A": None,
+    "6x4_B": [16,10,4,10] * int(150/4)
 }
 
 
