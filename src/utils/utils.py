@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import random
 import copy
+import shutil
 import time
 import statistics
 import matplotlib.pyplot as plt
@@ -11,6 +12,7 @@ import ast
 import itertools
 import seaborn as sns
 from scipy import stats
+from scipy.interpolate import CubicSpline
 
 from src.configs import configs
 from src.policies.q_table import QTable
@@ -702,10 +704,26 @@ def store_results(config: str, config_dict: dict, training_returns_avg, training
     final_folder = os.path.join(experiment_folder, "final")
     if not os.path.exists(experiment_folder):
         os.makedirs(experiment_folder)
+
     if not os.path.exists(training_folder):
         os.makedirs(training_folder)
+    else:
+        for filename in os.listdir(training_folder):
+            file_path = os.path.join(training_folder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+
     if not os.path.exists(final_folder):
         os.makedirs(final_folder)
+    else:
+        for filename in os.listdir(final_folder):
+            file_path = os.path.join(final_folder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
 
     path = os.path.join(experiment_folder, f"{config}_config.txt")
     with open(path, 'w', newline='') as file:
@@ -846,12 +864,12 @@ def store_results(config: str, config_dict: dict, training_returns_avg, training
             file.write(str(enforced_state_visits))
 
 
-def levene_test(group1, group2, alpha = 0.05) -> bool:
+def levene_test(group1, group2, alpha = 0.01) -> bool:
     """ performs Levene's Test for variance similarity. Returns true is variances pass the test, ie. are similar"""
     stat, p_value = stats.levene(group1, group2)
     return p_value >= alpha
 
-def t_test(group1, group2, equal_variance=True, alpha=0.05) -> bool:
+def t_test(group1, group2, equal_variance=True, alpha=0.01) -> bool:
     """
     Performs t-test to test if the means of two groups are significantly different.
     If equal_variance, then two-sampled t-test is performed, otw. Welch's t-test.
@@ -871,6 +889,13 @@ def plot_experiment(config: str, config_dict: dict):
     plot_folder = os.path.join(os.getcwd(), "plots", f"{config[0]}", f"{config}")
     if not os.path.exists(plot_folder):
         os.makedirs(plot_folder)
+    else:
+        for filename in os.listdir(plot_folder):
+            file_path = os.path.join(plot_folder, filename)
+            if os.path.isfile(file_path):
+                os.remove(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
 
 
     #  ---   ---   ---   plots: training_returns   ---   ---   ---
@@ -882,13 +907,24 @@ def plot_experiment(config: str, config_dict: dict):
         avg_returns = np.array(ast.literal_eval(content.split("\n")[0]))
         std_returns = np.array(ast.literal_eval(content.split("\n")[1]))
 
-    plt.figure(figsize=(10,6))
-    plt.plot(list(range(1,episodes+1)), avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    # TODO: decide about std_err
+    # plt.figure(figsize=(10,6))
+    # plt.plot(list(range(1,episodes+1)), avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker='o', markersize=4)
     # plt.fill_between(list(range(1,episodes+1)), avg_returns - std_returns, avg_returns + std_returns, color='blue', alpha=0.2, label='standard deviation')
-    plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
-    plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
-    plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+    # plt.plot(list(range(1,episodes+1)), [maximum] * episodes, color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
+    # plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
+    # plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+
+    x = np.arange(1, episodes + 1)
+    cs_std = CubicSpline(x, std_returns)
+    x_smooth = np.linspace(1, episodes, 150)
+    std_returns_smooth = cs_std(x_smooth)
+    cs_avg = CubicSpline(x, avg_returns)
+    avg_returns_smooth = cs_avg(x_smooth)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(x, avg_returns, label='expected return', linewidth=1.7, color='royalblue')
+    plt.fill_between(x_smooth, avg_returns_smooth  - std_returns_smooth, avg_returns_smooth  + std_returns_smooth, alpha=0.5, label='standard deviation', color='lightblue')
+    plt.plot(x, [maximum] * len(x), color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
 
     plt.title(f'{config} - Training returns')
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
@@ -1071,7 +1107,6 @@ def plot_experiment(config: str, config_dict: dict):
 
 
     #  ---   ---   ---   plots: final steps and slips   ---   ---   ---
-    # TODO: also include enforced steps + slips here!
     path = os.path.join(final_folder, f"{config}_steps.txt")
     final_steps = None
     with open(path, 'r', newline='') as file:
@@ -1084,19 +1119,19 @@ def plot_experiment(config: str, config_dict: dict):
         content = file.read()
         final_slips = ast.literal_eval(content.split("\n")[0])
 
-    path = os.path.join(final_folder, f"{config}_steps_enforced")
+    path = os.path.join(final_folder, f"{config}_steps_enforced.txt")
     enforced_steps = None
     if os.path.exists(path):
         with open(path, 'r', newline='') as file:
             content = file.read()
-            enforced_steps = ast.literal_eval(content)
+            enforced_steps = ast.literal_eval(content.split("\n")[0])
 
-    path = os.path.join(final_folder, f"{config}_slips_enforced")
+    path = os.path.join(final_folder, f"{config}_slips_enforced.txt")
     enforced_slips = None
     if os.path.exists(path):
         with open(path, 'r', newline='') as file:
             content = file.read()
-            enforced_slips = ast.literal_eval(content)
+            enforced_slips = ast.literal_eval(content.split("\n")[0])
 
     data = pd.DataFrame({
         'Type': ['Steps'] * len(final_steps) + ['Slips'] * len(final_slips),
@@ -1235,10 +1270,13 @@ def plot_experiment(config: str, config_dict: dict):
             significantly_different_groups = []
             # t_test(group1, group2, equal_variance=levene_test(group1, group2))
             for norm in group_labels:
+                # TODO: only for notReachedGoal use Chi-Squared test since binary data is not normal-distributed !!
                 if sum(final_violations[norm]) > 0 and sum(enforced_violations[norm]) > 0:
                     if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
                         significantly_different_groups.append(norm)
                         # TODO: test the t-test a bit more
+                        #  --> if data is doubled (ie. fake enforcing) then data similar
+                        #  --> but if enforcing is applied all norms are different, maybe strengthen alpha?.
 
             ax = plt.gca()
             xticks = ax.get_xticklabels()

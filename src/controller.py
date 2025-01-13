@@ -20,7 +20,7 @@ class Controller:
         self.store_experiments = False
 
     def plot_experiment(self, config: str):
-        plot_experiment(config)
+        plot_experiment(config, None)
 
     def plot_compare_of_experiments(self, configs: List, show_returns: bool = True, norm_set: int = 0):
         plot_compare_of_experiments(configs, show_returns, norm_set)
@@ -147,7 +147,7 @@ class Controller:
         # Evaluation: Training + Final + Enforced
         # -----------------------------------------------------------------------------
         training_returns_avg, _ = get_average_numbers(total_returns)
-        training_returns_stderr = get_standard_error(total_returns)
+        training_returns_stderr = [get_standard_error(list(col)) for col in list(zip(*total_returns))]
         debug_print(f"Returns:\n{training_returns_avg}")
         training_steps_avg, training_steps_stddev = get_average_numbers(total_steps)
         training_slips_avg, training_slips_stddev = get_average_numbers(total_slips)

@@ -31,7 +31,7 @@ def objective_for_RL_params_1(trial):
                             "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
                             "learning_decay_rate": learning_decay_rate},
                "planning": None,
-               "deontic": {"norm_set": 0, "evaluation_function": 4},
+               "deontic": {"norm_set": 0, "evaluation_function": None},
                "enforcing": None,
                }
 
@@ -46,16 +46,6 @@ def objective_for_RL_params_1(trial):
     # Trial 167; Value: 0.448; Parameters: {'episodes': 276, 'discount': 0.8048939983986804, 'reversed_q_learning': True, 'learning_rate': 0.1667906347540406};
     # Trial 70; Value: 0.439; Parameters: {'episodes': 270, 'discount': 0.8267467663570353, 'reversed_q_learning': True, 'learning_rate': 0.14462439646471592};
 
-    # TODO: collect result and plot config A1:
-    #  config = {"repetitions": 20, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 50,
-    #                "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
-    #                "learning": {"norm_set": None, "epsilon": None, "initialisation": zero, "reversed_q_learning": true,
-    #                             "discount": 0.99, "learning_rate": 0.15, "learning_rate_strategy": constant,
-    #                             "learning_decay_rate": None},
-    #                "planning": None,
-    #                "deontic": {"norm_set": 0, "evaluation_function": 4},
-    #                "enforcing": None,
-    #                }
 
 def objective_for_RL_params_2(trial):
     """
@@ -86,7 +76,7 @@ def objective_for_RL_params_2(trial):
                             "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
                             "learning_decay_rate": learning_decay_rate},
                "planning": None,
-               "deontic": {"norm_set": 0, "evaluation_function": 4},
+               "deontic": {"norm_set": 0, "evaluation_function": None},
                "enforcing": None,
                }
 
@@ -121,7 +111,7 @@ def objective_for_RL_params_3(trial):
                             "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
                             "learning_decay_rate": learning_decay_rate},
                "planning": None,
-               "deontic": {"norm_set": 0, "evaluation_function": 4},
+               "deontic": {"norm_set": 0, "evaluation_function": None},
                "enforcing": None,
                }
 
@@ -129,12 +119,20 @@ def objective_for_RL_params_3(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment("A3", config)
 
+    # Trial 25; Value: 0.705; Parameters: {'initialisation': 'distance'};
+    # Trial 29; Value: 0.69; Parameters: {'initialisation': 'distance'};
+    # Trial 223; Value: 0.687; Parameters: {'initialisation': 'distance'};
+    # Trial 324; Value: 0.684; Parameters: {'initialisation': 'distance'};
+    # Trial 195; Value: 0.682; Parameters: {'initialisation': 'distance'};
 
 
 def bayesian_optimization():
     import optuna
     study = optuna.create_study(direction='maximize')
     study.optimize(objective_for_RL_params_3, n_trials=400, n_jobs=6)
+
+    # TODO: form a baseline of A0? and let it run for some levels to compare with BX later
+    # TODO: implement objective for planning strategies (also no planning first for the right epsilon value!), maybe with more trials? and again with init strat
 
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"bayesian_result_from_{current_datetime}.txt"
