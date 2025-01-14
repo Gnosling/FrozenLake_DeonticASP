@@ -922,7 +922,7 @@ def plot_experiment(config: str, config_dict: dict):
     avg_returns_smooth = cs_avg(x_smooth)
 
     plt.figure(figsize=(10, 6))
-    plt.plot(x, avg_returns, label='expected return', linewidth=1.7, color='royalblue')
+    plt.plot(x, avg_returns, label='expected return', linewidth=1.7, color='royalblue', marker=None)
     plt.fill_between(x_smooth, avg_returns_smooth  - std_returns_smooth, avg_returns_smooth  + std_returns_smooth, alpha=0.5, label='standard deviation', color='lightblue')
     plt.plot(x, [maximum] * len(x), color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
 
@@ -1004,8 +1004,8 @@ def plot_experiment(config: str, config_dict: dict):
         inference_times = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue', marker='o', markersize=4)
-    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen', marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue', marker='.')
+    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen', marker='.')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1082,10 +1082,8 @@ def plot_experiment(config: str, config_dict: dict):
         slips = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), steps, label='steps', linewidth=1.7, color='royalblue',
-             marker='o', markersize=4)
-    plt.plot(list(range(1, episodes + 1)), slips, label='slips', linewidth=1.7, color='seagreen',
-             marker='o', markersize=4)
+    plt.plot(list(range(1, episodes + 1)), steps, label='steps', linewidth=1.7, color='royalblue', marker='.')
+    plt.plot(list(range(1, episodes + 1)), slips, label='slips', linewidth=1.7, color='seagreen', marker='.')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1184,7 +1182,7 @@ def plot_experiment(config: str, config_dict: dict):
 
         norms = violations[0].keys()
         for index, norm in enumerate(norms):
-            plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='o', markersize=3)
+            plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='.')
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1275,7 +1273,7 @@ def plot_experiment(config: str, config_dict: dict):
                     if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
                         significantly_different_groups.append(norm)
                         # TODO: test the t-test a bit more
-                        #  --> if data is doubled (ie. fake enforcing) then data similar
+                        #  --> if fake enforcing (ie. just repeating normal) then data similar
                         #  --> but if enforcing is applied all norms are different, maybe strengthen alpha?.
 
             ax = plt.gca()

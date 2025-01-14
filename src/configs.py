@@ -148,7 +148,7 @@ configs = {
 
     # A* to test RL-params
     # A0 is final baseline
-    # There are three levels here: _A = 4x4_A; _B = 3x3_A; _C = 6x4_A
+
     # "A0": {"repetitions": 20, "episodes": 80, "max_steps": 50,
     #        "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": None, "slippery": True},
     #        "learning": {"norm_set": None, "epsilon": 0.3, "initialisation": "zero | random | distance | safe | state_function | state_action_penalty", "reversed_q_learning": True, "discount": 0.95, "learning_rate": 0.6, "learning_rate_strategy": "constant | linear_decay | exponential_decay", "learning_decay_rate": 0.02},
@@ -157,7 +157,7 @@ configs = {
     #        "enforcing": None
     #        },
 
-    "A1": {"repetitions": 50, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
+    "A1": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
            "learning": {"norm_set": None, "epsilon": None, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.15, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
@@ -165,7 +165,7 @@ configs = {
            "enforcing": None,
            },
 
-    "A2": {"repetitions": 50, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
+    "A2": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
            "learning": {"norm_set": None, "epsilon": None, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.35, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
@@ -173,13 +173,17 @@ configs = {
            "enforcing": None,
            },
 
-    "A3": {"repetitions": 50, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
+    "A3": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
            "learning": {"norm_set": None, "epsilon": None, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
            "deontic": {"norm_set": 0, "evaluation_function": None},
            "enforcing": None,
            },
+
+    # TODO: repeat bayesian experiments for two other levels, define which
+    # TODO: define 'baseline' for majority of levels afterwards (we don't consider norms or presents, only traverser when cracked),
+    #  level without norms: 3x3_A, 4x4_A, 6x4_A, 6x4_B, 7x4_A, 7x4_B, 7x4_C, 8x8_A
 
 
     # B* to test policy strategies

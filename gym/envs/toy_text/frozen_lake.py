@@ -17,55 +17,89 @@ UP = 3
 SLIDING_PROB = 0.1
 
 MAPS = {
-    "3x3_A": [
+    "3x3_A": [ # simple level
         "SFF",
         "FHF",
         "FFG"
     ],
-    "3x3_B": [
+    "3x3_B": [ # traverser on 2, trade-off with present, maybe something with not turning
         "SFF",
         "FHP",
         "FFG"
     ],
-    "4x4_A": [
+    "4x4_A": [ # standard level
         "SFFF",
         "FHFH",
         "FFFH",
         "HFFG"
     ],
-    "4x4_B": [
+    "4x4_B": [ # slight change and added traverser
         "SFFF",
         "FHFH",
         "FFFH",
         "FFFG"
     ],
-    "4x4_T": [
+    "4x4_C": [ # has two path, one with traverser and other with present
         "SFFF",
-        "FHFH",
-        "FPFP",
-        "FFPG"
+        "FHPH",
+        "FFFH",
+        "FFFG"
     ],
-    "6x4_A": [
+    "6x4_A": [ # snake path, moving away from goal
         "SHHFFF",
         "FHFFFF",
         "FFFFHF",
         "FFFHHG"
     ],
-    "6x4_B": [
+    "6x4_B": [ # shorter riskier path with traverser
         "SFFFCF",
         "FHHHCH",
         "FHFFFH",
         "FFFHFG"
     ],
-    "8x8_A": [
+    "7x4_A": [ # to be return to safe, a longer path must be taken
+        "SFHHHFG",
+        "FFFFFFF",
+        "HFFFFFH"
+        "HHFFFHH",
+    ],
+    "7x4_B": [ # adding traverser
+        "SFHHHFG",
+        "FFFFFFF",
+        "HFFCFFH",
+        "HHFFFHH",
+    ],
+    "7x4_C": [ # two paths smaller one will fail due to traverser
+        "SFFCFFG",
+        "FHHHHHF",
+        "FHFFFHF",
+        "FFFHFFF",
+    ],
+    "7x4_D": [ # two paths larger one with presents but more dangerous
+        "SFFFFFG",
+        "FHHHHHF",
+        "FHPPPHF",
+        "FFFHFFF",
+    ],
+    "8x8_A": [ # large level with traverser on the shortest / safest route, unsafer routes avoid traverser though
         "SFFFFFFF",
         "FFFFFFFF",
-        "FFFHFFFF",
-        "FFFFFHFF",
-        "FFFHFFFF",
-        "FHHFFFHF",
-        "FHFFHFHF",
+        "FFFHFFCC",
+        "FFFFFHCC",
+        "FFFHFFCC",
+        "FHHFFFFF",
+        "FHFFHFFF",
         "FFFHFFFG",
+    ],
+    "8x8_B": [ # large level with presents (no traverser), taking all is complicated path and violates didNotReturn to safe
+        "SFFFFFFF",
+        "FFFFFFFF",
+        "FFFHFFFP",
+        "FFFFPHFF",
+        "FFFHFFFF",
+        "FFHFFFHF",
+        "FHFFHFFF",
+        "PFFHFFFG",
     ],
 }
 
@@ -74,9 +108,15 @@ TRAVERSER_PATHS = {
     "3x3_B": [2],
     "4x4_A": None,
     "4x4_B": [13,9] * int(150/2),
-    "4x4_T": [6,2,6,2,6,2,6,2,6,2,6],
+    "4x4_C": [13,9] * int(150/2),
     "6x4_A": None,
-    "6x4_B": [16,10,4,10] * int(150/4)
+    "6x4_B": [16,10,4,10] * int(150/4),
+    "7x4_A": None,
+    "7x4_B": [10,17] * int(200/2),
+    "7x4_C": [3],
+    "7x4_D": None,
+    "8x8_A": [38,30,22,23,31,39] * int(300/6),
+    "8x8_B": None,
 }
 
 

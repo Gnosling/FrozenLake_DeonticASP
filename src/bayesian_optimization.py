@@ -1,29 +1,20 @@
 from src.controller import Controller
 import datetime
 
-def objective_for_RL_params_1(trial):
+def objective_for_RL_params_L4_1(trial):
     """
     Tests episodes, reverse-q-learning, discount and constant learning-rate
     """
+
+    # TODO: factor out and use param for level
     episodes = trial.suggest_int("episodes", 60, 300)
-    # max_steps = trial.suggest_int("max_steps", 9, 20)
     max_steps = 20
     discount = trial.suggest_uniform("discount", 0.8, 1.0)
     reversed_q_learning = trial.suggest_categorical("reversed_q_learning", [True, False])
-    # initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
     initialisation = "zero"
-
-    # learning_rate_strategy = trial.suggest_categorical("learning_rate_strategy", ["constant", "linear_decay", "exponential_decay"])
     learning_rate_strategy = "constant"
-    if learning_rate_strategy == "linear_decay":
-        learning_rate = 1.0
-        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.001, 0.01)
-    elif learning_rate_strategy == "exponential_decay":
-        learning_rate = 1.0
-        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.0001, 0.001)
-    else:
-        learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
-        learning_decay_rate = None
+    learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
+    learning_decay_rate = None
 
     config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
                "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
@@ -47,7 +38,7 @@ def objective_for_RL_params_1(trial):
     # Trial 70; Value: 0.439; Parameters: {'episodes': 270, 'discount': 0.8267467663570353, 'reversed_q_learning': True, 'learning_rate': 0.14462439646471592};
 
 
-def objective_for_RL_params_2(trial):
+def objective_for_RL_params_L4_2(trial):
     """
     Tests learning rate strategies and decays
     """
@@ -91,7 +82,7 @@ def objective_for_RL_params_2(trial):
     # Trial 136; Value: 0.466; Parameters: {'learning_rate_strategy': 'linear_decay' (first: 1.0), 'learning_decay_rate': 0.002599003124983318};
 
 
-def objective_for_RL_params_3(trial):
+def objective_for_RL_params_L4_3(trial):
     """
     Tests simple initialisation strategies
     """
@@ -129,10 +120,10 @@ def objective_for_RL_params_3(trial):
 def bayesian_optimization():
     import optuna
     study = optuna.create_study(direction='maximize')
-    study.optimize(objective_for_RL_params_3, n_trials=400, n_jobs=6)
+    study.optimize(objective_for_RL_params_L4_3, n_trials=1000, n_jobs=6)
 
     # TODO: form a baseline of A0? and let it run for some levels to compare with BX later
-    # TODO: implement objective for planning strategies (also no planning first for the right epsilon value!), maybe with more trials? and again with init strat
+    # TODO: implement objective for planning strategies (also no planning first for the right epsilon value!), maybe with more trials or one set foreach level? and again with init strat
 
     current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"bayesian_result_from_{current_datetime}.txt"

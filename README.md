@@ -125,18 +125,23 @@ also have separate files for each norm to make copying into sets easier
 ---------------
 ### Experiments:
   - First on 'crude' frozenlake with better slippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
-  - A* for testing RL-params (choose three default levels: 3x3_A, 4x4_A, 6x4_A):
+  - A* for testing RL-params (choose three default levels):
     - discount should be high to make the agent use long-term rewards and it's okay because there are mostly negative rewards for any step
     - mention that only value of 1.0 and 0.0 have bad results?
     - reverse-q should be better since rewards are only at goal tile
-  - B* to test policy strategies / classes (choose three default levels):
+    - use bayesian optimization for different sets on each level
+  - B* to test policy strategies / classes (choose three default levels), compare with baseline:
     - test out epsilon -> no signifant value, due to all values lacking at the start
+    - test out no_planning
     - test out different starting tiles on same level? with same policy?
     - try-out no deontic init-strats, ie no planning
-  - C* to test norms simple with CTDs and all evaluations (choose three default levels, with some changes affecting norms)
-  - D* to test alternative implementations of norms (ie. forbid neg / oblig pos; deontic vs. factual)
-  - E* to test enforcing strategies
-  - F* to test norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
+    - use bayesian optimization for different sets on each level
+  - C* to test norms simple with CTDs and evaluations (choose specific level / configs):
+    - compare with baseline from B*
+    - no enforcing here
+  - D* to test alternative implementations of norms (ie. forbid neg / oblig pos; deontic vs. factual) and norms inspired to represent concrete paradoxes mentioned in paper (these include also the weird ones)
+  - E* to test enforcing strategies:
+    - compare with results from C and use specific configs
 
 ---------------
   
