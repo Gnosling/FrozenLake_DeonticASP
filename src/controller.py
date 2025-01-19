@@ -126,7 +126,7 @@ class Controller:
                 slips_of_target_per_episode.append(slips_of_target)
                 training_time_of_behavior_per_episode.append(training_time)
                 inference_time_of_target_per_episode.append(inference_time)
-                state_visits_of_target = state_visits
+                total_state_visits = update_state_visits(total_state_visits, state_visits)
                 if not is_debug_mode():
                     pbar.close()
 
@@ -139,7 +139,6 @@ class Controller:
             total_training_times.append(training_time_of_behavior_per_episode)
             total_inference_times.append(inference_time_of_target_per_episode)
             final_target_policies.append(target)
-            total_state_visits = update_state_visits(total_state_visits, state_visits_of_target)  # Note: takes only last values
             env.close()
 
 
@@ -153,7 +152,7 @@ class Controller:
         training_slips_avg, training_slips_stddev = get_average_numbers(total_slips)
         training_fitting_times_avg, training_fitting_times_stddev = get_average_numbers(total_training_times)
         training_inference_times_avg, training_inference_times_stddev = get_average_numbers(total_inference_times)
-        training_state_visits = get_average_state_visits(total_state_visits, repetitions)
+        training_state_visits = get_average_state_visits(total_state_visits, repetitions*episodes)
         training_violations_avg = training_violations_stddev = None
         if deontic:
             training_violations_avg, training_violations_stddev = get_average_violations(total_violations, deontic.get("norm_set"))
