@@ -181,9 +181,10 @@ configs = {
            "enforcing": None,
            },
 
-    # TODO: repeat bayesian experiments for two other levels, define which
+    # TODO: repeat bayesian experiments for two other levels, define which (also repeat current one) [4x4_A, 6x4_A, 8x8_A]
     # TODO: define 'baseline' for majority of levels afterwards (we don't consider norms or presents, only traverser when cracked),
     #  level without norms: 3x3_A, 4x4_A, 6x4_A, 6x4_B, 7x4_A, 7x4_B, 7x4_C, 8x8_A
+    # TODO: text 7x4 + 8x8 -levels!!
 
 
     # B* to test policy strategies

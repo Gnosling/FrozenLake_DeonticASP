@@ -5,8 +5,6 @@ def objective_for_RL_params_L4_1(trial):
     """
     Tests episodes, reverse-q-learning, discount and constant learning-rate
     """
-
-    # TODO: factor out and use param for level
     episodes = trial.suggest_int("episodes", 60, 300)
     max_steps = 20
     discount = trial.suggest_uniform("discount", 0.8, 1.0)
@@ -117,30 +115,231 @@ def objective_for_RL_params_L4_3(trial):
     # Trial 195; Value: 0.682; Parameters: {'initialisation': 'distance'};
 
 
-def bayesian_optimization():
+def objective_for_RL_params_L6_1(trial):
+    """
+    Tests episodes, reverse-q-learning, discount and constant learning-rate
+    """
+    episodes = trial.suggest_int("episodes", 100, 300)
+    max_steps = 25
+    discount = trial.suggest_uniform("discount", 0.8, 1.0)
+    reversed_q_learning = trial.suggest_categorical("reversed_q_learning", [True, False])
+    initialisation = "zero"
+    learning_rate_strategy = "constant"
+    learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
+    learning_decay_rate = None
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A1", config)
+
+
+
+def objective_for_RL_params_L6_2(trial):
+    """
+    Tests learning rate strategies and decays
+    """
+    episodes = 300
+    max_steps = 25
+    discount = 0.99
+    reversed_q_learning = True
+    # initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
+    initialisation = "zero"
+
+    learning_rate_strategy = trial.suggest_categorical("learning_rate_strategy", ["constant", "linear_decay", "exponential_decay"])
+    # learning_rate_strategy = "constant"
+    if learning_rate_strategy == "linear_decay":
+        learning_rate = 1.0
+        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.001, 0.01)
+    elif learning_rate_strategy == "exponential_decay":
+        learning_rate = 1.0
+        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.0001, 0.001)
+    else:
+        learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
+        learning_decay_rate = None
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A2", config)
+
+
+def objective_for_RL_params_L6_3(trial):
+    """
+    Tests simple initialisation strategies
+    """
+    episodes = 300
+    max_steps = 25
+    discount = 0.99
+    reversed_q_learning = True
+    learning_rate_strategy = "constant"
+    learning_rate = 0.3
+    learning_decay_rate = None
+
+    initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A3", config)
+
+def objective_for_RL_params_L8_1(trial):
+    """
+    Tests episodes, reverse-q-learning, discount and constant learning-rate
+    """
+    episodes = trial.suggest_int("episodes", 100, 300)
+    max_steps = 50
+    discount = trial.suggest_uniform("discount", 0.8, 1.0)
+    reversed_q_learning = trial.suggest_categorical("reversed_q_learning", [True, False])
+    initialisation = "zero"
+    learning_rate_strategy = "constant"
+    learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
+    learning_decay_rate = None
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A1", config)
+
+
+
+def objective_for_RL_params_L8_2(trial):
+    """
+    Tests learning rate strategies and decays
+    """
+    episodes = 300
+    max_steps = 50
+    discount = 0.99
+    reversed_q_learning = True
+    # initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
+    initialisation = "zero"
+
+    learning_rate_strategy = trial.suggest_categorical("learning_rate_strategy", ["constant", "linear_decay", "exponential_decay"])
+    # learning_rate_strategy = "constant"
+    if learning_rate_strategy == "linear_decay":
+        learning_rate = 1.0
+        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.001, 0.01)
+    elif learning_rate_strategy == "exponential_decay":
+        learning_rate = 1.0
+        learning_decay_rate = trial.suggest_loguniform("learning_decay_rate", 0.0001, 0.001)
+    else:
+        learning_rate = trial.suggest_uniform("learning_rate", 0.01, 0.5)
+        learning_decay_rate = None
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A2", config)
+
+
+def objective_for_RL_params_L8_3(trial):
+    """
+    Tests simple initialisation strategies
+    """
+    episodes = 300
+    max_steps = 50
+    discount = 0.99
+    reversed_q_learning = True
+    learning_rate_strategy = "constant"
+    learning_rate = 0.3
+    learning_decay_rate = None
+
+    initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
+
+    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+               "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": None, "initialisation": initialisation, "reversed_q_learning": reversed_q_learning,
+                            "discount": discount, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
+                            "learning_decay_rate": learning_decay_rate},
+               "planning": None,
+               "deontic": {"norm_set": 0, "evaluation_function": None},
+               "enforcing": None,
+               }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment("A3", config)
+
+def bayesian_optimization(category: str, level: str):
     import optuna
-    study = optuna.create_study(direction='maximize')
-    study.optimize(objective_for_RL_params_L4_3, n_trials=1000, n_jobs=6)
+
+    objectives = []
+    if category == "RL":
+        if level == "4x4_A":
+            objectives = [objective_for_RL_params_L4_1, objective_for_RL_params_L4_2, objective_for_RL_params_L4_3]
+        elif level == "6x4_A":
+            objectives = [objective_for_RL_params_L6_1, objective_for_RL_params_L6_2, objective_for_RL_params_L6_3]
+        elif level == "8x8_A":
+            objectives = [objective_for_RL_params_L8_1, objective_for_RL_params_L8_2, objective_for_RL_params_L8_3]
 
     # TODO: form a baseline of A0? and let it run for some levels to compare with BX later
     # TODO: implement objective for planning strategies (also no planning first for the right epsilon value!), maybe with more trials or one set foreach level? and again with init strat
 
-    current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    file_name = f"bayesian_result_from_{current_datetime}.txt"
-    with open(file_name, "w") as file:
-        def print_to_file(*args, **kwargs):
-            print(*args, **kwargs)
-            print(*args, **kwargs, file=file)
+    for objective in objectives:
+        study = optuna.create_study(direction='maximize')
+        study.optimize(objective, n_trials=1000, n_jobs=6)
 
-        print_to_file("\n---------------------------------------------------------------------")
-        print_to_file("---------------------------------------------------------------------")
-        print_to_file("---------------------------------------------------------------------")
-        print_to_file(f"Best value: {study.best_value}; Best parameters: {study.best_params}")
-        print_to_file("---------------------------------------------------------------------")
-        print_to_file("---------------------------------------------------------------------")
-        print_to_file("---------------------------------------------------------------------\n")
+        current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        file_name = f"bayesian_result_of_{str(objective.__name__)}_from_{current_datetime}.txt"
+        with open(file_name, "w") as file:
+            def print_to_file(*args, **kwargs):
+                print(*args, **kwargs)
+                print(*args, **kwargs, file=file)
 
-        sorted_trials = sorted(study.trials, key=lambda trial: trial.value, reverse=True)[:20]
-        print_to_file("\nAll trials and their parameters:")
-        for trial in sorted_trials:
-            print_to_file(f"Trial {trial.number}; Value: {trial.value}; Parameters: {trial.params};")
+            print_to_file("\n---------------------------------------------------------------------")
+            print_to_file("---------------------------------------------------------------------")
+            print_to_file("---------------------------------------------------------------------")
+            print_to_file(f"Best value: {study.best_value}; Best parameters: {study.best_params}")
+            print_to_file("---------------------------------------------------------------------")
+            print_to_file("---------------------------------------------------------------------")
+            print_to_file("---------------------------------------------------------------------\n")
+
+            sorted_trials = sorted(study.trials, key=lambda trial: trial.value, reverse=True)[:20]
+            print_to_file("Top 20 trials and their parameters:")
+            for trial in sorted_trials:
+                print_to_file(f"Trial {trial.number}; Value: {trial.value}; Parameters: {trial.params};")
