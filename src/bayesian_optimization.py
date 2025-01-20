@@ -28,12 +28,11 @@ def objective_for_RL_params_L4_1(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment("A1", config)
 
-    # All trials and their parameters:
-    # Trial 216; Value: 0.508; Parameters: {'episodes': 290, 'discount': 0.9831550109680668, 'reversed_q_learning': True, 'learning_rate': 0.09728948807236495};
-    # Trial 157; Value: 0.471; Parameters: {'episodes': 292, 'discount': 0.9841257162378517, 'reversed_q_learning': True, 'learning_rate': 0.17626028910729244};
-    # Trial 308; Value: 0.47; Parameters: {'episodes': 295, 'discount': 0.8055003189870396, 'reversed_q_learning': True, 'learning_rate': 0.1407057468044647};
-    # Trial 167; Value: 0.448; Parameters: {'episodes': 276, 'discount': 0.8048939983986804, 'reversed_q_learning': True, 'learning_rate': 0.1667906347540406};
-    # Trial 70; Value: 0.439; Parameters: {'episodes': 270, 'discount': 0.8267467663570353, 'reversed_q_learning': True, 'learning_rate': 0.14462439646471592};
+    # Trial 25; Value: 0.496; Parameters: {'episodes': 252, 'discount': 0.8395475115779703, 'reversed_q_learning': True, 'learning_rate': 0.18815556046386858};
+    # Trial 132; Value: 0.475; Parameters: {'episodes': 279, 'discount': 0.8466259397519311, 'reversed_q_learning': True, 'learning_rate': 0.20397812380507369};
+    # Trial 162; Value: 0.473; Parameters: {'episodes': 249, 'discount': 0.8422325222133493, 'reversed_q_learning': True, 'learning_rate': 0.43197792671208635};
+    # Trial 86; Value: 0.468; Parameters: {'episodes': 251, 'discount': 0.9189617029401612, 'reversed_q_learning': True, 'learning_rate': 0.13530255045951342};
+    # Trial 602; Value: 0.465; Parameters: {'episodes': 246, 'discount': 0.9357989284024836, 'reversed_q_learning': True, 'learning_rate': 0.11970478397839024};
 
 
 def objective_for_RL_params_L4_2(trial):
@@ -73,11 +72,11 @@ def objective_for_RL_params_L4_2(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment("A2", config)
 
-    # Trial 147; Value: 0.495; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.37420244005972036};
-    # Trial 3; Value: 0.49; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.44026002094667105};
-    # Trial 243; Value: 0.485; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.39817010321455726};
-    # Trial 64; Value: 0.467; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.19901532270046493};
-    # Trial 136; Value: 0.466; Parameters: {'learning_rate_strategy': 'linear_decay' (first: 1.0), 'learning_decay_rate': 0.002599003124983318};
+    # Trial 416; Value: 0.493; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4639995453433418};
+    # Trial 251; Value: 0.491; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3063791469017806};
+    # Trial 492; Value: 0.484; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3063548292055347};
+    # Trial 496; Value: 0.474; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.2632327258986996};
+    # Trial 748; Value: 0.468; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.47822106030079276};
 
 
 def objective_for_RL_params_L4_3(trial):
@@ -108,11 +107,11 @@ def objective_for_RL_params_L4_3(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment("A3", config)
 
-    # Trial 25; Value: 0.705; Parameters: {'initialisation': 'distance'};
-    # Trial 29; Value: 0.69; Parameters: {'initialisation': 'distance'};
-    # Trial 223; Value: 0.687; Parameters: {'initialisation': 'distance'};
-    # Trial 324; Value: 0.684; Parameters: {'initialisation': 'distance'};
-    # Trial 195; Value: 0.682; Parameters: {'initialisation': 'distance'};
+    # Trial 605; Value: 0.7; Parameters: {'initialisation': 'distance'};
+    # Trial 177; Value: 0.69; Parameters: {'initialisation': 'distance'};
+    # Trial 324; Value: 0.688; Parameters: {'initialisation': 'distance'};
+    # Trial 391; Value: 0.685; Parameters: {'initialisation': 'distance'};
+    # Trial 743; Value: 0.683; Parameters: {'initialisation': 'distance'};
 
 
 def objective_for_RL_params_L6_1(trial):
@@ -322,7 +321,7 @@ def bayesian_optimization(category: str, level: str):
 
     for objective in objectives:
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=1000, n_jobs=6)
+        study.optimize(objective, n_trials=750, n_jobs=6)
 
         current_datetime = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         file_name = f"bayesian_result_of_{str(objective.__name__)}_from_{current_datetime}.txt"
