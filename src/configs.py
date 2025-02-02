@@ -8,20 +8,20 @@ configs = {
     #        "enforcing": {"norm_set": 6, "strategy": "guardrail | fixing | optimal_reward_shaping | full_reward_shaping", "phase": "during_training | after_training", "enforcing_horizon": [3,6] (no use in guardral; in fixing is list [len of checked path; len of fixed path]; in reward-shaping defines number of shaping steps)},
     #        },
 
-    "T1": {"repetitions": 50, "episodes": 65, "max_steps": 15, "evaluation_repetitions": 100,
-           "frozenlake": {"name": "FrozenLake3x3_A", "traverser_path": "3x3_B", "slippery": True},
-           "learning": {"norm_set": None, "epsilon": None, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": 0.02},
-           "planning": None,
-           "deontic": {"norm_set": 0, "evaluation_function": None},
-           "enforcing": {"norm_set": 3, "strategy": "guardrail", "phase": "after_training", "enforcing_horizon": None}
-           },
-
-    "T2": {"repetitions": 2, "episodes": 30, "max_steps": 15, "evaluation_repetitions": 20,
-               "frozenlake": {"name": "FrozenLake3x3_A", "traverser_path": "3x3_A", "slippery": True},
-               "learning": {"norm_set": None, "epsilon": 0.3, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": 0.02},
-               "planning": {"norm_set": 3, "delta": 0.5, "strategy": "delta_greedy_planning", "planning_horizon": 8, "reward_set": 2},
+    "T1": {"repetitions": 2, "episodes": 30, "max_steps": 70, "evaluation_repetitions": 20,
+               "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": 0.3, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+               "planning": {"norm_set": 1, "delta": 0.9, "strategy": "delta_greedy_planning", "planning_horizon": 35, "reward_set": 2},
                "deontic": {"norm_set": 0, "evaluation_function": 4},
-               "enforcing": {"norm_set": 3, "strategy": "optimal_reward_shaping", "phase": "after_training", "enforcing_horizon": [15]},
+               "enforcing": None,
+               },
+
+    "T2": {"repetitions": 3, "episodes": 30, "max_steps": 25, "evaluation_repetitions": 20,
+               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
+               "learning": {"norm_set": None, "epsilon": 0.3, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+               "planning": {"norm_set": 1, "delta": 0.6, "strategy": "delta_greedy_planning", "planning_horizon": 20, "reward_set": 2},
+               "deontic": {"norm_set": 0, "evaluation_function": 4},
+               "enforcing": None,
                },
 
     "T3": {"repetitions": 1, "episodes": 60, "max_steps": 15, "evaluation_repetitions": 20,
@@ -147,33 +147,27 @@ configs = {
            },
 
     # A* to test RL-params
-    # A0 is final baseline
 
-    # "A0": {"repetitions": 20, "episodes": 80, "max_steps": 50,
-    #        "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": None, "slippery": True},
-    #        "learning": {"norm_set": None, "epsilon": 0.3, "initialisation": "zero | random | distance | safe | state_function | state_action_penalty", "reversed_q_learning": True, "discount": 0.95, "learning_rate": 0.6, "learning_rate_strategy": "constant | linear_decay | exponential_decay", "learning_decay_rate": 0.02},
-    #        "planning": None,
-    #        "deontic": {"norm_set": 8, "evaluation_function": None},
-    #        "enforcing": None
-    #        },
+    # TODO: define 'baseline' for majority of levels afterwards (we don't consider norms or presents, only traverser when cracked),
+    #  level without norms: 3x3_A, 4x4_A x2, 6x4_A, 6x4_B, 7x4_A, 7x4_C, 8x8_A
 
-    "A1": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
-           "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
-           "learning": {"norm_set": None, "epsilon": None, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.15, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+    "A1": {"repetitions": 100, "episodes": 40, "max_steps": 15, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake3x3_A", "traverser_path": "3x3_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
            "deontic": {"norm_set": 0, "evaluation_function": None},
            "enforcing": None,
            },
 
-    "A2": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
+    "A2": {"repetitions": 100, "episodes": 60, "max_steps": 20, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
-           "learning": {"norm_set": None, "epsilon": None, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.35, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
            "deontic": {"norm_set": 0, "evaluation_function": None},
            "enforcing": None,
            },
 
-    "A3": {"repetitions": 100, "episodes": 300, "max_steps": 20, "evaluation_repetitions": 100,
+    "A3": {"repetitions": 100, "episodes": 60, "max_steps": 20, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
            "learning": {"norm_set": None, "epsilon": None, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": None,
@@ -181,10 +175,46 @@ configs = {
            "enforcing": None,
            },
 
-    # TODO: repeat bayesian experiments for two other levels, define which (also repeat current one) [4x4_A, 6x4_A, 8x8_A]
-    # TODO: define 'baseline' for majority of levels afterwards (we don't consider norms or presents, only traverser when cracked),
-    #  level without norms: 3x3_A, 4x4_A, 6x4_A, 6x4_B, 7x4_A, 7x4_B, 7x4_C, 8x8_A
-    # TODO: text 7x4 + 8x8 -levels!!
+    "A4": {"repetitions": 100, "episodes": 150, "max_steps": 25, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": None,
+           "deontic": {"norm_set": 0, "evaluation_function": None},
+           "enforcing": None,
+           },
+
+    "A5": {"repetitions": 100, "episodes": 150, "max_steps": 25, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_B", "traverser_path": "6x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": None,
+           "deontic": {"norm_set": 0, "evaluation_function": None},
+           "enforcing": None,
+           },
+
+    "A6": {"repetitions": 100, "episodes": 175, "max_steps": 30, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": None,
+           "deontic": {"norm_set": 0, "evaluation_function": None},
+           "enforcing": None,
+           },
+
+
+    "A7": {"repetitions": 100, "episodes": 175, "max_steps": 30, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": None,
+           "deontic": {"norm_set": 0, "evaluation_function": None},
+           "enforcing": None,
+           },
+
+    "A8": {"repetitions": 100, "episodes": 400, "max_steps": 50, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": None, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": None,
+           "deontic": {"norm_set": 0, "evaluation_function": None},
+           "enforcing": None,
+           },
 
 
     # B* to test policy strategies

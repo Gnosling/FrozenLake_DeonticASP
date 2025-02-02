@@ -926,7 +926,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.fill_between(x_smooth, avg_returns_smooth  - std_returns_smooth, avg_returns_smooth  + std_returns_smooth, alpha=0.5, label='standard deviation', color='lightblue')
     plt.plot(x, [maximum] * len(x), color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
 
-    plt.title(f'{config} - Training returns')
+    plt.title(f'$\mathbf{{{config}}}$ - Training returns', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('returns')
@@ -972,12 +972,13 @@ def plot_experiment(config: str, config_dict: dict):
         plt.bar(x_positions, [final_bar_size, enforced_bar_size], label='Percentage of successes', color=['deepskyblue', 'darkcyan'], width=0.5, yerr=[final_std_err, enforced_std_err], capsize=15)
         plt.xticks(x_positions, ['final returns', 'enforced returns'])
     else:
-        plt.figure(figsize=(4.5, 8))
+        plt.figure(figsize=(3, 8))
         plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_err, capsize=30)
 
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
+    plt.xlabel('')
     plt.ylabel('Percentage')
-    plt.title(f'{config} - Final returns')
+    plt.title(f'$\mathbf{{{config}}}$ - Final returns', fontsize=16, pad=20)
     plt.ylim(0, 1)
     plt.yticks([i/10 for i in range(11)])
     plt.legend()
@@ -1009,14 +1010,14 @@ def plot_experiment(config: str, config_dict: dict):
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'{config} - Average time for training and inference of target policy')
+    plt.title(f'$\mathbf{{{config}}}$ - Training fitting and inference times', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('seconds')
     plt.legend(loc='upper right', framealpha=1.0)
 
     plt.xlim(1, episodes)
-    plt.ylim(-0.02, max(fitting_times) + 1)
+    plt.ylim(-0.02, max(fitting_times) + 0.5)
 
     plot_path = os.path.join(plot_folder, f"{config}_runtimes_training.png")
     if os.path.exists(plot_path):
@@ -1041,23 +1042,23 @@ def plot_experiment(config: str, config_dict: dict):
             enforced_inference_times = ast.literal_eval(content.split("\n")[0])
 
     data = pd.DataFrame({
-        'Type': ['Runtimes'] * len(final_inference_times),
+        'Type': ['runtimes'] * len(final_inference_times),
         'Value': final_inference_times
     })
-    plt.figure(figsize=(7, 8))
+    plt.figure(figsize=(3, 8))
 
     if enforced_inference_times:
         data = pd.DataFrame({
-            'Type': ['Runtimes'] * len(final_inference_times) + ['Enforced runtimes'] * len(enforced_inference_times),
+            'Type': ['runtimes'] * len(final_inference_times) + ['enforced runtimes'] * len(enforced_inference_times),
             'Value': np.concatenate([final_inference_times, enforced_inference_times])
         })
-        plt.figure(figsize=(14, 8))
+        plt.figure(figsize=(6, 8))
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title(f'{config} - Final inference times of target policy')
-    plt.xlabel('Target Groups')
-    plt.ylabel('Runtimes (s)')
+    plt.title(f'$\mathbf{{{config}}}$ - Final inference times', fontsize=16, pad=20)
+    plt.xlabel('')
+    plt.ylabel('runtimes (s)')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
     plot_path = os.path.join(plot_folder, f"{config}_runtimes_final.png")
@@ -1087,7 +1088,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'{config} - Average number of steps and of slips')
+    plt.title(f'$\mathbf{{{config}}}$ - Training steps and slips', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('counts')
@@ -1132,22 +1133,23 @@ def plot_experiment(config: str, config_dict: dict):
             enforced_slips = ast.literal_eval(content.split("\n")[0])
 
     data = pd.DataFrame({
-        'Type': ['Steps'] * len(final_steps) + ['Slips'] * len(final_slips),
+        'Type': ['steps'] * len(final_steps) + ['slips'] * len(final_slips),
         'Value': final_steps + final_slips
     })
-    plt.figure(figsize=(7, 8))
+    plt.figure(figsize=(6, 8))
 
     if enforced_steps and enforced_slips:
         data = pd.DataFrame({
-            'Type': ['Steps'] * len(final_steps) + ['Enforced steps'] * len(enforced_steps) + ['Slips'] * len(final_slips) + ['Enforced slips'] * len(enforced_slips),
+            'Type': ['steps'] * len(final_steps) + ['enforced steps'] * len(enforced_steps) + ['slips'] * len(final_slips) + ['enforced slips'] * len(enforced_slips),
             'Value': final_steps + enforced_steps + final_slips + enforced_slips
         })
-        plt.figure(figsize=(14, 8))
+        plt.figure(figsize=(12, 8))
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title(f'{config} - Final number of steps and of slips')
-    plt.ylabel('Counts')
+    plt.title(f'$\mathbf{{{config}}}$ - Final steps and of slips', fontsize=16, pad=20)
+    plt.xlabel('')
+    plt.ylabel('counts')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
 
     plot_path = os.path.join(plot_folder, f"{config}_steps_final.png")
@@ -1186,7 +1188,7 @@ def plot_experiment(config: str, config_dict: dict):
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-        plt.title(f'{config} - Violations during training')
+        plt.title(f'$\mathbf{{{config}}}$ - Training violations', fontsize=16, pad=20)
         # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episodes')
         plt.ylabel('violations')
@@ -1257,16 +1259,15 @@ def plot_experiment(config: str, config_dict: dict):
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
-        plt.title(f'{config} - Final violations')
-        plt.xlabel('Group')
-        plt.ylabel('Violations')
+        plt.title(f'$\mathbf{{{config}}}$ - Final violations', fontsize=16, pad=20)
+        plt.xlabel('')
+        plt.ylabel('violations')
         plt.ylim(-0.5, 10)
         plt.grid(axis='y', linestyle='--', alpha=0.5)
         plt.tight_layout()
 
         if enforced_violations:
             significantly_different_groups = []
-            # t_test(group1, group2, equal_variance=levene_test(group1, group2))
             for norm in group_labels:
                 # TODO: only for notReachedGoal use Chi-Squared test since binary data is not normal-distributed !!
                 if sum(final_violations[norm]) > 0 and sum(enforced_violations[norm]) > 0:
@@ -1308,7 +1309,7 @@ def plot_experiment(config: str, config_dict: dict):
         position = states[0]
         for action, value in actions.items():
             if action == 'VISITS':
-                position_visits[position] += value # TODO: test the merging of position and filling of these lists more!
+                position_visits[position] += value
             else:
                 sum_of_executed_actions[position][action] += value
 
@@ -1342,8 +1343,8 @@ def plot_experiment(config: str, config_dict: dict):
             ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-    plt.title(f'{config} - Visits of target policy', fontsize=16, pad=20)
-    # plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9) # TODO: define titles and subtitles for each plot
+    plt.title(f'$\mathbf{{{config}}}$ - Training state visits', fontsize=16, pad=20)
+    # plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
     plot_path = os.path.join(plot_folder, f"{config}_states_training.png")
     if os.path.exists(plot_path):
@@ -1369,8 +1370,7 @@ def plot_experiment(config: str, config_dict: dict):
         position = states[0]
         for action, value in actions.items():
             if action == 'VISITS':
-                position_visits[
-                    position] += value  # TODO: test the merging of position and filling of these lists more!
+                position_visits[position] += value
             else:
                 sum_of_executed_actions[position][action] += value
 
@@ -1405,8 +1405,8 @@ def plot_experiment(config: str, config_dict: dict):
             ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-    plt.title(f'{config} - Final state visits', fontsize=16, pad=20)
-    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
+    plt.title(f'$\mathbf{{{config}}}$ - Final state visits', fontsize=16, pad=20)
+    # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
     plot_path = os.path.join(plot_folder, f"{config}_states_final.png")
     if os.path.exists(plot_path):
@@ -1432,8 +1432,7 @@ def plot_experiment(config: str, config_dict: dict):
             position = states[0]
             for action, value in actions.items():
                 if action == 'VISITS':
-                    position_visits[
-                        position] += value  # TODO: test the merging of position and filling of these lists more!
+                    position_visits[position] += value
                 else:
                     sum_of_executed_actions[position][action] += value
 
@@ -1468,8 +1467,8 @@ def plot_experiment(config: str, config_dict: dict):
                 ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                         color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-        plt.title(f'{config} - Enforced state visits', fontsize=16, pad=20)
-        # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)  # TODO: define titles and subtitles for each plot
+        plt.title(f'$\mathbf{{{config}}}$ - Enforced state visits', fontsize=16, pad=20)
+        # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
         plot_path = os.path.join(plot_folder, f"{config}_states_enforced.png")
         if os.path.exists(plot_path):

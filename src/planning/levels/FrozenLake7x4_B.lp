@@ -11,7 +11,7 @@ hole(14). frozen(15..16). cracked(17). frozen(18..19). hole(20).
 hole(21..22). frozen(23..25). hole(26..27).
 
 
-goal(7).
+goal(6).
 
 leftEdge(X) :- tile(X), X \ width = 0.
 rightEdge(X) :- tile(X), X \ width = width-1.

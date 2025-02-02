@@ -1,4 +1,5 @@
 import os
+import platform
 import os.path
 import subprocess
 
@@ -118,17 +119,33 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"', f'"{file5}"', f'"{file6}"', f'"{file7}"'
     ]
 
-    bat_content = f"""
-    @echo off
-    {' '.join(command)}
-    """
+    if platform.system() == 'Windows':
+        bat_content = f"""
+        @echo off
+        {' '.join(command)}
+        """
+        bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
+        with open(bat_file_path, 'w') as bat_file:
+            bat_file.write(bat_content)
 
-    bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
-    with open(bat_file_path, 'w') as bat_file:
-        bat_file.write(bat_content)
+        result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
+        os.remove(bat_file_path)
 
+    elif platform.system() == 'Linux': # TODO: add this also for the validation-planning!
+        sh_content = f"""
+        #!/bin/bash
+        {' '.join(command)}
+        """
+        sh_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.sh")
+        with open(sh_file_path, 'w') as sh_file:
+            sh_file.write(sh_content)
+        os.chmod(sh_file_path, 0o777)
 
-    result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
+        result = subprocess.run(['bash', sh_file_path], shell=False, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
+        os.remove(sh_file_path)
+
+    else:
+        raise RuntimeError("Unsupported OS")
 
     output = result.stdout
     errors_and_warnings = result.stderr
@@ -137,7 +154,6 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         print("Telingo Errors and Warnings:")
         print(errors_and_warnings)
 
-    os.remove(bat_file_path)
     _remove_file_with_dynamic_parameters(exp_name)
 
     return _extract_first_action_from_telingo_output(output)

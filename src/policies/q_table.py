@@ -17,7 +17,7 @@ class QTable:
         layout, width, height = env.get_layout()
         safe_tiles = b'FPSG' # Note: safe tiles get a value of 0.2, cracked are only half save so they get 0.1
         for tile_number in range(width * height):
-            row = int(tile_number / height)
+            row = int(tile_number / width)
             col = tile_number % width
             current_states = {(s,t,p) for (s,t,p) in states if s == tile_number}
             for action in available_actions:

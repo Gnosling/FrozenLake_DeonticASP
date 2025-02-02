@@ -20,47 +20,47 @@ MAPS = {
     "3x3_A": [ # simple level
         "SFF",
         "FHF",
-        "FFG"
+        "FFG",
     ],
     "3x3_B": [ # traverser on 2, trade-off with present, maybe something with not turning
         "SFF",
         "FHP",
-        "FFG"
+        "FFG",
     ],
     "4x4_A": [ # standard level
         "SFFF",
         "FHFH",
         "FFFH",
-        "HFFG"
+        "HFFG",
     ],
     "4x4_B": [ # slight change and added traverser
         "SFFF",
         "FHFH",
         "FFFH",
-        "FFFG"
+        "FFFG",
     ],
     "4x4_C": [ # has two path, one with traverser and other with present
         "SFFF",
         "FHPH",
         "FFFH",
-        "FFFG"
+        "FFFG",
     ],
     "6x4_A": [ # snake path, moving away from goal
         "SHHFFF",
         "FHFFFF",
         "FFFFHF",
-        "FFFHHG"
+        "FFFHHG",
     ],
     "6x4_B": [ # shorter riskier path with traverser
         "SFFFCF",
         "FHHHCH",
         "FHFFFH",
-        "FFFHFG"
+        "FFFHFG",
     ],
     "7x4_A": [ # to be return to safe, a longer path must be taken
         "SFHHHFG",
         "FFFFFFF",
-        "HFFFFFH"
+        "HFFFFFH",
         "HHFFFHH",
     ],
     "7x4_B": [ # adding traverser
