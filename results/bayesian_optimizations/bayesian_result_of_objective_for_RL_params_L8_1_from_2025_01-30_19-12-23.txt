@@ -1,0 +1,29 @@
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.431; Best parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4234969090181534};
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 207; Value: 0.431; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4234969090181534};
+Trial 97; Value: 0.429; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.35493530380254473};
+Trial 147; Value: 0.427; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.432756913857975};
+Trial 162; Value: 0.42; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4389262274624366};
+Trial 172; Value: 0.418; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.45048554052623696};
+Trial 298; Value: 0.416; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4557013901331725};
+Trial 117; Value: 0.413; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.40506493018514533};
+Trial 95; Value: 0.412; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.3568393793896263};
+Trial 61; Value: 0.414; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.39396275944043235};
+Trial 270; Value: 0.414; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.41276624850288846};
+Trial 274; Value: 0.414; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4304028378671821};
+Trial 20; Value: 0.405; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.498460671544816};
+Trial 56; Value: 0.405; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.38736445203546277};
+Trial 27; Value: 0.405; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.3694237593541566};
+Trial 114; Value: 0.405; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.39661940830873343};
+Trial 130; Value: 0.405; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.34835802228643215};
+Trial 76; Value: 0.4; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.40258011146371264};
+Trial 19; Value: 0.356; Parameters: {'initialisation': 'safe', 'learning_rate_strategy': 'constant', 'learning_rate': 0.48486903096686323};
+Trial 17; Value: 0.343; Parameters: {'initialisation': 'distance', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4983287168738358};
+Trial 4; Value: 0.332; Parameters: {'initialisation': 'distance', 'learning_rate_strategy': 'constant', 'learning_rate': 0.4891374984046029};

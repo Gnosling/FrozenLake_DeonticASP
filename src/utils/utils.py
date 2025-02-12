@@ -692,7 +692,7 @@ def get_shaped_rewards(enforcing, discount, state, new_state, trail, env):
     return shaped_rewards
 
 
-def store_results(config: str, config_dict: dict, training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+def store_results(config: str, config_dict: dict, training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_explorations_avg, training_explorations_stddev, training_plannings_avg, training_plannings_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                   final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                   enforced_returns, enforced_steps, enforced_slips, enforced_violations, enforced_inference_times, enforced_state_visits):
     if config_dict:
@@ -745,6 +745,16 @@ def store_results(config: str, config_dict: dict, training_returns_avg, training
     with open(path, 'w', newline='') as file:
         file.write(str(training_slips_avg) + "\n")
         file.write(str(training_slips_stddev))
+
+    path = os.path.join(training_folder, f"{config}_explorations.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_explorations_avg) + "\n")
+        file.write(str(training_explorations_stddev))
+
+    path = os.path.join(training_folder, f"{config}_plannings.txt")
+    with open(path, 'w', newline='') as file:
+        file.write(str(training_plannings_avg) + "\n")
+        file.write(str(training_plannings_stddev))
 
     if training_violations_avg:
         path = os.path.join(training_folder, f"{config}_violations.txt")
@@ -898,6 +908,9 @@ def plot_experiment(config: str, config_dict: dict):
                 shutil.rmtree(file_path)
 
 
+    config_title_format = config.replace("_", r"\_")
+    config_title_format = f'$\mathbf{{{config_title_format}}}$'
+
     #  ---   ---   ---   plots: training_returns   ---   ---   ---
     path = os.path.join(training_folder, f"{config}_returns.txt")
     avg_returns = []
@@ -926,7 +939,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.fill_between(x_smooth, avg_returns_smooth  - std_returns_smooth, avg_returns_smooth  + std_returns_smooth, alpha=0.5, label='standard deviation', color='lightblue')
     plt.plot(x, [maximum] * len(x), color='limegreen', linestyle='-.', linewidth=1.2, label=f'maximum = {maximum}')
 
-    plt.title(f'$\mathbf{{{config}}}$ - Training returns', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Training returns', fontsize=16, pad=20, fontweight='bold')
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('returns')
@@ -978,7 +991,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
     plt.xlabel('')
     plt.ylabel('Percentage')
-    plt.title(f'$\mathbf{{{config}}}$ - Final returns', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Final returns', fontsize=16, pad=20)
     plt.ylim(0, 1)
     plt.yticks([i/10 for i in range(11)])
     plt.legend()
@@ -1010,14 +1023,14 @@ def plot_experiment(config: str, config_dict: dict):
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'$\mathbf{{{config}}}$ - Training fitting and inference times', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Training fitting and inference times', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('seconds')
     plt.legend(loc='upper right', framealpha=1.0)
 
     plt.xlim(1, episodes)
-    plt.ylim(-0.02, max(fitting_times) + 0.5)
+    plt.ylim(-0.02, max(fitting_times) + 0.2) # TODO: set the right axis-limit here
 
     plot_path = os.path.join(plot_folder, f"{config}_runtimes_training.png")
     if os.path.exists(plot_path):
@@ -1056,7 +1069,7 @@ def plot_experiment(config: str, config_dict: dict):
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title(f'$\mathbf{{{config}}}$ - Final inference times', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Final inference times', fontsize=16, pad=20)
     plt.xlabel('')
     plt.ylabel('runtimes (s)')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
@@ -1069,7 +1082,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.close()
 
 
-    #  ---   ---   ---   plots: training steps and slips   ---   ---   ---
+    #  ---   ---   ---   plots: training steps and slips   ---   ---   --- # TODO: add here the number of planned steps? and explored steps?
     path = os.path.join(training_folder, f"{config}_steps.txt")
     steps = []
     with open(path, 'r', newline='') as file:
@@ -1082,20 +1095,34 @@ def plot_experiment(config: str, config_dict: dict):
         content = file.read()
         slips = ast.literal_eval(content.split("\n")[0])
 
+    path = os.path.join(training_folder, f"{config}_explorations.txt")
+    explorations = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        explorations = ast.literal_eval(content.split("\n")[0])
+
+    path = os.path.join(training_folder, f"{config}_plannings.txt")
+    plannings = []
+    with open(path, 'r', newline='') as file:
+        content = file.read()
+        plannings = ast.literal_eval(content.split("\n")[0])
+
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), steps, label='steps', linewidth=1.7, color='royalblue', marker='.')
-    plt.plot(list(range(1, episodes + 1)), slips, label='slips', linewidth=1.7, color='seagreen', marker='.')
+    plt.plot(list(range(1, episodes + 1)), steps, label='target - steps', linewidth=1.7, color='royalblue', marker='.')
+    plt.plot(list(range(1, episodes + 1)), slips, label='target - slips', linewidth=1.7, color='seagreen', marker='.')
+    plt.plot(list(range(1, episodes + 1)), explorations, label='behavior - explorations', linewidth=1.7, color='darkorange', marker='.')
+    plt.plot(list(range(1, episodes + 1)), plannings, label='behavior - plannings', linewidth=1.7, color='goldenrod', marker='.')
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-    plt.title(f'$\mathbf{{{config}}}$ - Training steps and slips', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Training steps, slips, explorations and plannings', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('counts')
     plt.legend(loc='upper right', framealpha=1.0)
 
     plt.xlim(1, episodes)
-    plt.ylim(-0.02, max(steps)+2)
+    plt.ylim(-0.02, max(steps)+6)
 
     plot_path = os.path.join(plot_folder, f"{config}_steps_training.png")
     if os.path.exists(plot_path):
@@ -1147,7 +1174,7 @@ def plot_experiment(config: str, config_dict: dict):
 
     sns.boxplot(x='Type', y='Value', data=data, palette='Set2', width=0.3)
     sns.stripplot(x='Type', y='Value', data=data, jitter=True, color='black', alpha=0.5)
-    plt.title(f'$\mathbf{{{config}}}$ - Final steps and of slips', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Final steps and of slips', fontsize=16, pad=20)
     plt.xlabel('')
     plt.ylabel('counts')
     plt.grid(axis='y', linestyle='--', alpha=0.5)
@@ -1188,7 +1215,7 @@ def plot_experiment(config: str, config_dict: dict):
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
-        plt.title(f'$\mathbf{{{config}}}$ - Training violations', fontsize=16, pad=20)
+        plt.title(f'{config_title_format} - Training violations', fontsize=16, pad=20)
         # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episodes')
         plt.ylabel('violations')
@@ -1196,7 +1223,7 @@ def plot_experiment(config: str, config_dict: dict):
 
         max_violation = max(value for d in violations for value in d.values())+2
         plt.xlim(1, episodes)
-        plt.ylim(0, int(min(max_violation, 20)))
+        plt.ylim(0, int(min(max_violation+2, 20)))
         plt.yticks(range(0, int(min(max_violation, 21)), 1))
 
         plot_path = os.path.join(plot_folder, f"{config}_violations_training.png")
@@ -1259,7 +1286,7 @@ def plot_experiment(config: str, config_dict: dict):
         sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
 
-        plt.title(f'$\mathbf{{{config}}}$ - Final violations', fontsize=16, pad=20)
+        plt.title(f'{config_title_format} - Final violations', fontsize=16, pad=20)
         plt.xlabel('')
         plt.ylabel('violations')
         plt.ylim(-0.5, 10)
@@ -1343,7 +1370,7 @@ def plot_experiment(config: str, config_dict: dict):
             ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-    plt.title(f'$\mathbf{{{config}}}$ - Training state visits', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Training state visits', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01,f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
     plot_path = os.path.join(plot_folder, f"{config}_states_training.png")
@@ -1405,7 +1432,7 @@ def plot_experiment(config: str, config_dict: dict):
             ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                     color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-    plt.title(f'$\mathbf{{{config}}}$ - Final state visits', fontsize=16, pad=20)
+    plt.title(f'{config_title_format} - Final state visits', fontsize=16, pad=20)
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
     plot_path = os.path.join(plot_folder, f"{config}_states_final.png")
@@ -1467,7 +1494,7 @@ def plot_experiment(config: str, config_dict: dict):
                 ax.text(j + 0.5, i + 0.25, f'{preferred_actions[index]}', ha='center', va='bottom', fontweight='bold',
                         color='white' if grid[i, j] < grid.max() / 2 else 'black')
 
-        plt.title(f'$\mathbf{{{config}}}$ - Enforced state visits', fontsize=16, pad=20)
+        plt.title(f'{config_title_format} - Enforced state visits', fontsize=16, pad=20)
         # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, bla bla bla, \n', ha='center', va='center', fontsize=9)
 
         plot_path = os.path.join(plot_folder, f"{config}_states_enforced.png")

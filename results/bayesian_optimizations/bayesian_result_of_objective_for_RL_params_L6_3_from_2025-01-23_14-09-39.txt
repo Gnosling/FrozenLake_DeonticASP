@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.095; Best parameters: {'initialisation': 'safe'}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 306; Value: 0.095; Parameters: {'initialisation': 'safe'};
+Trial 565; Value: 0.077; Parameters: {'initialisation': 'safe'};
+Trial 162; Value: 0.075; Parameters: {'initialisation': 'safe'};
+Trial 301; Value: 0.075; Parameters: {'initialisation': 'safe'};
+Trial 684; Value: 0.074; Parameters: {'initialisation': 'safe'};
+Trial 269; Value: 0.073; Parameters: {'initialisation': 'zero'};
+Trial 650; Value: 0.073; Parameters: {'initialisation': 'safe'};
+Trial 413; Value: 0.072; Parameters: {'initialisation': 'safe'};
+Trial 516; Value: 0.072; Parameters: {'initialisation': 'safe'};
+Trial 571; Value: 0.072; Parameters: {'initialisation': 'safe'};
+Trial 637; Value: 0.072; Parameters: {'initialisation': 'safe'};
+Trial 257; Value: 0.069; Parameters: {'initialisation': 'safe'};
+Trial 323; Value: 0.069; Parameters: {'initialisation': 'safe'};
+Trial 619; Value: 0.068; Parameters: {'initialisation': 'safe'};
+Trial 113; Value: 0.067; Parameters: {'initialisation': 'safe'};
+Trial 677; Value: 0.067; Parameters: {'initialisation': 'safe'};
+Trial 278; Value: 0.065; Parameters: {'initialisation': 'safe'};
+Trial 711; Value: 0.065; Parameters: {'initialisation': 'safe'};
+Trial 55; Value: 0.064; Parameters: {'initialisation': 'safe'};
+Trial 89; Value: 0.064; Parameters: {'initialisation': 'safe'};

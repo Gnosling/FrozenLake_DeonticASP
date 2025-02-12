@@ -42,6 +42,8 @@ class Controller:
         total_violations = []
         total_steps = []
         total_slips = []
+        total_explorations = []
+        total_plannings = []
         total_training_times = []
         total_inference_times = []
         total_state_visits = dict()
@@ -57,6 +59,8 @@ class Controller:
             violations_of_target_per_episode = []
             steps_of_target_per_episode = []
             slips_of_target_per_episode = []
+            explorations_of_behavior_per_episode = []
+            plannings_of_behavior_per_episode = []
             training_time_of_behavior_per_episode = []
             inference_time_of_target_per_episode = []
             state_visits_of_target = dict()
@@ -69,6 +73,8 @@ class Controller:
                 debug_print(f"    ----    ----    Episode {episode}    ----    ----    ")
                 state, info = env.reset()  # this is to restart
                 layout, width, height = env.get_layout()
+                explorations_of_behavior = 0
+                plannings_of_behavior = 0
                 trail_of_behavior = []  # list of [state, proposed_action_name, new_state, rewards]
                 # Note: a state is (current_position, traverser_position, list_of_presents)
                 last_performed_action = None
@@ -80,12 +86,18 @@ class Controller:
                     debug_print(env.render())
 
                     behavior.update_dynamic_env_aspects(last_performed_action, action_name, previous_state)
-                    action_name = behavior.suggest_action(state, env)
+                    action_name, planning_used, exploration_used = behavior.suggest_action(state, env)
                     debug_print(f'Action: {action_name}')
 
                     new_state, reward, terminated, _, info = env.step(action_name_to_number(action_name))
                     debug_print(f'new_state: {new_state}, reward: {reward}, terminated: {terminated}, info: {info}')
                     trail_of_behavior.append([state, action_name, new_state, reward])
+
+                    if planning_used:
+                        plannings_of_behavior += 1
+                    if exploration_used:
+                        explorations_of_behavior += 1
+
                     if step == max_steps-1:
                         env.set_terminated(True)
 
@@ -124,6 +136,8 @@ class Controller:
                 violations_of_target_per_episode.append(violations_of_target)
                 steps_of_target_per_episode.append(len(trail_of_target))
                 slips_of_target_per_episode.append(slips_of_target)
+                explorations_of_behavior_per_episode.append(explorations_of_behavior)
+                plannings_of_behavior_per_episode.append(plannings_of_behavior)
                 training_time_of_behavior_per_episode.append(training_time)
                 inference_time_of_target_per_episode.append(inference_time)
                 total_state_visits = update_state_visits(total_state_visits, state_visits)
@@ -136,6 +150,8 @@ class Controller:
             total_violations.append(violations_of_target_per_episode)
             total_steps.append(steps_of_target_per_episode)
             total_slips.append(slips_of_target_per_episode)
+            total_explorations.append(explorations_of_behavior_per_episode)
+            total_plannings.append(plannings_of_behavior_per_episode)
             total_training_times.append(training_time_of_behavior_per_episode)
             total_inference_times.append(inference_time_of_target_per_episode)
             final_target_policies.append(target)
@@ -150,6 +166,8 @@ class Controller:
         debug_print(f"Returns:\n{training_returns_avg}")
         training_steps_avg, training_steps_stddev = get_average_numbers(total_steps)
         training_slips_avg, training_slips_stddev = get_average_numbers(total_slips)
+        training_explorations_avg, training_explorations_stddev = get_average_numbers(total_explorations)
+        training_plannings_avg, training_plannings_stddev = get_average_numbers(total_plannings)
         training_fitting_times_avg, training_fitting_times_stddev = get_average_numbers(total_training_times)
         training_inference_times_avg, training_inference_times_stddev = get_average_numbers(total_inference_times)
         training_state_visits = get_average_state_visits(total_state_visits, repetitions*episodes)
@@ -209,7 +227,7 @@ class Controller:
         # -----------------------------------------------------------------------------
         if self.store_experiments:
             store_results(config, config_dict,
-                          training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
+                          training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_explorations_avg, training_explorations_stddev, training_plannings_avg, training_plannings_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                           final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,
                           final_enforced_returns, final_enforced_steps, final_enforced_slips, final_enforced_violations, final_enforced_inference_times, final_enforced_state_visits)
 

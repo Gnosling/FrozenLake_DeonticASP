@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.061; Best parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0016759399410973502}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 687; Value: 0.061; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0016759399410973502};
+Trial 307; Value: 0.059; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4710167641035496};
+Trial 645; Value: 0.053; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.004562054605694456};
+Trial 414; Value: 0.049; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.005158526186860801};
+Trial 599; Value: 0.047; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.00431344465456139};
+Trial 465; Value: 0.046; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0046727452765397215};
+Trial 522; Value: 0.046; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.005687945622908206};
+Trial 311; Value: 0.045; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0047493538466315205};
+Trial 661; Value: 0.045; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.004232284225872439};
+Trial 189; Value: 0.044; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.009970284928077796};
+Trial 665; Value: 0.042; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.002235093298792841};
+Trial 83; Value: 0.041; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.005662701123644553};
+Trial 92; Value: 0.041; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.004835856226705057};
+Trial 392; Value: 0.041; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4896043862850712};
+Trial 434; Value: 0.041; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.004854517869669997};
+Trial 51; Value: 0.04; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3262927376269074};
+Trial 556; Value: 0.04; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0054609564853514165};
+Trial 575; Value: 0.038; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.005359504487814134};
+Trial 153; Value: 0.037; Parameters: {'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.005366161342734484};
+Trial 243; Value: 0.036; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4443177939504417};

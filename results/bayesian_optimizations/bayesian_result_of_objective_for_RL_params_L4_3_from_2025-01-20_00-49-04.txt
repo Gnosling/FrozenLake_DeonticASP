@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.7; Best parameters: {'initialisation': 'distance'}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 605; Value: 0.7; Parameters: {'initialisation': 'distance'};
+Trial 177; Value: 0.69; Parameters: {'initialisation': 'distance'};
+Trial 324; Value: 0.688; Parameters: {'initialisation': 'distance'};
+Trial 391; Value: 0.685; Parameters: {'initialisation': 'distance'};
+Trial 753; Value: 0.683; Parameters: {'initialisation': 'distance'};
+Trial 602; Value: 0.682; Parameters: {'initialisation': 'distance'};
+Trial 683; Value: 0.682; Parameters: {'initialisation': 'distance'};
+Trial 157; Value: 0.681; Parameters: {'initialisation': 'distance'};
+Trial 164; Value: 0.677; Parameters: {'initialisation': 'distance'};
+Trial 227; Value: 0.677; Parameters: {'initialisation': 'distance'};
+Trial 32; Value: 0.676; Parameters: {'initialisation': 'distance'};
+Trial 722; Value: 0.676; Parameters: {'initialisation': 'distance'};
+Trial 23; Value: 0.675; Parameters: {'initialisation': 'distance'};
+Trial 450; Value: 0.674; Parameters: {'initialisation': 'distance'};
+Trial 509; Value: 0.672; Parameters: {'initialisation': 'distance'};
+Trial 599; Value: 0.672; Parameters: {'initialisation': 'distance'};
+Trial 431; Value: 0.671; Parameters: {'initialisation': 'distance'};
+Trial 447; Value: 0.67; Parameters: {'initialisation': 'distance'};
+Trial 300; Value: 0.669; Parameters: {'initialisation': 'distance'};
+Trial 332; Value: 0.669; Parameters: {'initialisation': 'distance'};

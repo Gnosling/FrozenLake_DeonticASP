@@ -5,5 +5,6 @@
 forbidden(X) :- 'forbidden(X).
 obligatory(X) :- 'obligatory(X).
 
+
 #program final.
 #minimize {V@L : violationsOfLevel(V,L)}.

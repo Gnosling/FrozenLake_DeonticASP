@@ -8,6 +8,7 @@ obligatory(X) :- 'obligatory(X).
 superior(X,Y) :- inferior(Y,X), X != Y.
 inferior(X,Y) :- superior(Y,X), X != Y.
 
+
 benefits(E) :- rewards(R), E = 1 * R.
 
 :- currentViolation(forbidden(X)), superior(X,Y), forbidden(Y), not currentViolation(forbidden(Y)), X != Y.

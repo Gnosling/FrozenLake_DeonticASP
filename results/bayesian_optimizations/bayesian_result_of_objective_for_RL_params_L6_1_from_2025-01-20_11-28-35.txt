@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.069; Best parameters: {'episodes': 276, 'discount': 0.97093809146443, 'reversed_q_learning': True, 'learning_rate': 0.4743161170635867}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 313; Value: 0.069; Parameters: {'episodes': 276, 'discount': 0.97093809146443, 'reversed_q_learning': True, 'learning_rate': 0.4743161170635867};
+Trial 153; Value: 0.056; Parameters: {'episodes': 284, 'discount': 0.8235936230792694, 'reversed_q_learning': True, 'learning_rate': 0.06116232548866202};
+Trial 545; Value: 0.053; Parameters: {'episodes': 279, 'discount': 0.8048033926622332, 'reversed_q_learning': True, 'learning_rate': 0.3690892321793242};
+Trial 54; Value: 0.052; Parameters: {'episodes': 286, 'discount': 0.8082605763340218, 'reversed_q_learning': True, 'learning_rate': 0.361875475662738};
+Trial 644; Value: 0.049; Parameters: {'episodes': 286, 'discount': 0.9722123561307507, 'reversed_q_learning': True, 'learning_rate': 0.062071887014868};
+Trial 175; Value: 0.047; Parameters: {'episodes': 267, 'discount': 0.922309187717532, 'reversed_q_learning': True, 'learning_rate': 0.020813872642492875};
+Trial 484; Value: 0.047; Parameters: {'episodes': 214, 'discount': 0.8001609296088378, 'reversed_q_learning': True, 'learning_rate': 0.4584332264095954};
+Trial 126; Value: 0.046; Parameters: {'episodes': 219, 'discount': 0.9409500528946582, 'reversed_q_learning': True, 'learning_rate': 0.13421918563284863};
+Trial 661; Value: 0.046; Parameters: {'episodes': 258, 'discount': 0.9443303997590476, 'reversed_q_learning': True, 'learning_rate': 0.08466433083765258};
+Trial 56; Value: 0.045; Parameters: {'episodes': 288, 'discount': 0.8077878385270325, 'reversed_q_learning': True, 'learning_rate': 0.36569336592988366};
+Trial 358; Value: 0.044; Parameters: {'episodes': 295, 'discount': 0.8714036611498345, 'reversed_q_learning': True, 'learning_rate': 0.3357907343127671};
+Trial 435; Value: 0.042; Parameters: {'episodes': 283, 'discount': 0.9422025255301933, 'reversed_q_learning': True, 'learning_rate': 0.48844683526500177};
+Trial 309; Value: 0.041; Parameters: {'episodes': 300, 'discount': 0.9676199016770523, 'reversed_q_learning': True, 'learning_rate': 0.0275222802714689};
+Trial 25; Value: 0.04; Parameters: {'episodes': 274, 'discount': 0.8563923715793863, 'reversed_q_learning': True, 'learning_rate': 0.12003844823155414};
+Trial 90; Value: 0.04; Parameters: {'episodes': 272, 'discount': 0.9009628386112737, 'reversed_q_learning': True, 'learning_rate': 0.13000388529289478};
+Trial 383; Value: 0.04; Parameters: {'episodes': 282, 'discount': 0.8541496846972483, 'reversed_q_learning': True, 'learning_rate': 0.3760711205013387};
+Trial 569; Value: 0.04; Parameters: {'episodes': 254, 'discount': 0.9224554378578467, 'reversed_q_learning': True, 'learning_rate': 0.053105493000304406};
+Trial 717; Value: 0.04; Parameters: {'episodes': 271, 'discount': 0.9464557924277711, 'reversed_q_learning': True, 'learning_rate': 0.47816165466198784};
+Trial 55; Value: 0.039; Parameters: {'episodes': 286, 'discount': 0.9646429161617245, 'reversed_q_learning': True, 'learning_rate': 0.3955845193630951};
+Trial 75; Value: 0.039; Parameters: {'episodes': 281, 'discount': 0.8474268654251771, 'reversed_q_learning': True, 'learning_rate': 0.4781239019728243};

@@ -127,9 +127,9 @@ also have separate files for each norm to make copying into sets easier
   - First on 'crude' frozenlake with better slippery, so everything else deactivated, pick default level (4x4_A # optimum = 0.74)
   - A* for testing RL-params (choose three default levels):
     - discount should be high to make the agent use long-term rewards and it's okay because there are mostly negative rewards for any step
-    - mention that only value of 1.0 and 0.0 have bad results?
-    - reverse-q should be better since rewards are only at goal tile
-    - use bayesian optimization for different sets on each level
+    - reverse-q should be better since rewards are only at goal tile -> true
+    - use bayesian optimization for different sets on each level -> done
+    - the Ax has a mix of init-strats safe vs distance
   - B* to test policy strategies / classes (choose three default levels), compare with baseline:
     - test out epsilon -> no signifant value, due to all values lacking at the start
     - test out no_planning

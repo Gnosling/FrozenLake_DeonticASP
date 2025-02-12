@@ -3,10 +3,7 @@ import platform
 import os.path
 import subprocess
 
-
-
-#from src.utils.utils import debug_print
-
+computed_plans = []
 
 def _fill_file_for_dynamic_parameters(exp_name, current_state: int, current_state_of_traverser: int, last_performed_action: str, presents: list, allowed_actions: list = None, action_path: list = None):
     with open(os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp"), "w") as file:
@@ -96,6 +93,13 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
     returns planned action
     """
 
+    key_for_storing_results = (exp_name, state, last_performed_action)
+    for dictionary in computed_plans:
+        if key_for_storing_results in dictionary:
+            # Note: action was already planned and can be returned from this 'cache' instead of re-computing
+            already_planned_action = dictionary[key_for_storing_results]
+            return already_planned_action
+
     file1 = os.path.join(os.getcwd(), "src", "planning", "general_reasoning.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_reasoning.lp")
     file3 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
@@ -109,6 +113,9 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
     # Note: planning_horizon is needed to force telingo to explore that many states, ie. imin lowerbounds the states telingo unfolds
     #   if the optimum lies within these steps, then the optimal action will be found (otw its the optimal with these limited steps)
     # Note: Weak constraints must add positive penalties, such that telingo handles the return value correctly
+
+    if planning_horizon is None or not isinstance(planning_horizon, int):
+        raise ValueError("planning horizon is not set or not a number!")
 
     # Note: starts already in the active python environment
     command = [
@@ -131,7 +138,7 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
         os.remove(bat_file_path)
 
-    elif platform.system() == 'Linux': # TODO: add this also for the validation-planning!
+    elif platform.system() == 'Linux':
         sh_content = f"""
         #!/bin/bash
         {' '.join(command)}
@@ -155,8 +162,10 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         print(errors_and_warnings)
 
     _remove_file_with_dynamic_parameters(exp_name)
+    planned_action = _extract_first_action_from_telingo_output(output)
+    computed_plans.append({key_for_storing_results: planned_action})
 
-    return _extract_first_action_from_telingo_output(output)
+    return planned_action
 
 def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, last_performed_action: str, state: tuple, enforcing_norm_set: int):
     """
@@ -181,16 +190,33 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"'
     ]
 
-    bat_content = f"""
+    if platform.system() == 'Windows':
+        bat_content = f"""
         @echo off
         {' '.join(command)}
         """
+        bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
+        with open(bat_file_path, 'w') as bat_file:
+            bat_file.write(bat_content)
 
-    bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
-    with open(bat_file_path, 'w') as bat_file:
-        bat_file.write(bat_content)
+        result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
+        os.remove(bat_file_path)
 
-    result = subprocess.run(['cmd', '/c', bat_file_path], shell=True, capture_output=True, text=True)
+    elif platform.system() == 'Linux':
+        sh_content = f"""
+        #!/bin/bash
+        {' '.join(command)}
+        """
+        sh_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.sh")
+        with open(sh_file_path, 'w') as sh_file:
+            sh_file.write(sh_content)
+        os.chmod(sh_file_path, 0o777)
+
+        result = subprocess.run(['bash', sh_file_path], shell=False, capture_output=True, text=True, env={**os.environ, 'PYTHONUNBUFFERED': '1'})
+        os.remove(sh_file_path)
+
+    else:
+        raise RuntimeError("Unsupported OS")
 
     output = result.stdout
     errors_and_warnings = result.stderr
@@ -199,10 +225,9 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
         print("Telingo Errors and Warnings:")
         print(errors_and_warnings)
 
-    os.remove(bat_file_path)
     _remove_file_with_dynamic_parameters(exp_name)
 
-    return _extract_validation_result_from_telingo_output(output)
+    return _extract_validation_result_from_telingo_output(output) # TODO: how to handle the validation and also the enfocring, cache info must be updated, since norm_set might change!
 
 
 

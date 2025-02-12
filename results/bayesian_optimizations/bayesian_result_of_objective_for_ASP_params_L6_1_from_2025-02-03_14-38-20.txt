@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.156; Best parameters: {'epsilon': 0.1077582749645429, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3194657837509404}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 70; Value: 0.156; Parameters: {'epsilon': 0.1077582749645429, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3194657837509404};
+Trial 74; Value: 0.13; Parameters: {'epsilon': 0.10301152464038921, 'learning_rate_strategy': 'constant', 'learning_rate': 0.4552841037739112};
+Trial 64; Value: 0.054; Parameters: {'epsilon': 0.08361614369789942, 'learning_rate_strategy': 'constant', 'learning_rate': 0.49778913807855985};
+Trial 65; Value: 0.05; Parameters: {'epsilon': 0.1078364344316523, 'learning_rate_strategy': 'constant', 'learning_rate': 0.49281115968397504};
+Trial 61; Value: 0.044; Parameters: {'epsilon': 0.08952235005021492, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3220778551905252};
+Trial 67; Value: 0.042; Parameters: {'epsilon': 0.0833531438800567, 'learning_rate_strategy': 'constant', 'learning_rate': 0.48883717797247384};
+Trial 55; Value: 0.038; Parameters: {'epsilon': 0.04480898668941074, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3624274716561744};
+Trial 35; Value: 0.028; Parameters: {'epsilon': 0.0696351736777618, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.0004880995839697482};
+Trial 42; Value: 0.026; Parameters: {'epsilon': 0.06034848623358183, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.0004676858459842474};
+Trial 68; Value: 0.02; Parameters: {'epsilon': 0.08097179872245083, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3048100973468581};
+Trial 50; Value: 0.018; Parameters: {'epsilon': 0.04684942024188176, 'learning_rate_strategy': 'constant', 'learning_rate': 0.18933744387652612};
+Trial 14; Value: 0.016; Parameters: {'epsilon': 0.09870639240680151, 'learning_rate_strategy': 'linear_decay', 'learning_decay_rate': 0.0016036921392001964};
+Trial 72; Value: 0.014; Parameters: {'epsilon': 0.11265244065682362, 'learning_rate_strategy': 'constant', 'learning_rate': 0.4468898121582785};
+Trial 71; Value: 0.012; Parameters: {'epsilon': 0.11249571216160738, 'learning_rate_strategy': 'constant', 'learning_rate': 0.4938912756852474};
+Trial 69; Value: 0.008; Parameters: {'epsilon': 0.11234275676835095, 'learning_rate_strategy': 'constant', 'learning_rate': 0.30378602983699204};
+Trial 33; Value: 0.006; Parameters: {'epsilon': 0.06168361469435896, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.00010248876265218214};
+Trial 2; Value: 0.002; Parameters: {'epsilon': 0.2731389944080831, 'learning_rate_strategy': 'constant', 'learning_rate': 0.1467091844142021};
+Trial 6; Value: 0.002; Parameters: {'epsilon': 0.1612077624095712, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.00031839286785449207};
+Trial 7; Value: 0.002; Parameters: {'epsilon': 0.21147742618441803, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.00015631082588638803};
+Trial 11; Value: 0.002; Parameters: {'epsilon': 0.45244030011192676, 'learning_rate_strategy': 'exponential_decay', 'learning_decay_rate': 0.0003446264177408589};

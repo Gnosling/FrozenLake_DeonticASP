@@ -105,6 +105,7 @@ class Policy:
             return action_sequence[0]
         else:
             # Note: evaluation_set 4 (weak constraints) is used per default with reward_set 1 (original rewards)
+            # TODO: how to handle the already computed states here?
             return plan_action(self.exp_name, self.level, planning_horizon, self.last_performed_action, original_state, enforcing_norm_set, 1, 4, ACTION_SET)
 
 

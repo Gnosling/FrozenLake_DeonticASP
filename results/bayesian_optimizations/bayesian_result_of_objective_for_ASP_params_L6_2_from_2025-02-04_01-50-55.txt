@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.572; Best parameters: {'planning_strategy': 'full_planning'}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 6; Value: 0.572; Parameters: {'planning_strategy': 'full_planning'};
+Trial 47; Value: 0.556; Parameters: {'planning_strategy': 'full_planning'};
+Trial 64; Value: 0.552; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 2.6413502688454443e-05};
+Trial 12; Value: 0.536; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 36; Value: 0.536; Parameters: {'planning_strategy': 'full_planning'};
+Trial 2; Value: 0.532; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 1.0728229516080113e-05};
+Trial 58; Value: 0.532; Parameters: {'planning_strategy': 'full_planning'};
+Trial 8; Value: 0.528; Parameters: {'planning_strategy': 'full_planning'};
+Trial 13; Value: 0.524; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 35; Value: 0.52; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 54; Value: 0.52; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 24; Value: 0.516; Parameters: {'planning_strategy': 'full_planning'};
+Trial 14; Value: 0.512; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 60; Value: 0.512; Parameters: {'planning_strategy': 'full_planning'};
+Trial 71; Value: 0.512; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 6.219937884967993e-05};
+Trial 37; Value: 0.508; Parameters: {'planning_strategy': 'full_planning'};
+Trial 70; Value: 0.508; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 2.4382798729906198e-05};
+Trial 19; Value: 0.504; Parameters: {'planning_strategy': 'plan_for_new_states'};
+Trial 42; Value: 0.504; Parameters: {'planning_strategy': 'delta_greedy_planning', 'delta_greedy': 0.8078627762099992};
+Trial 20; Value: 0.5; Parameters: {'planning_strategy': 'plan_for_new_states'};

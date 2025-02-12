@@ -1,0 +1,30 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.493; Best parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4639995453433418}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+
+Top 20 trials and their parameters:
+Trial 416; Value: 0.493; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4639995453433418};
+Trial 251; Value: 0.491; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3063791469017806};
+Trial 492; Value: 0.484; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3063548292055347};
+Trial 496; Value: 0.474; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.2632327258986996};
+Trial 748; Value: 0.468; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.47822106030079276};
+Trial 469; Value: 0.467; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.2807765118538177};
+Trial 859; Value: 0.467; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.2640950329206872};
+Trial 213; Value: 0.465; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.2831081899375209};
+Trial 562; Value: 0.457; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3016116063703136};
+Trial 771; Value: 0.457; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.49986843265608594};
+Trial 141; Value: 0.455; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4995225452707551};
+Trial 877; Value: 0.455; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.49172278833790195};
+Trial 63; Value: 0.452; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.39687602137383254};
+Trial 512; Value: 0.452; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3230796562380198};
+Trial 589; Value: 0.449; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.3183252980683622};
+Trial 628; Value: 0.448; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.45918358534388004};
+Trial 880; Value: 0.447; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.312355525154817};
+Trial 201; Value: 0.446; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.33711149675351426};
+Trial 710; Value: 0.446; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.4881689714470767};
+Trial 551; Value: 0.443; Parameters: {'learning_rate_strategy': 'constant', 'learning_rate': 0.29964653433548444};

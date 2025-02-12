@@ -294,7 +294,7 @@ def objective_for_ASP_params_L4_1(trial):
         learning_rate = trial.suggest_float("learning_rate", 0.01, 0.5)
         learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 10, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
                "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
                "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation, "reversed_q_learning": True,
                             "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -337,7 +337,7 @@ def objective_for_ASP_params_L4_2(trial):
     learning_rate = 0.3
     learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 10, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
               "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
               "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation,"reversed_q_learning": True,
                            "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -351,6 +351,12 @@ def objective_for_ASP_params_L4_2(trial):
     controller = Controller()
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"B{trial.number}", config)
+
+    # Trial 74; Value: 0.663; Parameters: {'planning_strategy': 'delta_greedy_planning', 'delta_greedy': 0.3824306568130741};
+    # Trial 72; Value: 0.65; Parameters: {'planning_strategy': 'delta_greedy_planning', 'delta_greedy': 0.30204630683625233};
+    # Trial 23; Value: 0.651; Parameters: {'planning_strategy': 'plan_for_new_states'};
+    # Trial 95; Value: 0.649; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 2.58719235403631e-05};
+    # Trial 22; Value: 0.646; Parameters: {'planning_strategy': 'plan_for_new_states'};
 
 def objective_for_ASP_params_L4_3(trial):
     """
@@ -362,18 +368,18 @@ def objective_for_ASP_params_L4_3(trial):
 
     epsilon = 0.02
     delta = None
-    planning_strategy = trial.suggest_categorical("planning_strategy", ["no_planning", "full_planning", "plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
+    planning_strategy = trial.suggest_categorical("planning_strategy", ["plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
     if planning_strategy == "delta_greedy_planning":
-        delta = 0.7 # TODO: set
+        delta = 0.4
     elif planning_strategy == "delta_decaying_planning":
-        delta = 0.0005 # TODO: set
+        delta = 0.00005
 
     initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
     learning_rate_strategy = "constant"
     learning_rate = 0.3
     learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 10, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
               "frozenlake": {"name": "FrozenLake4x4_A", "traverser_path": "4x4_A", "slippery": True},
               "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation,"reversed_q_learning": True,
                            "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -387,12 +393,18 @@ def objective_for_ASP_params_L4_3(trial):
     controller = Controller()
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"B{trial.number}", config)
+    # Trial 26; Value: 0.657; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+    # Trial 21; Value: 0.657; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+    # Trial 25; Value: 0.656; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+    # Trial 24; Value: 0.654; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+    # Trial 35; Value: 0.653; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'distance'};
+
 
 def objective_for_ASP_params_L6_1(trial):
     """
     Tests learning-rates and epsilons
     """
-    episodes = 150
+    episodes = 100
     max_steps = 25
     planning_horizon = 16
 
@@ -414,7 +426,7 @@ def objective_for_ASP_params_L6_1(trial):
         learning_rate = trial.suggest_float("learning_rate", 0.01, 0.5)
         learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 5, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
                "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
                "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation, "reversed_q_learning": True,
                             "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -427,16 +439,21 @@ def objective_for_ASP_params_L6_1(trial):
     controller = Controller()
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"B{trial.number}", config)
+    # Trial 70; Value: 0.156; Parameters: {'epsilon': 0.1077582749645429, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3194657837509404};
+    # Trial 74; Value: 0.13; Parameters: {'epsilon': 0.10301152464038921, 'learning_rate_strategy': 'constant', 'learning_rate': 0.4552841037739112};
+    # Trial 64; Value: 0.054; Parameters: {'epsilon': 0.08361614369789942, 'learning_rate_strategy': 'constant', 'learning_rate': 0.49778913807855985};
+    # Trial 65; Value: 0.05; Parameters: {'epsilon': 0.1078364344316523, 'learning_rate_strategy': 'constant', 'learning_rate': 0.49281115968397504};
+    # Trial 61; Value: 0.044; Parameters: {'epsilon': 0.08952235005021492, 'learning_rate_strategy': 'constant', 'learning_rate': 0.3220778551905252};
 
 def objective_for_ASP_params_L6_2(trial):
     """
     Tests planning strategies and deltas
     """
-    episodes = 150
+    episodes = 100
     max_steps = 25
     planning_horizon = 16
 
-    epsilon = 0.02 # TODO: set
+    epsilon = 0.02
     delta = None
     planning_strategy = trial.suggest_categorical("planning_strategy", ["no_planning", "full_planning", "plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
     if planning_strategy == "delta_greedy_planning":
@@ -449,7 +466,7 @@ def objective_for_ASP_params_L6_2(trial):
     learning_rate = 0.3
     learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 5, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
               "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation,"reversed_q_learning": True,
                            "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -463,28 +480,34 @@ def objective_for_ASP_params_L6_2(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"B{trial.number}", config)
 
+    # Trial 6; Value: 0.572; Parameters: {'planning_strategy': 'full_planning'};
+    # Trial 47; Value: 0.556; Parameters: {'planning_strategy': 'full_planning'};
+    # Trial 64; Value: 0.552; Parameters: {'planning_strategy': 'delta_decaying_planning', 'delta_decaying': 2.6413502688454443e-05};
+    # Trial 12; Value: 0.536; Parameters: {'planning_strategy': 'plan_for_new_states'};
+    # Trial 36; Value: 0.536; Parameters: {'planning_strategy': 'full_planning'};
+
 def objective_for_ASP_params_L6_3(trial):
     """
     Tests planning strategies and initialisations
     """
-    episodes = 150
+    episodes = 100
     max_steps = 25
     planning_horizon = 16
 
     epsilon = 0.02
     delta = None
-    planning_strategy = trial.suggest_categorical("planning_strategy", ["no_planning", "full_planning", "plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
+    planning_strategy = trial.suggest_categorical("planning_strategy", ["plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
     if planning_strategy == "delta_greedy_planning":
-        delta = 0.7 # TODO: set
+        delta = 0.5
     elif planning_strategy == "delta_decaying_planning":
-        delta = 0.0005 # TODO: set
+        delta = 0.00005
 
     initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
     learning_rate_strategy = "constant"
     learning_rate = 0.3
     learning_decay_rate = None
 
-    config = {"repetitions": 20, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+    config = {"repetitions": 5, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
               "frozenlake": {"name": "FrozenLake6x4_A", "traverser_path": "6x4_A", "slippery": True},
               "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation,"reversed_q_learning": True,
                            "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy,
@@ -498,10 +521,52 @@ def objective_for_ASP_params_L6_3(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"B{trial.number}", config)
 
-def objective_for_ASP_params_L8_1(trial):
-    # TODO: decide
-    pass
+    # Trial 37; Value: 0.556; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'random'};
+    # Trial 39; Value: 0.54; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 1; Value: 0.532; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 69; Value: 0.532; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'safe'};
+    # Trial 19; Value: 0.528; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'zero'};
 
+def objective_for_ASP_params_L8_1(trial):
+    """
+    Tests planning strategies and initialisations
+    """
+    episodes = 150
+    max_steps = 50
+    planning_horizon = 25
+
+    epsilon = 0.02
+    delta = None
+    planning_strategy = trial.suggest_categorical("planning_strategy", ["plan_for_new_states", "delta_greedy_planning", "delta_decaying_planning"])
+    if planning_strategy == "delta_greedy_planning":
+        delta = 0.5
+    elif planning_strategy == "delta_decaying_planning":
+        delta = 0.00005
+
+    initialisation = trial.suggest_categorical("initialisation", ["zero", "random", "distance", "safe"])
+    learning_rate_strategy = "constant"
+    learning_rate = 0.3
+    learning_decay_rate = None
+
+    config = {"repetitions": 5, "episodes": episodes, "max_steps": max_steps, "evaluation_repetitions": 50,
+              "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+              "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": initialisation, "reversed_q_learning": True,
+                           "discount": 0.99, "learning_rate": learning_rate, "learning_rate_strategy": learning_rate_strategy, "learning_decay_rate": learning_decay_rate},
+              "planning": {"norm_set": 1, "delta": delta, "strategy": planning_strategy, "planning_horizon": planning_horizon, "reward_set": 2},
+              "deontic": {"norm_set": 0, "evaluation_function": 4},
+              "enforcing": None,
+              }
+
+    controller = Controller()
+    controller.disable_storing_and_plottings()
+    return controller.run_experiment(f"L8_B{trial.number}", config)
+
+    # Trial 31; Value: 0.608; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 15; Value: 0.596; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 28; Value: 0.588; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 33; Value: 0.588; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'safe'};
+    # Trial 16; Value: 0.576; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
+    # Trial 6; Value: 0.544; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'safe'};
 
 
 def bayesian_optimization(category: str, level: str):
@@ -517,14 +582,13 @@ def bayesian_optimization(category: str, level: str):
         elif level == "8x8_A":
             objectives = [objective_for_RL_params_L8_1]
     elif category == "ASP":
-        n_trials = 100
+        n_trials = 75
         if level == "4x4_A":
-            objectives = [objective_for_ASP_params_L4_2]
-
-    # TODO: form a baseline of A0? and let it run for some levels to compare with BX later
-    # TODO: implement objective-functions for planning strategies (also no planning first for the right epsilon value!), and again with init strat
-    #  this affects same levels as for RL
-    #  Note: planning uses only the norm reach goal and internal rewards.
+            objectives = [objective_for_ASP_params_L4_1, objective_for_ASP_params_L4_2, objective_for_ASP_params_L4_3]
+        elif level == "6x4_A":
+            objectives = [objective_for_ASP_params_L6_1, objective_for_ASP_params_L6_2, objective_for_ASP_params_L6_3]
+        elif level == "8x8_A":
+            objectives = [objective_for_ASP_params_L8_1]
 
     for objective in objectives:
         study = optuna.create_study(direction='maximize')

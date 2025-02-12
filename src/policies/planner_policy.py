@@ -34,6 +34,8 @@ class PlannerPolicy(Policy):
         Enforcing strategies are also handled here.
         """
         action = None
+        planning_used = False
+        exploration_used = False
 
         allowed_actions = ACTION_SET
         if self.enforcing and self.enforcing.get("phase") == "during_training":
@@ -41,25 +43,29 @@ class PlannerPolicy(Policy):
                 allowed_actions = guardrail(self.enforcing, state, self.previous_state, self.last_performed_action, self.last_proposed_action, env)
 
             if "fixing" in self.enforcing.get("strategy"):
-                return self._check_and_fix_path(state, env)
+                planning_used = True
+                return self._check_and_fix_path(state, env), planning_used, exploration_used
 
         if self.strategy == "full_planning":
             debug_print("planning was triggered")
             action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+            planning_used = True
 
         elif self.strategy == "plan_for_new_states":
             if state not in self.visited_states:
                 debug_print("planning was triggered")
                 action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                planning_used = True
             else:
-                action = self._retrieve_action_from_table(state, allowed_actions)
+                action, exploration_used = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_greedy_planning":
             if random.random() < self.delta:
                 debug_print("planning was triggered")
                 action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                planning_used = True
             else:
-                action = self._retrieve_action_from_table(state, allowed_actions)
+                action, exploration_used = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "delta_decaying_planning":
             # Note: decay_value should be initial 1 and delta should be <0.0005
@@ -67,11 +73,12 @@ class PlannerPolicy(Policy):
             if random.random() < self.decay_value:
                 debug_print("planning was triggered")
                 action = plan_action(self.exp_name, self.level, self.planning_horizon, self.last_performed_action, state, self.norm_set, self.planning_reward_set, self.evaluation_function, allowed_actions)
+                planning_used = True
             else:
-                action = self._retrieve_action_from_table(state, allowed_actions)
+                action, exploration_used = self._retrieve_action_from_table(state, allowed_actions)
 
         elif self.strategy == "no_planning":
-            action = self._retrieve_action_from_table(state, allowed_actions)
+            action, exploration_used = self._retrieve_action_from_table(state, allowed_actions)
 
         else:
             raise ValueError(f"invalid planning strategy: {self.strategy}")
@@ -79,14 +86,14 @@ class PlannerPolicy(Policy):
         if state not in self.visited_states:
             self.visited_states.append(state)
         self.suggestion_called_count = self.suggestion_called_count + 1
-        return action
+        return action, planning_used, exploration_used
 
     def _retrieve_action_from_table(self, state, allowed_actions):
         if random.random() < self.epsilon:
             debug_print("exploration was triggered")
-            return random.choice(list(ACTION_SET))  # Note: exploration is never restricted
+            return random.choice(list(ACTION_SET)), True  # Note: exploration is never restricted
         else:
-            return self.q_table.get_best_allowed_action_for_state(state, allowed_actions)
+            return self.q_table.get_best_allowed_action_for_state(state, allowed_actions), False
 
     def reset_after_episode(self):
         self.visited_states = []

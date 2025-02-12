@@ -1,0 +1,29 @@
+
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Best value: 0.657; Best parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'}
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+---------------------------------------------------------------------
+Top 20 trials and their parameters:
+Trial 26; Value: 0.657; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 21; Value: 0.657; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 25; Value: 0.656; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 24; Value: 0.654; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 35; Value: 0.653; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'distance'};
+Trial 2; Value: 0.651; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'safe'};
+Trial 42; Value: 0.647; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 29; Value: 0.645; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 43; Value: 0.64; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 27; Value: 0.64; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 32; Value: 0.639; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'distance'};
+Trial 45; Value: 0.638; Parameters: {'planning_strategy': 'delta_decaying_planning', 'initialisation': 'safe'};
+Trial 37; Value: 0.637; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 51; Value: 0.633; Parameters: {'planning_strategy': 'delta_decaying_planning', 'initialisation': 'zero'};
+Trial 38; Value: 0.633; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 52; Value: 0.632; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'zero'};
+Trial 31; Value: 0.631; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'distance'};
+Trial 18; Value: 0.631; Parameters: {'planning_strategy': 'delta_greedy_planning', 'initialisation': 'safe'};
+Trial 7; Value: 0.63; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'safe'};
+Trial 14; Value: 0.63; Parameters: {'planning_strategy': 'plan_for_new_states', 'initialisation': 'zero'};
