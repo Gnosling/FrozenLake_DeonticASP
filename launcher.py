@@ -8,7 +8,7 @@ import concurrent.futures
 
 def process_config(config, controller):
     try:
-        controller.run_experiment(config)
+        (controller.run_experiment(config))
     except Exception as e:
         print(f"Exception type: {type(e).__name__}")
         print(f"Error message: {e}")
@@ -34,7 +34,7 @@ if __name__ == '__main__':
 
     ]
 
-    experiments = ["B7_decay"]
+    experiments = [config for config in configs.keys() if config.startswith("C1")]
 
 
 
@@ -42,7 +42,7 @@ if __name__ == '__main__':
         print("START: " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
         process_config(elem, controller)
         print("FINISHED: " + str(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
-        print("\n\n")
+        print("\n")
 
 
     # filtered_configs = [config for config in configs.keys() if config.startswith(experiment)]

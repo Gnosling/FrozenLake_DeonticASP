@@ -451,6 +451,7 @@ class FrozenLakeEnv(Env):
 
         if tile in b"P":
             self.remove_present_from_tile(current_position)
+            presents = tuple(self.get_presents())
 
         if self.traverser_path:
             # case traverser exist

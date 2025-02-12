@@ -945,7 +945,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.ylabel('returns')
     handles, labels = plt.gca().get_legend_handles_labels()
     order = [1,0]
-    plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=1.0)
+    plt.legend([handles[idx] for idx in order], [labels[idx] for idx in order], loc='upper left', framealpha=0.8)
 
     plt.xlim(1, episodes)
     plt.ylim(-0.02, 1.02)
@@ -994,7 +994,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.title(f'{config_title_format} - Final returns', fontsize=16, pad=20)
     plt.ylim(0, 1)
     plt.yticks([i/10 for i in range(11)])
-    plt.legend()
+    plt.legend(framealpha=0.8)
 
     plot_path = os.path.join(plot_folder, f"{config}_returns_final.png")
     if os.path.exists(plot_path):
@@ -1018,8 +1018,8 @@ def plot_experiment(config: str, config_dict: dict):
         inference_times = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue', marker='.')
-    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen', marker='.')
+    plt.plot(list(range(1, episodes + 1)), fitting_times, label='fitting', linewidth=1.7, color='royalblue', marker='.', alpha=0.7)
+    plt.plot(list(range(1, episodes + 1)), inference_times, label='inference', linewidth=1.7, color='seagreen', marker='.', alpha=0.7)
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1027,10 +1027,10 @@ def plot_experiment(config: str, config_dict: dict):
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('seconds')
-    plt.legend(loc='upper right', framealpha=1.0)
+    plt.legend(loc='upper right', framealpha=0.8)
 
     plt.xlim(1, episodes)
-    plt.ylim(-0.02, max(fitting_times) + 0.2) # TODO: set the right axis-limit here
+    plt.ylim(-0.02, max(fitting_times) + 0.2)
 
     plot_path = os.path.join(plot_folder, f"{config}_runtimes_training.png")
     if os.path.exists(plot_path):
@@ -1082,7 +1082,7 @@ def plot_experiment(config: str, config_dict: dict):
     plt.close()
 
 
-    #  ---   ---   ---   plots: training steps and slips   ---   ---   --- # TODO: add here the number of planned steps? and explored steps?
+    #  ---   ---   ---   plots: training steps, slips, explorations and plannings   ---   ---   ---
     path = os.path.join(training_folder, f"{config}_steps.txt")
     steps = []
     with open(path, 'r', newline='') as file:
@@ -1108,10 +1108,10 @@ def plot_experiment(config: str, config_dict: dict):
         plannings = ast.literal_eval(content.split("\n")[0])
 
     plt.figure(figsize=(10, 6))
-    plt.plot(list(range(1, episodes + 1)), steps, label='target - steps', linewidth=1.7, color='royalblue', marker='.')
-    plt.plot(list(range(1, episodes + 1)), slips, label='target - slips', linewidth=1.7, color='seagreen', marker='.')
-    plt.plot(list(range(1, episodes + 1)), explorations, label='behavior - explorations', linewidth=1.7, color='darkorange', marker='.')
-    plt.plot(list(range(1, episodes + 1)), plannings, label='behavior - plannings', linewidth=1.7, color='goldenrod', marker='.')
+    plt.plot(list(range(1, episodes + 1)), steps, label='target - steps', linewidth=1.7, color='royalblue', marker='.', alpha=0.7)
+    plt.plot(list(range(1, episodes + 1)), slips, label='target - slips', linewidth=1.7, color='seagreen', marker='.', alpha=0.7)
+    plt.plot(list(range(1, episodes + 1)), explorations, label='behavior - explorations', linewidth=1.7, color='darkorange', marker='.', alpha=0.7)
+    plt.plot(list(range(1, episodes + 1)), plannings, label='behavior - plannings', linewidth=1.7, color='gold', marker='.', alpha=0.7)
     plt.axhline(y=0, color='dimgray', linestyle='-', linewidth=0.7)
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1119,12 +1119,12 @@ def plot_experiment(config: str, config_dict: dict):
     # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning}, norm_set={deontic}\n', ha='center', va='center', fontsize=9)
     plt.xlabel('episodes')
     plt.ylabel('counts')
-    plt.legend(loc='upper right', framealpha=1.0)
+    plt.legend(loc='upper right', framealpha=0.8)
 
     plt.xlim(1, episodes)
     plt.ylim(-0.02, max(steps)+6)
 
-    plot_path = os.path.join(plot_folder, f"{config}_steps_training.png")
+    plot_path = os.path.join(plot_folder, f"{config}_steps_slips_explorations_plannings_training.png")
     if os.path.exists(plot_path):
         os.remove(plot_path)
     plt.savefig(plot_path)
@@ -1211,7 +1211,7 @@ def plot_experiment(config: str, config_dict: dict):
 
         norms = violations[0].keys()
         for index, norm in enumerate(norms):
-            plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='.')
+            plt.plot(list(range(1,episodes+1)), [elem[norm] for elem in violations], label=f'{norm}', linewidth=1.5, color=colors_of_norms[norm], marker='.', alpha=0.7)
 
         plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
 
@@ -1219,7 +1219,7 @@ def plot_experiment(config: str, config_dict: dict):
         # plt.figtext(0.5, 0.01, f'{frozenlake.get("name")}, {planning.get("planning_strategy")}, norm_set={deontic.get("norm_set")}\n', ha='center', va='center', fontsize=9)
         plt.xlabel('episodes')
         plt.ylabel('violations')
-        plt.legend(loc='upper right', framealpha=1.0)
+        plt.legend(loc='upper right', framealpha=0.8)
 
         max_violation = max(value for d in violations for value in d.values())+2
         plt.xlim(1, episodes)
