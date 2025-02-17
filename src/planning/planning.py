@@ -93,6 +93,8 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
     returns planned action
     """
 
+    # TODO: if allowed_actions is just a single one, then it can be returned directly, also it should be added to the cache
+
     key_for_storing_results = (exp_name, state, last_performed_action)
     for dictionary in computed_plans:
         if key_for_storing_results in dictionary:
@@ -122,7 +124,7 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         f'python', f'-m', f'telingo',
         f'--quiet=1,1,1',
         f'--imin={planning_horizon}', f'--imax={planning_horizon}',
-        f'--time-limit=30',
+        f'--time-limit=60',
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"', f'"{file5}"', f'"{file6}"', f'"{file7}"'
     ]
 
@@ -186,7 +188,7 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
         f'python', f'-m', f'telingo',
         f'--quiet=1,1,1',
         f'--imin={enforcing_horizon}', f'--imax={enforcing_horizon}',
-        f'--time-limit=30',
+        f'--time-limit=60',
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"'
     ]
 

@@ -54,6 +54,7 @@ takePresent(S) :- currentState(S), present(S), not presentTaken(S).
 presentTaken(S) :- 'takePresent(S).
 presentTaken(S) :- 'presentTaken(S).
 presentTaken(S) :- currentStateOfTraverser(S), present(S), not presentTaken(S), not currentState(S).
+presentMissed(S) :- present(S), not presentTaken(S).
 
 
 % define safe tiles as tiles not next to a hole

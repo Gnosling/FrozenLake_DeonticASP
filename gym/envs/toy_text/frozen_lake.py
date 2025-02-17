@@ -113,7 +113,7 @@ TRAVERSER_PATHS = {
     "6x4_B": [16,10,4,10] * int(150/4),
     "7x4_A": None,
     "7x4_B": [10,17] * int(200/2),
-    "7x4_C": [3],
+    "7x4_C": [6,5,4,3,2,1,0], # TODO. update chart.png of this
     "7x4_D": None,
     "8x8_A": [38,30,22,23,31,39] * int(300/6),
     "8x8_B": None,
@@ -452,6 +452,7 @@ class FrozenLakeEnv(Env):
         if tile in b"P":
             self.remove_present_from_tile(current_position)
             presents = tuple(self.get_presents())
+            ret_values = ((int(current_position), -1, presents), reward, terminated, False, {"prob": prob})
 
         if self.traverser_path:
             # case traverser exist

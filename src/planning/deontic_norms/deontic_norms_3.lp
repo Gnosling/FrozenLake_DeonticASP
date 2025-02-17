@@ -14,5 +14,5 @@ level(reachedGoal,4).
 
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not &tel {<? goalStateReached}.
-missedPresents :- present(S), not presentTaken(S).
-currentViolation(forbidden(missedPresents)) :- forbidden(missedPresents), missedPresents.
+currentViolation(forbidden(missedPresents(S))) :- forbidden(missedPresents), presentMissed(S).
+level(missedPresents(S), L) :- level(missedPresents,L), presentMissed(S).

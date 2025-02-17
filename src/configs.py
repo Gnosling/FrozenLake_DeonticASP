@@ -58,7 +58,7 @@ configs = {
            "enforcing": {"norm_set": 6, "strategy": "full_reward_shaping", "phase": "after_training", "enforcing_horizon": 4},
            },
 
-
+# TODO: replace initialiSation with initialiZation !
 
     # A* to test RL-params
     # levels without norms, just structure: 3x3_A, 4x4_A, 6x4_A, 6x4_B, 7x4_A, 7x4_C, 8x8_A
@@ -370,6 +370,8 @@ configs = {
            "enforcing": None,
            },
 
+    # TODO: maybe redo B9 with the new time-limit
+
     # TODO: Notes from B*
     #  results for high early planning (full,new,decay) ignore the initialization
     #  all plannings outperformed no_plannings, and learned the shortest path to goal
@@ -379,10 +381,9 @@ configs = {
     #  for B6, the planning component aimed for the shortest path, but after the traverser blocks it, it redirects the agent, this extra step is also learned into the target policy
     #  B7 the right path was learned, but the rewards are low, due to narrow path and risk of sliding (An edge kissing was not learned, since the model has not integrated this)
     #  B7 was the hardest level (7x4_C)
-    #  .
+    #  for B2 (and maybe some others) return of newstates is better than for full (ie. they are similar and randomness decides superior?)
+    #  for B2 (and maybe some others) if the initialization does not solve the level then it hinder final return
     #  .......
-
-# TODO: also redo the other experiments
 
 
     # C* to test norms and CTD
@@ -391,23 +392,23 @@ configs = {
     # TODO: deontic aspects should be simple norms and then with ctds, also some larger ones with different priorities
     # TODO: foreach config here define hypotheses
 
-    # C1 on 3x3_B tests simple CTD, presents and then combination
+    # C1 on 3x3_B tests simple CTD, presents and then combination # TODO: re-run
     #   works as expected, Present favors present, CTD the other way, CTD and CTD with presents have equal results
-    "C1_CTD": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
+    "C1_traverser": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake3x3_B", "traverser_path": "3x3_B", "slippery": True},
            "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_3x3, "reward_set": 2},
            "deontic": {"norm_set": 0, "evaluation_function": 4},
            "enforcing": None,
            },
-    "C1_Present": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
+    "C1_present": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake3x3_B", "traverser_path": "3x3_B", "slippery": True},
            "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": {"norm_set": 3, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_3x3, "reward_set": 2},
            "deontic": {"norm_set": 0, "evaluation_function": 4},
            "enforcing": None,
            },
-    "C1_CTD_With_Present": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
+    "C1_traverser_with_present": {"repetitions": 100, "episodes": episodes_3x3, "max_steps": max_steps_3x3, "evaluation_repetitions": 100,
            "frozenlake": {"name": "FrozenLake3x3_B", "traverser_path": "3x3_B", "slippery": True},
            "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "distance", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
            "planning": {"norm_set": 4, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_3x3, "reward_set": 2},
@@ -415,7 +416,342 @@ configs = {
            "enforcing": None,
            },
 
-    # TODO: have something with evaluations in here and also with changing levels
+    # C2 on 4x4_B tests traverser avoidance challenged with safe area
+    "C2_normless": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C2_traverser": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C2_safe": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 5, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C2_traverser_with_safe": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 6, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C3 on 4x4_C tests traverser with present and different evaluation-strats (like only rewards, scaling, only violations and lastly weak constraints)
+    "C3_rewards": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_C", "traverser_path": "4x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 4, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 1},
+           "enforcing": None,
+           },
+    "C3_scaling": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_C", "traverser_path": "4x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 4, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 2},
+           "enforcing": None,
+           },
+    "C3_violations": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_C", "traverser_path": "4x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 4, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 3},
+           "enforcing": None,
+           },
+    "C3_weakconstrains": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_C", "traverser_path": "4x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 4, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C4 on 6x4_B tests norm of reaching vs detour to avoid traverser
+    "C4_traverser": {"repetitions": 100, "episodes": episodes_6x4, "max_steps": max_steps_6x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_B", "traverser_path": "6x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_6x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C4_moving": {"repetitions": 100, "episodes": episodes_6x4, "max_steps": max_steps_6x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_B", "traverser_path": "6x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_6x4, "reward_set": 2},
+           "deontic": {"norm_set": 7, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C4_strictly_moving": {"repetitions": 100, "episodes": episodes_6x4, "max_steps": max_steps_6x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_B", "traverser_path": "6x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_6x4, "reward_set": 2},
+           "deontic": {"norm_set": 8, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C4_traverser_with_moving": {"repetitions": 100, "episodes": episodes_6x4, "max_steps": max_steps_6x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake6x4_B", "traverser_path": "6x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_6x4, "reward_set": 2},
+           "deontic": {"norm_set": 9, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C5 on 7x4_A tests safe areas vs moving to goal
+    "C5_safe": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 5, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C5_moving": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 7, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C5_safe_first": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 10, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C5_moving_first": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 11, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C5_equal": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_A", "traverser_path": "7x4_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 12, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C6 on 7x4_B tests the safe areas but with traverser
+    "C6_traverser_first": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_B", "traverser_path": "7x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 13, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C6_safe_first": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_B", "traverser_path": "7x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 14, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C6_equal": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_B", "traverser_path": "7x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 15, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C7 on 7x4_C tests  moving towards goal, can make a failure here
+    "C7_normless": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_C", "traverser_path": "7x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C7_moving": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_C", "traverser_path": "7x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 7, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C7_strictly_moving": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_C", "traverser_path": "7x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 8, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C7_traverser_with_moving": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_C", "traverser_path": "7x4_C", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": "todo", "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 9, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C8 on 7x4_D tests presents vs moving towards goal (maybe also some evaluations here)
+    "C8_normless": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_D", "traverser_path": "7x4_D", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C8_no_presents": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_D", "traverser_path": "7x4_D", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 16, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C8_presents": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_D", "traverser_path": "7x4_D", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 3, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C8_moving": {"repetitions": 100, "episodes": episodes_7x4, "max_steps": max_steps_7x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake7x4_D", "traverser_path": "7x4_D", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 7, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_7x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C9 on 8x8_A tests just traverser (comp with the one with B*)
+    "C9_traverser": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C9_traverser_over_safe": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_A", "traverser_path": "8x8_A", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 13, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # C10 on 8x8_B tests presents vs reward vs moving towards goal
+    # "C10_normless": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+    #        "frozenlake": {"name": "FrozenLake8x8_B", "traverser_path": "8x8_B", "slippery": True},
+    #        "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+    #        "planning": {"norm_set": 1, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+    #        "deontic": {"norm_set": 0, "evaluation_function": 4},
+    #        "enforcing": None,
+    #        },
+    "C10_safe": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_B", "traverser_path": "8x8_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 5, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C10_presents": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_B", "traverser_path": "8x8_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 3, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    # TODO: re-run all experiments with presents
+    # TODO: run both experiments below
+    "C10_safe_with_presents_1": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_B", "traverser_path": "8x8_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 17, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+    "C10_safe_with_presents_2": {"repetitions": 100, "episodes": episodes_8x8, "max_steps": max_steps_8x8, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake8x8_B", "traverser_path": "8x8_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "safe", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 18, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_8x8, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": None,
+           },
+
+    # TODO: Notes from C*
+    #  .
+    #  The plan_for_new_states some issues when sliding, because the planning chain then gets broken, need to find an example to illustrate this, or have a C11 with full planning?
+    #  .
+    #  ...
+
+
+    # D* to test dilemmas + alternatives in deontic reasoning + 'failures' or pitfalls
+    # TODO: different rewards,
+    #  different evaluations?,
+    #  worse plannings + play around without reaching goal norm,
+    #  normative pitfalls in successfully reaching goal/ conflicts (could correlate to some paradoxes),
+    #  forbidden -> not permitted, obligatory -> forbidden(not permitted),
+    #  deontic vs factual detachment,
+    #  paradoxes-simulations
+
+    # TODO: safe init is not the same as safe_area -> check and fix in paper
+
+
+    # E* to test enforcings
+    # "enforcing": {"norm_set": 6, "strategy": "guardrail | fixing | optimal_reward_shaping | full_reward_shaping", "phase": "during_training | after_training", "enforcing_horizon": [3,6] (no use in guardral; in fixing is list [len of checked path; len of fixed path]; in reward-shaping defines number of shaping steps)},
+    # TODO: a guardrail with a simple reaching goal norm could help even without planning, the rewards shaping could also use the dependency on planning
+
+    # On 4x4_B during training for traverser
+    "E1_traverser_guard": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "guardrail", "phase": "during_training", "enforcing_horizon": None},
+           },
+    "E1_traverser_fix": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "fixing", "phase": "during_training", "enforcing_horizon": [4, ph_4x4]},
+           },
+    "E1_traverser_full_shaping": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "full_reward_shaping", "phase": "during_training", "enforcing_horizon": [100]},
+           },
+
+    # On 4x4_B after training for traverser
+    "E2_traverser_guard": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "guardrail", "phase": "after_training", "enforcing_horizon": None},
+           },
+    "E2_traverser_fix": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "fixing", "phase": "after_training", "enforcing_horizon": [4, ph_4x4]},
+           },
+    "E2_traverser_full_shaping": {"repetitions": 100, "episodes": episodes_4x4, "max_steps": max_steps_4x4, "evaluation_repetitions": 100,
+           "frozenlake": {"name": "FrozenLake4x4_B", "traverser_path": "4x4_B", "slippery": True},
+           "learning": {"norm_set": None, "epsilon": epsilon, "initialisation": "zero", "reversed_q_learning": True, "discount": 0.99, "learning_rate": 0.3, "learning_rate_strategy": "constant", "learning_decay_rate": None},
+           "planning": {"norm_set": 2, "delta": None, "strategy": "plan_for_new_states", "planning_horizon": ph_4x4, "reward_set": 2},
+           "deontic": {"norm_set": 0, "evaluation_function": 4},
+           "enforcing": {"norm_set": 2, "strategy": "full_reward_shaping", "phase": "after_training", "enforcing_horizon": [100]},
+           },
+
+
+    # TODO: test and debug the other enforcings, update cache for validating (different cache for that?), update violation plot and the tests
 
 
 

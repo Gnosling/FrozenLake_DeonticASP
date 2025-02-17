@@ -436,6 +436,8 @@ def _check_violations(norm_violations, trail, terminated, env):
     new_position = new_state[0]
     old_traverser_position = state[1]
     new_traverser_position = new_state[1]
+    original_presents = list(trail[0][0][2])
+    taken_presents = []
     previous_presents = list(state[2])
     remaining_presents = list(new_state[2])
 
@@ -466,9 +468,13 @@ def _check_violations(norm_violations, trail, terminated, env):
 
         elif norm == "missedPresents":
             if terminated:
-                remaining_presents = list(new_state[2])
-                if len(remaining_presents) > 0:
-                    norm_violations[norm] += 1
+                for step in trail:
+                    new_loop_position = step[2][0]
+                    old_loop_presents = list(step[0][2])
+                    if new_loop_position in old_loop_presents:
+                        taken_presents.append(new_loop_position)
+                if len(taken_presents) != len(original_presents):
+                    norm_violations[norm] += len(original_presents) - len(taken_presents)
 
         elif norm == "movedAwayFromGoal":
             previous_distance = distance_to_goal(old_position, goal, width, height)
@@ -558,7 +564,7 @@ def extract_norm_levels(norm_set):
 def guardrail(enforcing_config, state, previous_state, last_performed_action, last_proposed_action, env):
     """
     guardrails the 'allowed' moves for the given state.
-    returns the norm-confirm next actions selectable for this state
+    returns the next actions selectable for this state with minimal violations
     (only considers direct violations in the successor and no future violations of all paths)
     """
     allowed_actions = {action for action in constants.ACTION_SET}
@@ -570,7 +576,7 @@ def guardrail(enforcing_config, state, previous_state, last_performed_action, la
     holes = env.get_holes()
     sum_of_violations = dict()
 
-    # Note: foreach action all non-deterministic successors are added to the trail and checked
+    # Note: foreach action all deterministic successors are added to the trail and checked
     # If all actions are not allowed, then the one with the minimal sum is returned
     for action in constants.ACTION_SET:
         successor = compute_expected_successor(state[0], action, width, height)
@@ -619,6 +625,7 @@ def get_state_value(state, norms, level_of_norms, env):
             continue  # Note: CTD cannot be checked as state-function
 
         elif norm == "stolePresent":
+            # The presents in a state-function cannot consider who picked up presents
             if len(state[2]) > 0:
                 value += len(state[2]) * (scaling_factor**(level_of_norms[norm]-1))
 
@@ -874,18 +881,35 @@ def store_results(config: str, config_dict: dict, training_returns_avg, training
             file.write(str(enforced_state_visits))
 
 
-def levene_test(group1, group2, alpha = 0.01) -> bool:
-    """ performs Levene's Test for variance similarity. Returns true is variances pass the test, ie. are similar"""
+def levene_test(group1, group2, alpha = 0.001) -> bool:
+    """
+    Performs Levene's Test for variance similarity.
+    Returns true is variances pass the test, ie. are similar
+    """
     stat, p_value = stats.levene(group1, group2)
     return p_value >= alpha
 
-def t_test(group1, group2, equal_variance=True, alpha=0.01) -> bool:
+def t_test(group1, group2, equal_variance=True, alpha=0.001) -> bool:
     """
     Performs t-test to test if the means of two groups are significantly different.
     If equal_variance, then two-sampled t-test is performed, otw. Welch's t-test.
     Returns true iff the means are significantly different
     """
     stat, p_value = stats.ttest_ind(group1, group2, equal_var=equal_variance)
+    return p_value < alpha
+
+def chi_squared_test(group1, group2, alpha=0.001) -> bool:
+    """
+    Performs a chi-squared test to check if the means of two groups are significantly different.
+    Groups should be lists of binary data (0 and 1).
+    Returns True if the means are significantly different, otherwise False.
+    """
+    success1, failure1 = np.sum(group1), len(group1) - np.sum(group1)
+    success2, failure2 = np.sum(group2), len(group2) - np.sum(group2)
+    contingency_table = np.array([[success1, failure1], [success2, failure2]])
+
+    chi2, p_value, _, _ = stats.chi2_contingency(contingency_table)
+
     return p_value < alpha
 
 
@@ -985,7 +1009,7 @@ def plot_experiment(config: str, config_dict: dict):
         plt.bar(x_positions, [final_bar_size, enforced_bar_size], label='Percentage of successes', color=['deepskyblue', 'darkcyan'], width=0.5, yerr=[final_std_err, enforced_std_err], capsize=15)
         plt.xticks(x_positions, ['final returns', 'enforced returns'])
     else:
-        plt.figure(figsize=(3, 8))
+        plt.figure(figsize=(3, 8)) # TODO: too thin for larger config names, maybe handle in title, like over two lines?
         plt.bar(['final returns'], [final_bar_size], label='Percentage of successes', color='skyblue', width=0.5, yerr=final_std_err, capsize=30)
 
     plt.grid(True, which='both', axis='y', linestyle='-', linewidth=0.2, color='grey')
@@ -1265,9 +1289,10 @@ def plot_experiment(config: str, config_dict: dict):
         type_column = []
         group_column = []
         for norm in group_labels:
-            data_list.append(final_violations[norm])
-            type_column.extend(['violations'] * len(final_violations[norm]))
-            group_column.extend([norm] * len(final_violations[norm]))
+            if any(final_violations[norm]):
+                data_list.append(final_violations[norm])
+                type_column.extend(['violations'] * len(final_violations[norm]))
+                group_column.extend([norm] * len(final_violations[norm]))
 
             if any(enforced_violations[norm]):
                 data_list.append(enforced_violations[norm])
@@ -1282,37 +1307,45 @@ def plot_experiment(config: str, config_dict: dict):
             'Group': group_column
         })
 
-        plt.figure(figsize=(22, 6))
-        sns.violinplot(x='Group', y='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
-        plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
+        plt.figure(figsize=(12,22))
+        sns.violinplot(y='Group', x='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
+        # plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
+        plt.axvline(x=0, color='limegreen', linestyle='--', linewidth=2, label='_nolegend_')
 
-        plt.title(f'{config_title_format} - Final violations', fontsize=16, pad=20)
-        plt.xlabel('')
-        plt.ylabel('violations')
-        plt.ylim(-0.5, 10)
-        plt.grid(axis='y', linestyle='--', alpha=0.5)
-        plt.tight_layout()
+        plt.title(f'{config_title_format} - Final violations', fontsize=28, pad=20)
+        plt.ylabel('')
+        plt.xlabel('violations', fontsize=20)
+        plt.yticks(rotation=45, ha='right')
+        plt.xticks(fontsize=20)
+        plt.yticks(fontsize=20)
+        plt.legend(fontsize=20, loc='upper right', title_fontsize='20')
+        plt.xlim(-0.5, 10)
+        plt.grid(axis='x', linestyle='--', alpha=0.5)
 
         if enforced_violations:
             significantly_different_groups = []
             for norm in group_labels:
-                # TODO: only for notReachedGoal use Chi-Squared test since binary data is not normal-distributed !!
                 if sum(final_violations[norm]) > 0 and sum(enforced_violations[norm]) > 0:
-                    if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
-                        significantly_different_groups.append(norm)
-                        # TODO: test the t-test a bit more
-                        #  --> if fake enforcing (ie. just repeating normal) then data similar
-                        #  --> but if enforcing is applied all norms are different, maybe strengthen alpha?.
+                    if norm == "notReachedGoal":
+                        # Note: only for notReachedGoal use Chi-Squared test since binary data is not normal-distributed
+                        if chi_squared_test(final_violations[norm], enforced_violations[norm]):
+                            significantly_different_groups.append(norm)
+                    else:
+                        if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
+                            significantly_different_groups.append(norm)
+                            # TODO: test the t-test a bit more
+                            #  --> if fake enforcing (ie. just repeating normal) then data similar
+                            #  --> but if enforcing is applied all norms are different, maybe strengthen alpha?.
 
             ax = plt.gca()
-            xticks = ax.get_xticklabels()
+            yticks = ax.get_yticklabels()
             for group in significantly_different_groups:
-                for label in xticks:
+                for label in yticks:
                     if group in label.get_text():
-                        label.set_fontsize(12)
                         label.set_color('orangered')
                         label.set_fontweight('bold')
 
+        plt.tight_layout()
         plot_path = os.path.join(plot_folder, f"{config}_violations_final.png")
         if os.path.exists(plot_path):
             os.remove(plot_path)

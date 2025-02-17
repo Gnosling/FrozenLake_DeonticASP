@@ -10,7 +10,7 @@
 forbidden(occupiedTraverserTile).
 occupiedTraverserTile :- currentState(X), currentStateOfTraverser(Y), X=Y.
 currentViolation(forbidden(occupiedTraverserTile)) :- forbidden(occupiedTraverserTile), occupiedTraverserTile.
-level(occupiedTraverserTile,1).
+level(occupiedTraverserTile,2).
 
 % If the agent and traverser occupy the same tile, then the agent must move straight
 forbidden(turnedOnTraverserTile).
@@ -28,5 +28,5 @@ level(reachedGoal,4).
 
 #program final.
 currentViolation(obligatory(reachedGoal)) :- not &tel {<? goalStateReached}.
-missedPresents :- present(S), not presentTaken(S).
-currentViolation(forbidden(missedPresents)) :- forbidden(missedPresents), missedPresents.
+currentViolation(forbidden(missedPresents(S))) :- forbidden(missedPresents), presentMissed(S).
+level(missedPresents(S), L) :- level(missedPresents,L), presentMissed(S).
