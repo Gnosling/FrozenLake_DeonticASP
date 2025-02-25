@@ -92,10 +92,10 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
     uses general_reasoner for RL, frozenlake_reasoner for frozenlake, level-data and a helper file to handle dynamic properties (eg. to parse the currrent-state in the solver)
     returns planned action
     """
+    if allowed_actions and len(allowed_actions) == 1:
+        return list(allowed_actions)[0]
 
-    # TODO: if allowed_actions is just a single one, then it can be returned directly, also it should be added to the cache
-
-    key_for_storing_results = (exp_name, state, last_performed_action)
+    key_for_storing_results = (exp_name, "planning", planning_horizon, state, norm_set, reward_set, evaluation_function, last_performed_action, tuple(allowed_actions))
     for dictionary in computed_plans:
         if key_for_storing_results in dictionary:
             # Note: action was already planned and can be returned from this 'cache' instead of re-computing
@@ -175,7 +175,14 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
     uses frozenlake_checking, level-data and a helper file to handle dynamic properties
     returns True if and only if the checked path is valid meaning no norm-violations were identified
     """
+    key_for_storing_results = (exp_name, "validation", state, enforcing_norm_set, last_performed_action, actions)
+    for dictionary in computed_plans:
+        if key_for_storing_results in dictionary:
+            # Note: actions were already validated and can be returned from this 'cache' instead of re-computing
+            already_validated = dictionary[key_for_storing_results]
+            return already_validated
 
+    # TODO: test validation planning
     file1 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_checking.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
     _fill_file_for_dynamic_parameters(exp_name, state[0], state[1], last_performed_action, list(state[2]), None, actions)
@@ -228,8 +235,10 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
         print(errors_and_warnings)
 
     _remove_file_with_dynamic_parameters(exp_name)
+    validation = _extract_validation_result_from_telingo_output(output)
+    computed_plans.append({key_for_storing_results: validation})
 
-    return _extract_validation_result_from_telingo_output(output) # TODO: how to handle the validation and also the enfocring, cache info must be updated, since norm_set might change!
+    return validation
 
 
 

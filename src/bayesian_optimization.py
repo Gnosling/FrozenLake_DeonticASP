@@ -28,12 +28,7 @@ def objective_for_RL_params_L4_1(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"A{trial.number}", config)
 
-    # Trial 25; Value: 0.496; Parameters: {'episodes': 252, 'discount': 0.8395475115779703, 'reversed_q_learning': True, 'learning_rate': 0.18815556046386858};
-    # Trial 132; Value: 0.475; Parameters: {'episodes': 279, 'discount': 0.8466259397519311, 'reversed_q_learning': True, 'learning_rate': 0.20397812380507369};
-    # Trial 162; Value: 0.473; Parameters: {'episodes': 249, 'discount': 0.8422325222133493, 'reversed_q_learning': True, 'learning_rate': 0.43197792671208635};
-    # Trial 86; Value: 0.468; Parameters: {'episodes': 251, 'discount': 0.9189617029401612, 'reversed_q_learning': True, 'learning_rate': 0.13530255045951342};
-    # Trial 602; Value: 0.465; Parameters: {'episodes': 246, 'discount': 0.9357989284024836, 'reversed_q_learning': True, 'learning_rate': 0.11970478397839024};
-
+    evalu
 
 def objective_for_RL_params_L4_2(trial):
     """

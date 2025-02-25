@@ -233,9 +233,9 @@ def build_policy(config: str, config_dict, env):
     _, _, _, _, learning, frozenlake, planning, deontic, enforcing = read_config_params(config, config_dict)
 
     if planning is None:
-        behavior = Policy(config, QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
+        behavior = Policy(config, QTable(learning.get("initialization"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), frozenlake.get("name"), None)
     else:
-        behavior = PlannerPolicy(config, QTable(learning.get("initialisation"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), planning.get("reward_set"), deontic.get("evaluation_function"), None)
+        behavior = PlannerPolicy(config, QTable(learning.get("initialization"), learning.get("norm_set")), learning.get("learning_rate"), learning.get("learning_rate_strategy"), learning.get("learning_decay_rate"), learning.get("discount"), learning.get("epsilon"), planning.get("strategy"), planning.get("planning_horizon"), planning.get("delta"), frozenlake.get("name"), planning.get("norm_set"), planning.get("reward_set"), deontic.get("evaluation_function"), None)
 
     if enforcing and enforcing.get("phase") == "during_training":
         behavior.set_enforcing(enforcing)
@@ -886,7 +886,7 @@ def levene_test(group1, group2, alpha = 0.001) -> bool:
     Performs Levene's Test for variance similarity.
     Returns true is variances pass the test, ie. are similar
     """
-    stat, p_value = stats.levene(group1, group2)
+    stat, p_value = stats.levene(group1, group2, center='median')
     return p_value >= alpha
 
 def t_test(group1, group2, equal_variance=True, alpha=0.001) -> bool:
