@@ -22,8 +22,8 @@ class Controller:
     def plot_experiment(self, config: str):
         plot_experiment(config, None)
 
-    def plot_compare_of_experiments(self, configs: List, show_returns: bool = True, norm_set: int = 0):
-        plot_compare_of_experiments(configs, show_returns, norm_set)
+    def plot_compare_of_experiments(self, configs: List, level: str, show_returns: bool = True, show_enforced: bool = False, norm_set: int = 0):
+        plot_compare_of_experiments(configs, level, show_returns, show_enforced, norm_set)
 
     def run_experiment(self, config: str, config_dict: dict = None):
 
@@ -203,14 +203,17 @@ class Controller:
         final_enforced_state_visits = dict()
         final_enforced_violations = None
         if enforcing and enforcing.get("phase") == "after_training":
-            for target in final_target_policies:
+            debug_print(f"Doing post enforcing ...")
+            for enf_rep, target in enumerate(final_target_policies):
                 target.set_enforcing(enforcing)
                 if enforcing.get("enforcing_horizon") and "reward_shaping" in enforcing.get("strategy"):
                     # Note: if rewards shaping is used, then the targets are 'shaped' before the actual evaluation
                     for i in range(enforcing.get("enforcing_horizon")[0]):
-                        test_target(target, env, config)
+                        test_target(target, env, config, config_dict)
 
                 for i in range(evaluation_repetitions):
+                    if not is_debug_mode():
+                        pbar = tqdm(total=max_steps, desc=f"Performing enforcing {enf_rep+1}:   {i+1}/{evaluation_repetitions}",leave=False)
                     trail_of_target, violations_of_target, slips_of_target, inference_time, state_visits = test_target(target, env, config, config_dict)
                     expected_return = compute_expected_return(learning.get("discount"),[r for [_, _, _, r] in trail_of_target])
                     final_enforced_returns.append(expected_return)
@@ -219,6 +222,13 @@ class Controller:
                     final_enforced_slips.append(slips_of_target)
                     final_enforced_inference_times.append(inference_time)
                     final_enforced_state_visits = update_state_visits(final_enforced_state_visits, state_visits)
+                    if not is_debug_mode():
+                        pbar.update(1)  # updates progress bar
+
+                if not is_debug_mode():
+                    if pbar.n < pbar.total:
+                        pbar.update(pbar.total - pbar.n - 1)
+                    pbar.close()
             final_enforced_state_visits = get_average_state_visits(final_enforced_state_visits, repetitions * evaluation_repetitions)
 
 
@@ -226,6 +236,7 @@ class Controller:
         # Storing of results
         # -----------------------------------------------------------------------------
         if self.store_experiments:
+            print("Storing results ...")
             store_results(config, config_dict,
                           training_returns_avg, training_returns_stderr, training_steps_avg, training_steps_stddev, training_slips_avg, training_slips_stddev, training_explorations_avg, training_explorations_stddev, training_plannings_avg, training_plannings_stddev, training_violations_avg, training_violations_stddev, training_fitting_times_avg, training_fitting_times_stddev, training_inference_times_avg, training_inference_times_stddev, training_state_visits,
                           final_returns, final_steps, final_slips, final_violations, final_inference_times, final_state_visits,

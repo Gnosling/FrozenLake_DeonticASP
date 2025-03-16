@@ -1,4 +1,4 @@
-# safe over move
+% safe over move
 
 % Norms:
 % notReachedGoal

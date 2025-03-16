@@ -28,7 +28,7 @@ def objective_for_RL_params_L4_1(trial):
     controller.disable_storing_and_plottings()
     return controller.run_experiment(f"A{trial.number}", config)
 
-    evalu
+    # TODO: add results here
 
 def objective_for_RL_params_L4_2(trial):
     """
@@ -584,6 +584,8 @@ def bayesian_optimization(category: str, level: str):
             objectives = [objective_for_ASP_params_L6_1, objective_for_ASP_params_L6_2, objective_for_ASP_params_L6_3]
         elif level == "8x8_A":
             objectives = [objective_for_ASP_params_L8_1]
+
+    # TODO: cleanup and upload the bayes files on the paper and reference
 
     for objective in objectives:
         study = optuna.create_study(direction='maximize')

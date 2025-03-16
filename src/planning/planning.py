@@ -102,11 +102,12 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
             already_planned_action = dictionary[key_for_storing_results]
             return already_planned_action
 
+    exp_name_escaped = exp_name.replace("(", "_").replace(")", "_")
     file1 = os.path.join(os.getcwd(), "src", "planning", "general_reasoning.lp")
     file2 = os.path.join(os.getcwd(), "src", "planning", "frozenlake_reasoning.lp")
     file3 = os.path.join(os.getcwd(), "src", "planning", "levels", f"{level}.lp")
-    _fill_file_for_dynamic_parameters(exp_name, state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
-    file4 = os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name}.lp")
+    _fill_file_for_dynamic_parameters(exp_name_escaped, state[0], state[1], last_performed_action, list(state[2]), allowed_actions, None)
+    file4 = os.path.join(os.getcwd(), "src", "planning", f"dynamic_parameters_{exp_name_escaped}.lp")
     file5 = os.path.join(os.getcwd(), "src", "planning", "deontic_norms", f"deontic_norms_{norm_set}.lp")
     file6 = os.path.join(os.getcwd(), "src", "planning", "rewards", f"rewards_{reward_set}.lp")
     file7 = os.path.join(os.getcwd(), "src", "planning", "evaluations", f"evaluation_{evaluation_function}.lp")
@@ -133,7 +134,7 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         @echo off
         {' '.join(command)}
         """
-        bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.bat")
+        bat_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name_escaped}.bat")
         with open(bat_file_path, 'w') as bat_file:
             bat_file.write(bat_content)
 
@@ -145,7 +146,7 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         #!/bin/bash
         {' '.join(command)}
         """
-        sh_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name}.sh")
+        sh_file_path = os.path.join(os.getcwd(), f"run_telingo_{exp_name_escaped}.sh")
         with open(sh_file_path, 'w') as sh_file:
             sh_file.write(sh_content)
         os.chmod(sh_file_path, 0o777)
@@ -163,7 +164,7 @@ def plan_action(exp_name, level: str, planning_horizon: int, last_performed_acti
         print("Telingo Errors and Warnings:")
         print(errors_and_warnings)
 
-    _remove_file_with_dynamic_parameters(exp_name)
+    _remove_file_with_dynamic_parameters(exp_name_escaped)
     planned_action = _extract_first_action_from_telingo_output(output)
     computed_plans.append({key_for_storing_results: planned_action})
 
@@ -175,7 +176,7 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
     uses frozenlake_checking, level-data and a helper file to handle dynamic properties
     returns True if and only if the checked path is valid meaning no norm-violations were identified
     """
-    key_for_storing_results = (exp_name, "validation", state, enforcing_norm_set, last_performed_action, actions)
+    key_for_storing_results = (exp_name, "validation", state, enforcing_norm_set, last_performed_action, tuple(actions))
     for dictionary in computed_plans:
         if key_for_storing_results in dictionary:
             # Note: actions were already validated and can be returned from this 'cache' instead of re-computing
@@ -195,7 +196,7 @@ def validate_path(exp_name, actions: list, level: str, enforcing_horizon: int, l
         f'python', f'-m', f'telingo',
         f'--quiet=1,1,1',
         f'--imin={enforcing_horizon}', f'--imax={enforcing_horizon}',
-        f'--time-limit=60',
+        f'--time-limit=40',
         f'"{file1}"', f'"{file2}"', f'"{file3}"', f'"{file4}"'
     ]
 

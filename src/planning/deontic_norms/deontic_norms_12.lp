@@ -1,4 +1,4 @@
-# safe equal to move
+% safe equal to move
 
 % Norms:
 % notReachedGoal

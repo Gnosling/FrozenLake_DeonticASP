@@ -436,7 +436,10 @@ def _check_violations(norm_violations, trail, terminated, env):
     new_position = new_state[0]
     old_traverser_position = state[1]
     new_traverser_position = new_state[1]
-    original_presents = list(trail[0][0][2])
+    if trail[0][0]:
+        original_presents = list(trail[0][0][2])
+    else:
+        original_presents = list(trail[1][0][2]) # only the case for guardrail
     taken_presents = []
     previous_presents = list(state[2])
     remaining_presents = list(new_state[2])
@@ -1311,7 +1314,7 @@ def plot_experiment(config: str, config_dict: dict):
         sns.violinplot(y='Group', x='Value', hue='Type', data=data, split=True, inner='quart', palette='Set2', bw=0.4 , cut=0)
         # plt.axhline(y=0, color='limegreen', linestyle='--', linewidth=2, label=f'no violations')
         plt.axvline(x=0, color='limegreen', linestyle='--', linewidth=2, label='_nolegend_')
-
+        plt.pause(0.2)
         plt.title(f'{config_title_format} - Final violations', fontsize=28, pad=20)
         plt.ylabel('')
         plt.xlabel('violations', fontsize=20)
@@ -1321,7 +1324,7 @@ def plot_experiment(config: str, config_dict: dict):
         plt.legend(fontsize=20, loc='upper right', title_fontsize='20')
         plt.xlim(-0.5, 10)
         plt.grid(axis='x', linestyle='--', alpha=0.5)
-
+        plt.pause(0.2)
         if enforced_violations:
             significantly_different_groups = []
             for norm in group_labels:
@@ -1333,9 +1336,6 @@ def plot_experiment(config: str, config_dict: dict):
                     else:
                         if t_test(final_violations[norm], enforced_violations[norm], equal_variance=levene_test(final_violations[norm], enforced_violations[norm])):
                             significantly_different_groups.append(norm)
-                            # TODO: test the t-test a bit more
-                            #  --> if fake enforcing (ie. just repeating normal) then data similar
-                            #  --> but if enforcing is applied all norms are different, maybe strengthen alpha?.
 
             ax = plt.gca()
             yticks = ax.get_yticklabels()
@@ -1345,6 +1345,7 @@ def plot_experiment(config: str, config_dict: dict):
                         label.set_color('orangered')
                         label.set_fontweight('bold')
 
+        plt.pause(0.2)
         plt.tight_layout()
         plot_path = os.path.join(plot_folder, f"{config}_violations_final.png")
         if os.path.exists(plot_path):
@@ -1540,7 +1541,7 @@ def plot_experiment(config: str, config_dict: dict):
     print(f"Stored plots in: \t {plot_folder}")
 
 
-def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int):
+def plot_compare_of_experiments(configs: List, level: str, show_returns: bool, show_enforced: bool, norm_set: int):
     """
     plots a table comparing results from different experiments listed by configs
     """
@@ -1553,7 +1554,7 @@ def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int
         os.makedirs(plot_folder)
 
     norms = extract_norm_keys(norm_set)
-    configs.sort()
+    # configs.sort()
     for config in configs:
         returns = None
         enforced_returns = None
@@ -1657,6 +1658,7 @@ def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int
 
         row = {
             "Experiment": config,
+            "  Level  ": level,
             "  Returns  \n": returns,
             "  Returns  \nenforced": enforced_returns,
             "notReachedGoal\n": notReachedGoal,
@@ -1679,19 +1681,23 @@ def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int
             "missedPresents\nenforced": missedPresents_enforced,
         }
 
-        filtered_row = {key: value for key, value in row.items() if key == "Experiment" or any(norm in key for norm in norms.keys()) or (show_returns and "Returns" in key)}
+        filtered_row = {key: value for key, value in row.items()
+                        if key == "Experiment"
+                        or "Level" in key
+                        or any(norm in key for norm in norms.keys())
+                        or (show_returns and "Returns" in key)}
+        filtered_row = {key: value for key, value in filtered_row.items() if show_enforced or "enforced" not in key}
         table_data.append(filtered_row)
 
     df = pd.DataFrame(table_data)
 
     n_rows, n_cols = df.shape
-    fig_width = n_cols * 2.4
-    fig_height = n_rows * 1.6
+    fig_width = n_cols * 1
+    fig_height = n_rows * 1
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     ax.axis("off")
     table = ax.table(cellText=df.values, colLabels=df.columns, loc="center", cellLoc="center")
     table.auto_set_column_width([row for row in range(len(df.columns))])
-    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
     for (row, col), cell in table.get_celld().items():
         if row == 0:
             cell.set_fontsize(12)
@@ -1709,31 +1715,36 @@ def plot_compare_of_experiments(configs: List, show_returns: bool, norm_set: int
         cell.set_height(0.1)
         cell.set_width(0.2)
 
-    for col_idx in range(1, len(df.columns)):
+    for col_idx in range(2, len(df.columns)):
         column_values = [val for val in df.iloc[:, col_idx] if val != dash]
         numeric_values = [float(str(val).split(plusminus)[0]) for val in column_values]
-        min_val = min(numeric_values)
-        max_val = max(numeric_values)
 
-        if sum(numeric_values) != 0:
-            for row_idx, value in enumerate(df.iloc[:, col_idx]):
-                cell = table[row_idx + 1, col_idx]
-                if value == dash:
-                    continue
+        if column_values and numeric_values:
+            min_val = min(numeric_values)
+            max_val = max(numeric_values)
 
-                numeric_value = float(str(value).split(plusminus)[0])
-                if numeric_value == min_val:
-                    cell.set_facecolor("lightyellow")
-                if numeric_value == max_val:
-                    cell.set_facecolor("azure")
+            if sum(numeric_values) != 0:
+                for row_idx, value in enumerate(df.iloc[:, col_idx]):
+                    cell = table[row_idx + 1, col_idx]
+                    if value == dash:
+                        continue
+
+                    numeric_value = float(str(value).split(plusminus)[0])
+                    if numeric_value == min_val:
+                        cell.set_facecolor("lightyellow")
+                    if numeric_value == max_val:
+                        cell.set_facecolor("azure")
 
     # plt.show()
+    width, height = fig.get_size_inches()
+    table.scale(1, 1.5+(width/10))
+    fig.subplots_adjust(left=0, right=1, top=0.8, bottom=0.2)
     configs_title = "_".join(configs)
     plot_path = os.path.join(plot_folder, f"Comparison_of_{configs_title}.png")
     if os.path.exists(plot_path):
         os.remove(plot_path)
     # plt.tight_layout()
-    plt.savefig(plot_path)
+    plt.savefig(plot_path, bbox_inches="tight")
     plt.close()
 
 
